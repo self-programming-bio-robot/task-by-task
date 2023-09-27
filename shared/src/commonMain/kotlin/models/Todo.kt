@@ -8,6 +8,7 @@ data class TodoItem(
     val title: String,
     val description: String = "",
     val pomodoros: List<Pomodoro> = listOf(),
+    val done: Boolean = false
 )
 
 data class Pomodoro(

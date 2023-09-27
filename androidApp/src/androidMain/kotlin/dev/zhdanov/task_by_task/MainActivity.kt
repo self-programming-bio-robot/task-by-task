@@ -1,4 +1,4 @@
-package com.myapplication
+package dev.zhdanov.task_by_task
 
 import MainView
 import android.os.Bundle

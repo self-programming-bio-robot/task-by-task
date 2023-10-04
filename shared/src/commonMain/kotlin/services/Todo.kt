@@ -1,13 +1,14 @@
 package services
 
+import models.Pomodoro
 import models.TodoItem
 
 class TodoRepository {
     private var lastId = 0L
     private val todos = mutableMapOf<Long, TodoItem>()
 
-    fun <R : Comparable<R>>getAll(selector: (TodoItem) -> R): Collection<TodoItem>
-        = todos.values.sortedBy(selector)
+    fun <R : Comparable<R>> getAll(selector: (TodoItem) -> R): Collection<TodoItem> =
+        todos.values.sortedBy(selector)
 
     fun save(todo: TodoItem): TodoItem {
         todos[todo.id] = todo
@@ -26,6 +27,7 @@ class TodoRepository {
         return lastId++
     }
 }
+
 class TodoService(
     private val repository: TodoRepository
 ) {
@@ -35,6 +37,16 @@ class TodoService(
             id, title, description
         )
         return repository.save(todo)
+    }
+
+    fun addPomodoro(id: Long, pomodoro: Pomodoro): TodoItem? {
+        return repository.get(id)?.let {
+            repository.save(
+                it.copy(
+                    pomodoros = it.pomodoros + pomodoro
+                )
+            )
+        }
     }
 
     fun switch(id: Long, newState: Boolean): TodoItem {

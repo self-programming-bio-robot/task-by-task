@@ -16,3 +16,5 @@ data class Pomodoro(
     val start: Instant,
     val isDone: Boolean,
 )
+
+typealias TodoSelectedEvent = (todo: TodoItem) -> Unit

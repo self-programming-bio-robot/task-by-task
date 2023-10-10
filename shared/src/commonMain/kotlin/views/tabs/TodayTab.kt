@@ -27,9 +27,10 @@ import org.koin.compose.getKoin
 import services.TodoService
 import views.NewTaskInput
 import views.TodoList
+import viewsModels.TimerViewModel
 import viewsModels.TodoListViewModel
 
-object TodayTab : Tab {
+internal object TodayTab : Tab {
 
     override val options: TabOptions
         @Composable
@@ -47,8 +48,13 @@ object TodayTab : Tab {
     @Composable
     override fun Content() {
         var todoService = getKoin().get<TodoService>()
+        var timerViewModel = getKoin().get<TimerViewModel>()
         var todoListViewModel =
             getViewModel(Unit, viewModelFactory { TodoListViewModel(todoService) })
+
+        timerViewModel.onDone {
+            todoListViewModel.updateItems()
+        }
 
         Column {
             DayHeader(

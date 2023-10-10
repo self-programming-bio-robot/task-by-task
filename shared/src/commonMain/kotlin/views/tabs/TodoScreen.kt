@@ -8,16 +8,15 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.mvvm.compose.getViewModel
 import dev.icerock.moko.mvvm.compose.viewModelFactory
-import models.TodoSelectedEvent
+import models.TodoEvent
 import org.koin.compose.getKoin
 import services.TodoService
 import views.NewTaskInput
 import views.TodoList
-import viewsModels.SelectedTodoViewModel
 import viewsModels.TodoListViewModel
 
-class TodoScreen(
-    val onSelected: TodoSelectedEvent? = null
+internal class TodoScreen(
+    private val onSelected: TodoEvent? = null
 ) : Screen {
     @Composable
     override fun Content() {
@@ -30,7 +29,8 @@ class TodoScreen(
             TodoList(
                 todoListViewModel = todoListViewModel,
                 modifier = Modifier.weight(1f),
-                onSelected = { todo ->
+                onChange = {},
+                onPick = { todo ->
                     onSelected?.let { it(todo) }
                     navigator.pop()
                 }

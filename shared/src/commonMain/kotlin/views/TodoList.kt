@@ -1,6 +1,7 @@
 package views
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +32,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import models.TodoItem
-import models.TodoSelectedEvent
+import models.TodoEvent
 import viewsModels.TodoListViewModel
 
 
@@ -39,7 +40,8 @@ import viewsModels.TodoListViewModel
 fun TodoList(
     modifier: Modifier,
     todoListViewModel: TodoListViewModel,
-    onSelected: TodoSelectedEvent? = null
+    onChange: TodoEvent? = null,
+    onPick: TodoEvent? = null
 ) {
     val uiState by todoListViewModel.uiState.collectAsState()
     Column(
@@ -51,11 +53,17 @@ fun TodoList(
             Text("All is done!")
         } else {
             uiState.list.forEach { item ->
-                TodoItem(item) { newState ->
-                    onSelected?.let { callback ->
-                        callback(item)
-                    } ?: todoListViewModel.switchTodo(item.id, newState)
-                }
+                TodoItem(
+                    item,
+                    onClick = {
+                        onPick?.let { it(item) }
+                    },
+                    onChange = { newState ->
+                        onChange?.let { callback ->
+                            callback(item)
+                        } ?: todoListViewModel.switchTodo(item.id, newState)
+                    }
+                )
             }
             Row(Modifier.height(48.dp)) {}
         }
@@ -63,11 +71,12 @@ fun TodoList(
 }
 
 @Composable
-fun TodoItem(item: TodoItem, onChange: (state: Boolean) -> Unit) {
+fun TodoItem(item: TodoItem, onClick: (() -> Unit)? = null, onChange: (state: Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .padding(8.dp)
-            .height(48.dp),
+            .height(48.dp)
+            .clickable(enabled = onClick != null, onClick = { onClick?.let { it() }}),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {

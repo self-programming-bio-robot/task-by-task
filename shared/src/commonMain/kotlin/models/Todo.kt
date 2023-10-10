@@ -17,4 +17,4 @@ data class Pomodoro(
     val isDone: Boolean,
 )
 
-typealias TodoSelectedEvent = (todo: TodoItem) -> Unit
+typealias TodoEvent = (todo: TodoItem) -> Unit

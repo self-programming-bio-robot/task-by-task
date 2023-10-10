@@ -12,7 +12,6 @@ import kotlinx.datetime.toDateTimePeriod
 import models.Pomodoro
 import models.TimerSettings
 import models.TodoItem
-import services.Timer
 import services.TodoService
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -21,7 +20,7 @@ data class TimerState(
     val started: Instant? = null,
     val duration: Duration,
     val reminders: Duration,
-    val onDone: (() -> Unit)? = null,
+    val onFinish: OnFinishEvent? = null,
     val condition: TimerCondition = TimerCondition.WAIT_WORK,
     val workInLine: Int = 1,
     val focusTodo: TodoItem? = null
@@ -42,6 +41,8 @@ data class TimerState(
     }
 }
 
+typealias OnFinishEvent = (state: TimerCondition) -> Unit
+
 enum class TimerCondition(private val active: Boolean) {
     WAIT_WORK(false),
     WORKING(true),
@@ -57,7 +58,7 @@ enum class TimerCondition(private val active: Boolean) {
 class TimerViewModel(
     val timerSettings: TimerSettings = TimerSettings(),
     val todoService: TodoService
-) : ViewModel(), Timer {
+) : ViewModel() {
     private val _uiState = MutableStateFlow(
         TimerState(
             duration = timerSettings.baseDuration,
@@ -92,7 +93,7 @@ class TimerViewModel(
                 var focusTodo = state.focusTodo
                 if (state.condition == TimerCondition.WORKING) {
                     focusTodo = state.focusTodo?.let { focusTodo ->
-                        finishWorking(focusTodo, state.duration, state.started!!, false)
+                        finishWorking(focusTodo, state.duration, state.started!!, false, state)
                     }
                 }
 
@@ -109,7 +110,7 @@ class TimerViewModel(
         }
     }
 
-    override fun updateTime(time: Instant): Boolean {
+    private fun updateTime(time: Instant): Boolean {
         var done = false
         _uiState.update { state ->
             val new = state.started?.let { started ->
@@ -122,10 +123,9 @@ class TimerViewModel(
                 var focusTodo = new.focusTodo
                 if (new.condition == TimerCondition.WORKING) {
                     focusTodo = new.focusTodo?.let { focusTodo ->
-                        finishWorking(focusTodo, new.duration, new.started!!, true)
+                        finishWorking(focusTodo, new.duration, new.started!!, true, state)
                     }
                 }
-                new.onDone?.let { it() }
                 done = true
                 val newCondition = nextCondition(new)
                 new.copy(
@@ -148,14 +148,43 @@ class TimerViewModel(
         return done
     }
 
+    fun onDone(callback: OnFinishEvent) {
+        _uiState.update {
+            it.copy(
+                onFinish = callback
+            )
+        }
+    }
+
+    fun setFocusTodo(todo: TodoItem) {
+        _uiState.update {
+            it.copy(
+                focusTodo = todo
+            )
+        }
+    }
+
+    fun clearFocusTodo() {
+        _uiState.update {
+            it.copy(
+                focusTodo = null
+            )
+        }
+    }
+
     private fun finishWorking(
         todo: TodoItem,
         duration: Duration,
         start: Instant,
-        isDone: Boolean
+        isDone: Boolean,
+        state: TimerState
     ): TodoItem {
         val pomodoro = Pomodoro(duration, start, isDone)
-        return todoService.addPomodoro(todo.id, pomodoro) ?: TODO("do something")
+        val todoItem = todoService.addPomodoro(todo.id, pomodoro) ?: TODO("do something")
+
+        state.onFinish?.let { it(state.condition) }
+
+        return todoItem
     }
 
     private fun duration(newCondition: TimerCondition) = when (newCondition) {
@@ -178,30 +207,6 @@ class TimerViewModel(
             TimerCondition.WAIT_WORK -> TimerCondition.WORKING
             TimerCondition.WAIT_SHORT_REST -> TimerCondition.SHORT_REST
             TimerCondition.WAIT_LONG_REST -> TimerCondition.LONG_REST
-        }
-    }
-
-    override fun onDone(callback: () -> Unit) {
-        _uiState.update {
-            it.copy(
-                onDone = callback
-            )
-        }
-    }
-
-    fun setFocusTodo(todo: TodoItem) {
-        _uiState.update {
-            it.copy(
-                focusTodo = todo
-            )
-        }
-    }
-
-    fun clearFocusTodo() {
-        _uiState.update {
-            it.copy(
-                focusTodo = null
-            )
         }
     }
 }

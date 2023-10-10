@@ -1,6 +1,5 @@
 package views.tabs
 
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring.StiffnessHigh
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.gestures.Orientation
@@ -19,10 +18,9 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.SwipeableDefaults
-import androidx.compose.material.SwipeableState
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Stop
@@ -60,12 +58,12 @@ import viewsModels.TimerCondition
 import viewsModels.TimerState
 import viewsModels.TimerViewModel
 
-object TimerTab : Tab {
+internal object TimerTab : Tab {
 
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Filled.Timer)
+            val icon = rememberVectorPainter(Icons.Filled.PlayArrow)
             return remember {
                 TabOptions(
                     index = 0u,
@@ -116,7 +114,6 @@ class TimerScreen : Screen {
                     onPick = {
                         navigator.push(TodoScreen {
                             timerViewModel.setFocusTodo(it)
-                            todoService.switch(it.id, true)
                         })
                     },
                     onDone = {

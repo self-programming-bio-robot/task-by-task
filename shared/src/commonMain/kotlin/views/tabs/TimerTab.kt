@@ -8,16 +8,19 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -35,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +55,8 @@ import kotlinx.coroutines.launch
 import models.TodoItem
 import org.koin.compose.getKoin
 import services.TodoService
+import theme.timerRestState
+import theme.timerWorkingState
 import views.CheckCircle
 import views.Pomodoro
 import views.PomodoroSize
@@ -96,13 +102,32 @@ class TimerScreen : Screen {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = uiState.formattedString,
-                        textAlign = TextAlign.Center,
-                        fontSize = 64.sp
-                    )
-                    TimerControls(uiState, timerViewModel)
+                val color = if (uiState.condition == TimerCondition.WORKING
+                    || uiState.condition == TimerCondition.WAIT_WORK) {
+                    MaterialTheme.colors.timerWorkingState
+                } else {
+                    MaterialTheme.colors.timerRestState
+                }
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .aspectRatio(1f),
+                    shape = CircleShape,
+                    color = color,
+                    elevation = 8.dp
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = uiState.formattedString,
+                            textAlign = TextAlign.Center,
+                            fontSize = 64.sp
+                        )
+                        TimerControls(uiState, timerViewModel)
+                    }
                 }
             }
             Row(

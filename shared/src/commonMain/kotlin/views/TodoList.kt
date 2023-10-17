@@ -15,12 +15,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -82,8 +84,9 @@ fun TodoItem(item: TodoItem, onClick: (() -> Unit)? = null, onChange: (state: Bo
         Column {
             Text(
                 text = item.title.replaceFirstChar { it.titlecase() },
-                fontSize = 20.sp,
-                color = if (item.done) Color.LightGray else Color.DarkGray
+                style = MaterialTheme.typography.headlineSmall,
+                color = if (item.done) LocalContentColor.current.copy(alpha = 0.5f)
+                    else LocalContentColor.current
             )
             if (item.pomodoros.isNotEmpty()) {
                 Row {
@@ -107,7 +110,7 @@ fun CheckCircle(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    color: Color = MaterialTheme.colors.secondary,
+    color: Color = MaterialTheme.colorScheme.primary,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val toggleableModifier =

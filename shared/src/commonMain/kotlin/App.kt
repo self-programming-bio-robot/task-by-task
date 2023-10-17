@@ -1,12 +1,12 @@
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -14,6 +14,7 @@ import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import com.example.compose.AppTheme
 import org.koin.compose.KoinApplication
 import org.koin.dsl.module
 import services.TodoRepository
@@ -33,7 +34,8 @@ fun App() {
             single { SelectedTodoViewModel() }
         })
     }) {
-        MaterialTheme {
+        CompositionLocalProvider {}
+        AppTheme {
             TabNavigator(TodayTab) {
                 Scaffold(
                     content = {
@@ -53,7 +55,7 @@ fun App() {
                         }
                     },
                     bottomBar = {
-                        BottomNavigation {
+                        NavigationBar {
                             TabNavigationItem(TodayTab)
                             TabNavigationItem(TimerTab)
                         }
@@ -68,7 +70,7 @@ fun App() {
 private fun RowScope.TabNavigationItem(tab: Tab) {
     val tabNavigator = LocalTabNavigator.current
 
-    BottomNavigationItem(
+    NavigationBarItem(
         selected = tabNavigator.current == tab,
         onClick = { tabNavigator.current = tab },
         icon = { Icon(painter = tab.options.icon!!, contentDescription = tab.options.title) }

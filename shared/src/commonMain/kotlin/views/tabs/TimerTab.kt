@@ -1,8 +1,11 @@
 package views.tabs
 
-import androidx.compose.animation.core.Spring.StiffnessHigh
-import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -14,22 +17,22 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AvTimer
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material.swipeable
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
@@ -51,25 +53,25 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.example.compose.AppTheme
 import kotlinx.coroutines.launch
 import models.TodoItem
 import org.koin.compose.getKoin
 import services.TodoService
-import theme.timerRestState
-import theme.timerWorkingState
 import views.CheckCircle
 import views.Pomodoro
 import views.PomodoroSize
 import viewsModels.TimerCondition
 import viewsModels.TimerState
 import viewsModels.TimerViewModel
+import kotlin.math.abs
 
 internal object TimerTab : Tab {
 
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Filled.PlayArrow)
+            val icon = rememberVectorPainter(Icons.Filled.AvTimer)
             return remember {
                 TabOptions(
                     index = 0u,
@@ -87,6 +89,7 @@ internal object TimerTab : Tab {
 
 class TimerScreen : Screen {
     @Composable
+    @ExperimentalMaterial3Api
     override fun Content() {
         val timerViewModel = getKoin().get<TimerViewModel>()
         val todoService = getKoin().get<TodoService>()
@@ -103,10 +106,11 @@ class TimerScreen : Screen {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val color = if (uiState.condition == TimerCondition.WORKING
-                    || uiState.condition == TimerCondition.WAIT_WORK) {
-                    MaterialTheme.colors.timerWorkingState
+                    || uiState.condition == TimerCondition.WAIT_WORK
+                ) {
+                    AppTheme.pomodoroColors.workState
                 } else {
-                    MaterialTheme.colors.timerRestState
+                    AppTheme.pomodoroColors.restState
                 }
                 Surface(
                     modifier = Modifier
@@ -115,7 +119,7 @@ class TimerScreen : Screen {
                         .aspectRatio(1f),
                     shape = CircleShape,
                     color = color,
-                    elevation = 8.dp
+                    shadowElevation = 8.dp
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -194,7 +198,6 @@ private enum class TaskSwipeState {
     RIGHT
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TaskCard(
     modifier: Modifier = Modifier,
@@ -204,37 +207,51 @@ fun TaskCard(
     onDone: (todo: TodoItem) -> Unit,
     onCancel: () -> Unit
 ) {
+
     val coroutineScope = rememberCoroutineScope()
     val indicationSource = remember { MutableInteractionSource() }
-    val swipeableState = rememberSwipeableState(TaskSwipeState.NORMAL)
     val maxOffsetPx = with(LocalDensity.current) { 108.dp.toPx() }
-
-    if (swipeableState.currentValue == TaskSwipeState.LEFT
-        || swipeableState.currentValue == TaskSwipeState.RIGHT
-    ) {
-        coroutineScope.launch {
-            onCancel()
-            swipeableState.animateTo(TaskSwipeState.NORMAL, SpringSpec(stiffness = StiffnessHigh))
+    val offsetX = remember { Animatable(0f) }
+    val backgroundColor: Color by animateColorAsState(
+        if (abs(offsetX.value) < maxOffsetPx) MaterialTheme.colorScheme.tertiaryContainer
+        else MaterialTheme.colorScheme.errorContainer
+    )
+    val swipeableState = remember {
+        DraggableState {
+            coroutineScope.launch {
+                offsetX.snapTo(offsetX.value + it)
+            }
         }
     }
+
+    val interactionSource = remember { MutableInteractionSource() }
     Card(
         modifier = Modifier.fillMaxWidth()
             .padding(8.dp)
             .indication(indicationSource, rememberRipple())
-            .swipeable(
+            .draggable(
                 state = swipeableState,
                 enabled = todo != null,
-                anchors = mapOf(
-                    -maxOffsetPx to TaskSwipeState.LEFT,
-                    0f to TaskSwipeState.NORMAL,
-                    maxOffsetPx to TaskSwipeState.RIGHT
-                ),
                 orientation = Orientation.Horizontal,
+                interactionSource = interactionSource,
+                onDragStopped = {
+                    coroutineScope.launch {
+                        if (abs(offsetX.value) >= maxOffsetPx) {
+                            onCancel()
+                        }
+                        offsetX.animateTo(
+                            targetValue = 0f,
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                delayMillis = 0
+                            )
+                        )
+                    }
+                }
             )
-            .offset { IntOffset(x = swipeableState.offset.value.toInt(), y = 0) }
-            .blur(swipeableState.offset.value.dp)
+            .offset { IntOffset(x = offsetX.value.toInt(), y = 0) }
             .then(modifier),
-        backgroundColor = MaterialTheme.colors.primaryVariant,
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         todo?.let { todo ->
             Column(
@@ -253,7 +270,7 @@ fun TaskCard(
                         Row {
                             Text(
                                 text = todo.title,
-                                style = MaterialTheme.typography.h5
+                                style = MaterialTheme.typography.headlineSmall
                             )
                         }
                         if (todo.description.isNotBlank()) {
@@ -273,8 +290,9 @@ fun TaskCard(
                 }
             }
         } ?: run {
-            Button(modifier = Modifier.fillMaxWidth(), onClick = onPick) {
-                Text("Pick your focus")
+            TextButton(modifier = Modifier.fillMaxWidth(), onClick = onPick) {
+                Text("Pick your focus",
+                    color = contentColorFor(backgroundColor))
             }
         }
     }

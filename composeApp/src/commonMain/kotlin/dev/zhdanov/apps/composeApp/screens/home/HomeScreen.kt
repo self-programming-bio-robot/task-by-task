@@ -11,7 +11,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun HomeScreen(navigateToDetails: () -> Unit) {
+fun HomeScreen(navigateToFeedback: () -> Unit) {
     val viewModel = koinViewModel<HomeViewModel>()
 
     Box(

@@ -1,0 +1,17 @@
+CREATE TABLE FocusTime (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    duration INTEGER NOT NULL,
+    feedback TEXT,
+    finishedAt INTEGER NOT NULL
+);
+
+insertFocusTime:
+INSERT INTO FocusTime (duration, feedback, finishedAt)
+VALUES (?, ?, ?);
+
+selectAllFocusTimes:
+SELECT * FROM FocusTime;
+
+selectFocusTimesInPeriod:
+SELECT * FROM FocusTime
+WHERE finishedAt BETWEEN ? AND ?;

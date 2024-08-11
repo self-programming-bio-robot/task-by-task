@@ -64,6 +64,7 @@ kotlin {
             implementation(projects.shared)
 
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+            implementation(libs.kotlin.datetime)
 
             implementation(libs.lifecycle.viewmodel)
 

@@ -17,9 +17,7 @@ fun SetupNavGraph(
     ) {
         composable(route = Screen.Home.route) {
             HomeScreen(
-                navigateToDetails = {
-                    println("Navigate to details")
-                }
+                navigateToFeedback = {}
             )
         }
     }

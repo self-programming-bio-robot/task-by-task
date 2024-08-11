@@ -13,7 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
 import dev.zhdanov.apps.shared.TimerState
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -23,14 +25,8 @@ val LightGreen = Color(0xFF32CD32)
 val DarkGreen = Color(0xFF006400)
 val LightGray = Color(0xFFD3D3D3)
 val DarkGray = Color(0xFFA9A9A9)
-val Yellow = Color(0xFFFFD700)
-val Teal = Color(0xFF20B2AA)
-val Purple = Color(0xFF800080)
 val DisabledBackground = Color(0xFFD3D3D3) // Light Gray for disabled background
 val DisabledContent = Color(0xFFA9A9A9)   // Dark Gray for disabled content
-
-private val WORK_SHAPE_COLOR = Color(red = 0x87, green = 0xCE, blue = 0xFA)
-
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
@@ -57,6 +53,16 @@ fun TimerView() {
             disabledContentColor = DarkGray,
         )
 
+    if (state.value == TimerState.FEEDBACK) {
+        Feedback(
+            finishAt = Clock.System.now().toEpochMilliseconds(),
+            duration = viewModel.settings.value.workDuration,
+            onExit = { feedback ->
+                feedback?.let { viewModel.saveFeedback(it) }
+                viewModel.nextState()
+            }
+        )
+    }
     Box(
         modifier = Modifier
             .background(
@@ -74,7 +80,7 @@ fun TimerView() {
                 if (!isRunning.value) {
                     Button(
                         colors = buttonStateColors,
-                        enabled = !isRunning.value,
+                        enabled = !isRunning.value && state.value != TimerState.FEEDBACK,
                         onClick = { viewModel.startTimer() }
                     ) {
                         Text("Start")

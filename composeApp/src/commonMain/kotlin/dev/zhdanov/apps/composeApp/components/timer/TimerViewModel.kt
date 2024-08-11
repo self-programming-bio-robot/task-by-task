@@ -5,27 +5,27 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
-import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.TEST_TIMER_SETTINGS
-import dev.zhdanov.apps.shared.TimerSettings
 import dev.zhdanov.apps.shared.TimerState
+import dev.zhdanov.apps.shared.cache.Database
+import dev.zhdanov.apps.shared.cache.focus.CreateFocusTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
 import kotlin.math.max
 
 class TimerViewModel(
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val database: Database,
 ) : ViewModel() {
     private val _time = MutableStateFlow(0)
     private val _workPeriodCounter = mutableStateOf(0)
     private val _state = MutableStateFlow(TimerState.WORK)
     private val _isRunning = MutableStateFlow(false)
     private val _isPause = MutableStateFlow(false)
-    private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
+    private val _settings = MutableStateFlow(TEST_TIMER_SETTINGS)
 
     val time = _time.map(this::getTime)
     val isRunning = _isRunning.asStateFlow()
@@ -64,6 +64,12 @@ class TimerViewModel(
         }
     }
 
+    fun saveFeedback(feedback: CreateFocusTime) {
+        viewModelScope.launch {
+            database.addFocusTime(feedback)
+        }
+    }
+
     fun stopTimer() {
         this._isRunning.value = false
         updateCurrentTimer()
@@ -77,18 +83,27 @@ class TimerViewModel(
         _time.value = 0
     }
 
-    private fun nextState() {
+    fun nextState() {
         val settings = this._settings.value
-        if (_state.value == TimerState.WORK) {
-            _workPeriodCounter.value++
-            if (_workPeriodCounter.value >= settings.workCycles) {
-                _workPeriodCounter.value = 0
-                _state.value = TimerState.LONG_BREAK
-            } else {
-                _state.value = TimerState.BREAK
+        when (_state.value) {
+            TimerState.WORK -> {
+                _workPeriodCounter.value++
+                _state.value = TimerState.FEEDBACK
             }
-        } else {
-            _state.value = TimerState.WORK
+            TimerState.BREAK -> {
+                _state.value = TimerState.WORK
+            }
+            TimerState.LONG_BREAK -> {
+                _state.value = TimerState.WORK
+            }
+            TimerState.FEEDBACK -> {
+                if (_workPeriodCounter.value >= settings.workCycles) {
+                    _workPeriodCounter.value = 0
+                    _state.value = TimerState.LONG_BREAK
+                } else {
+                    _state.value = TimerState.BREAK
+                }
+            }
         }
 
         updateCurrentTimer()
@@ -106,14 +121,14 @@ class TimerViewModel(
             TimerState.WORK -> {
                 _time.value = settings.workDuration
             }
-
             TimerState.BREAK -> {
                 _time.value = settings.shortBreakDuration
-
             }
-
             TimerState.LONG_BREAK -> {
                 _time.value = settings.longBreakDuration
+            }
+            TimerState.FEEDBACK -> {
+                _time.value = 0
             }
         }
     }

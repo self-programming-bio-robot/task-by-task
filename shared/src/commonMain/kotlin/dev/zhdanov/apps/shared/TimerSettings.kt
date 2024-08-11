@@ -10,5 +10,6 @@ data class TimerSettings(
 enum class TimerState {
     WORK,
     BREAK,
-    LONG_BREAK
+    LONG_BREAK,
+    FEEDBACK
 }

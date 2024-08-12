@@ -42,6 +42,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.runtime)
+            api(libs.logging)
         }
 
         jvmMain.dependencies {

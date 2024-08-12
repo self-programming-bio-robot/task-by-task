@@ -24,6 +24,7 @@ koinCompose = "1.1.5"
 koinComposeViewModel = "1.2.0-Beta4"
 lifecycleViewModel = "2.8.0-rc01"
 sqlDelight = "2.0.1"
+logging = "1.5.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -53,6 +54,7 @@ android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = 
 native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqlDelight" }
 jvm-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqlDelight" }
 runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }
+logging = { module = "org.lighthousegames:logging", version.ref = "logging"}
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
-import dev.zhdanov.apps.shared.TEST_TIMER_SETTINGS
+import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.TimerState
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.focus.CreateFocusTime
@@ -25,7 +25,7 @@ class TimerViewModel(
     private val _state = MutableStateFlow(TimerState.WORK)
     private val _isRunning = MutableStateFlow(false)
     private val _isPause = MutableStateFlow(false)
-    private val _settings = MutableStateFlow(TEST_TIMER_SETTINGS)
+    private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
 
     val time = _time.map(this::getTime)
     val isRunning = _isRunning.asStateFlow()

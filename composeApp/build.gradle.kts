@@ -129,6 +129,8 @@ compose.desktop {
             packageName = "TaskByTask"
             packageVersion = "1.0.0"
 
+            modules("java.sql")
+
             macOS {
                 dockName = "Task By Task"
             }

@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
+import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.services.ReviewCache
 import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -16,17 +17,10 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun FinishedDayScreen(
-    reviewId: String?,
+    summary: String,
+    response: String,
     onNext: () -> Unit
 ) {
-    val reviewCache = koinInject<ReviewCache>()
-    val review = reviewId?.let { reviewCache.getReview(reviewId) }
-
-    if (review == null) {
-        onNext()
-        return
-    }
-
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -39,10 +33,10 @@ fun FinishedDayScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text("Review:", style = MaterialTheme.typography.headlineMedium)
-            Markdown(review.summary, modifier = Modifier.wrapContentHeight())
+            Markdown(summary, modifier = Modifier.wrapContentHeight())
             Spacer(modifier = Modifier.height(16.dp))
             Text("Buddy:", style = MaterialTheme.typography.headlineMedium)
-            Markdown(review.response, modifier = Modifier.wrapContentHeight())
+            Markdown(response, modifier = Modifier.wrapContentHeight())
             Button(
                 onClick = { onNext() },
                 modifier = Modifier

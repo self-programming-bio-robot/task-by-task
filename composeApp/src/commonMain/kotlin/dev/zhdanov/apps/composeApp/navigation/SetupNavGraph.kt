@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
@@ -13,37 +14,32 @@ import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
 @Composable
 fun SetupNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Home.route
+    startDestination: Screen = Screen.Home
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = startDestination
     ) {
-        composable(route = Screen.Home.route) {
+        composable<Screen.Home> {
             HomeScreen(
                 navigateToHistory = {
-                    navController.navigate(Screen.History.route)
+                    navController.navigate(Screen.History)
                 },
-                onFinishDay = { reviewId ->
-                    navController.navigate(Screen.FinishedDay(reviewId).route)
+                onFinishDay = { review ->
+                    navController.navigate(Screen.FinishedDay(review.summary, review.response))
                 }
             )
         }
-        composable(route = Screen.History.route) {
+        composable<Screen.History> {
             HistoryScreen(onBack = {
                 navController.popBackStack()
             })
         }
-        composable(route = Screen.FinishedDay("{reviewId}").route,
-            arguments = listOf(navArgument("reviewId") {
-                type = NavType.StringType
-                nullable = false
-            })
-        ) { backStackEntry ->
-            val reviewId = backStackEntry.arguments?.getString("reviewId")
-            FinishedDayScreen(reviewId) {
-                navController.navigate(Screen.History.route) {
-                    popUpTo(Screen.FinishedDay(reviewId ?: "").route) {
+        composable<Screen.FinishedDay> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.FinishedDay>()
+            FinishedDayScreen(route.summary, route.response) {
+                navController.navigate(Screen.History) {
+                    popUpTo(Screen.FinishedDay(route.summary, route.response)) {
                         inclusive = true
                     }
                 }

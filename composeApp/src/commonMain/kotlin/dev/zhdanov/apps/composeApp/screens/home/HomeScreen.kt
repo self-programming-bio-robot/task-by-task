@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
+import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -24,7 +25,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @Composable
 fun HomeScreen(
     navigateToHistory: () -> Unit,
-    onFinishDay: (review: String) -> Unit
+    onFinishDay: (review: AssistantReviewResponse) -> Unit
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     val coroutineScope = rememberCoroutineScope()
@@ -72,7 +73,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable(
-                        indication = null, // disable ripple effect
+                        indication = null,
                         interactionSource = remember { MutableInteractionSource() },
                         onClick = { }
                     )

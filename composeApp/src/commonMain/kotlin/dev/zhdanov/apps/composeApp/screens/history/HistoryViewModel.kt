@@ -2,6 +2,7 @@ package dev.zhdanov.apps.composeApp.screens.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavType
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.DaySummary
 import kotlinx.coroutines.flow.*

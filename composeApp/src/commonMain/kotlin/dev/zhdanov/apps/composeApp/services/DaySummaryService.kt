@@ -31,7 +31,7 @@ class DaySummaryService(
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    suspend fun finishDay(): String {
+    suspend fun finishDay(): AssistantReviewResponse {
         val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
         val fiveAmToday = LocalDateTime(
@@ -57,9 +57,7 @@ class DaySummaryService(
             )
         )
 
-        val id = Uuid.random().toHexString();
-        reviewCache.addReview(id, review)
-        return id
+        return review
     }
 
     fun migration() {

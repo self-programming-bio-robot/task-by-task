@@ -2,6 +2,7 @@ package dev.zhdanov.apps.composeApp.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.shared.cache.Database
 import kotlinx.coroutines.flow.*
@@ -29,7 +30,7 @@ class HomeViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(1.seconds), false)
 
-    suspend fun finishDay(): String {
+    suspend fun finishDay(): AssistantReviewResponse {
         _isActive.value = false
         return daySummaryService.finishDay()
     }

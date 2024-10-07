@@ -3,9 +3,9 @@ package dev.zhdanov.apps.composeApp.components.timer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults.buttonColors
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -40,16 +40,16 @@ fun TimerView() {
 
     val buttonStateColors = if (state.value == TimerState.WORK)
         buttonColors(
-            backgroundColor = LightGreen,
+            containerColor = LightGreen,
             contentColor = Color.White,
-            disabledBackgroundColor = DisabledBackground,
+            disabledContainerColor = DisabledBackground,
             disabledContentColor = DisabledContent
         )
     else
         buttonColors(
-            backgroundColor = DarkGreen,
+            containerColor = DarkGreen,
             contentColor = Color.White,
-            disabledBackgroundColor = LightGray,
+            disabledContainerColor = LightGray,
             disabledContentColor = DarkGray,
         )
 

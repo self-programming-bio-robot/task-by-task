@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import dev.zhdanov.apps.shared.cache.focus.CreateFocusTime
+import dev.zhdanov.apps.shared.model.CreateFocusTime
 
 @Composable
 actual fun Feedback(

@@ -8,7 +8,7 @@ import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.TimerState
 import dev.zhdanov.apps.shared.cache.Database
-import dev.zhdanov.apps.shared.cache.focus.CreateFocusTime
+import dev.zhdanov.apps.shared.model.CreateFocusTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

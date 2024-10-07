@@ -15,3 +15,27 @@ SELECT * FROM FocusTime;
 selectFocusTimesInPeriod:
 SELECT * FROM FocusTime
 WHERE finishedAt BETWEEN ? AND ?;
+
+CREATE TABLE IF NOT EXISTS DaySummary (
+    date INTEGER NOT NULL,
+    focusTime INTEGER NOT NULL,
+    review TEXT NOT NULL
+);
+
+insertDaySummary:
+INSERT INTO DaySummary (date, focusTime, review)
+VALUES (?, ?, ?);
+
+selectAllDaySummaries:
+SELECT * FROM DaySummary
+ORDER BY date DESC;
+
+selectDaySummariesInPeriod:
+SELECT * FROM DaySummary
+WHERE date BETWEEN ? AND ?;
+
+
+selectDaySummaryOnDate:
+SELECT * FROM DaySummary
+WHERE date = ?
+LIMIT 1;

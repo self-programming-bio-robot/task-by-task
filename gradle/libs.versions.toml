@@ -17,7 +17,9 @@ junit = "4.13.2"
 kotlin = "2.0.0"
 ktor = "2.3.11"
 logback = "1.5.6"
+multiplatformMarkdownRendererM3 = "0.26.0"
 navigation = "2.7.0-alpha07"
+openaiClient = "3.8.2"
 viewmodel = "2.8.0"
 koin = "3.5.6"
 koinCompose = "1.1.5"
@@ -25,6 +27,8 @@ koinComposeViewModel = "1.2.0-Beta4"
 lifecycleViewModel = "2.8.0-rc01"
 sqlDelight = "2.0.1"
 logging = "1.5.0"
+buildKonfig = "0.15.2"
+
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -45,7 +49,11 @@ ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "kto
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-tests = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
+ktor-client-jvm = { module = "io.ktor:ktor-client-jetty", version.ref = "ktor" }
+multiplatform-markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
+multiplatform-markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "multiplatformMarkdownRendererM3" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
+openai-client = { module = "com.aallam.openai:openai-client", version.ref = "openaiClient" }
 viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodel" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinCompose" }
@@ -66,3 +74,4 @@ ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqlDelight" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildKonfig" }

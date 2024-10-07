@@ -42,6 +42,8 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.runtime)
+            implementation(libs.kotlin.datetime)
+
             api(libs.logging)
         }
 

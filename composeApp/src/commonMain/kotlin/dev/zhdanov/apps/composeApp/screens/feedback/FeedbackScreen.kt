@@ -1,7 +1,7 @@
 package dev.zhdanov.apps.composeApp.screens.feedback
 
 import androidx.compose.runtime.Composable
-import dev.zhdanov.apps.shared.cache.focus.CreateFocusTime
+import dev.zhdanov.apps.shared.model.CreateFocusTime
 
 @Composable
 expect fun Feedback(

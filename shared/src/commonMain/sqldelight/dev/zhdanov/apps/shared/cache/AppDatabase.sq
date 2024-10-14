@@ -1,3 +1,5 @@
+import kotlin.Boolean;
+
 CREATE TABLE IF NOT EXISTS FocusTime (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     duration INTEGER NOT NULL,
@@ -15,6 +17,7 @@ SELECT * FROM FocusTime;
 selectFocusTimesInPeriod:
 SELECT * FROM FocusTime
 WHERE finishedAt BETWEEN ? AND ?;
+
 
 CREATE TABLE IF NOT EXISTS DaySummary (
     date INTEGER NOT NULL,
@@ -34,8 +37,62 @@ selectDaySummariesInPeriod:
 SELECT * FROM DaySummary
 WHERE date BETWEEN ? AND ?;
 
-
 selectDaySummaryOnDate:
 SELECT * FROM DaySummary
 WHERE date = ?
 LIMIT 1;
+
+
+CREATE TABLE IF NOT EXISTS TimerSetting (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workDuration INTEGER NOT NULL,
+    shortBreakDuration INTEGER NOT NULL,
+    longBreakDuration INTEGER NOT NULL,
+    workCycles INTEGER NOT NULL,
+    isDefault INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+-- Insert a new TimerSetting
+insertTimerSetting:
+INSERT INTO TimerSetting (workDuration, shortBreakDuration, longBreakDuration, workCycles)
+VALUES (?, ?, ?, ?);
+
+-- Select all TimerSettings
+selectAllTimerSettings:
+SELECT * FROM TimerSetting;
+
+-- Select a TimerSetting by id
+selectTimerSettingById:
+SELECT * FROM TimerSetting WHERE id = ?;
+
+-- Update a TimerSetting
+updateTimerSetting:
+UPDATE TimerSetting
+SET workDuration = ?, shortBreakDuration = ?, longBreakDuration = ?, workCycles = ?
+WHERE id = ?;
+
+-- Delete a TimerSetting by id
+deleteTimerSettingById:
+DELETE FROM TimerSetting WHERE id = ?;
+
+-- Unset the current default TimerSetting
+unsetDefaultTimerSetting:
+UPDATE TimerSetting
+SET isDefault = 0
+WHERE isDefault = 1;
+
+-- Set the default TimerSetting by id
+setDefaultTimerSettingById:
+UPDATE TimerSetting
+SET isDefault = 1
+WHERE id = ?;
+
+-- Find default settings
+findDefaultTimerSettings:
+SELECT * FROM TimerSetting
+WHERE isDefault = 1;
+
+
+-- COMMON
+lastInsertRowId:
+SELECT last_insert_rowid();

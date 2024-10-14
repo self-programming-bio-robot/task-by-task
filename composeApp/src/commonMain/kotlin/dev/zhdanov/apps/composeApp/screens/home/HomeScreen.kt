@@ -3,12 +3,10 @@ package dev.zhdanov.apps.composeApp.screens.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HistoryEdu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +23,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @Composable
 fun HomeScreen(
     navigateToHistory: () -> Unit,
+    navigateToSettings: () -> Unit,
     onFinishDay: (review: AssistantReviewResponse) -> Unit
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
@@ -39,18 +38,32 @@ fun HomeScreen(
 
         TimerView()
 
-        IconButton(
-            onClick = { navigateToHistory() },
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.HistoryEdu,
-                contentDescription = "Menu",
-                tint = Color.Black
-            )
+            IconButton(
+                onClick = { navigateToHistory() }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.HistoryEdu,
+                    contentDescription = "History",
+                    tint = Color.Black
+                )
+            }
+
+            IconButton(
+                onClick = { navigateToSettings() }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.Black
+                )
+            }
         }
+
 
         Button(
             enabled = isActive,

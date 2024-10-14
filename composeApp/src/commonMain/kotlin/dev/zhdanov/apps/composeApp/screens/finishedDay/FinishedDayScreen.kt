@@ -9,9 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
-import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
-import dev.zhdanov.apps.composeApp.services.ReviewCache
-import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)

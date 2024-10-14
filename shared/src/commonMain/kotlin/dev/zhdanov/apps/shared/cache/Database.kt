@@ -1,18 +1,35 @@
 package dev.zhdanov.apps.shared.cache
 
+import app.cash.sqldelight.db.QueryResult
+import dev.zhdanov.apps.shared.cache.repository.TimerSettingRepository
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.datetime.LocalDate
+import org.lighthousegames.logging.logging
 
 class Database(databaseDriverFactory: DatabaseDriverFactory) {
     private val driver = databaseDriverFactory.createDriver()
-    private val database = AppDatabase(driver)
+    private val database = AppDatabase(
+        driver,
+    )
     private val dbQuery = database.appDatabaseQueries
 
+    val timerSettingRepository = TimerSettingRepository(dbQuery)
+
     init {
+        val currentVersion = getDatabaseVersion()
+        logger.i { "Current version: $currentVersion; actual version: ${AppDatabase.Schema.version}" }
+        AppDatabase.Schema.migrate(driver, currentVersion,  AppDatabase.Schema.version)
         AppDatabase.Schema.create(driver)
+    }
+
+    private fun getDatabaseVersion(): Long {
+        val executeQuery: QueryResult<Long> = driver.executeQuery(1, "PRAGMA user_version;", mapper = {
+            QueryResult.Value(it.getLong(0) ?: 0L)
+        }, 0)
+        return executeQuery.value
     }
 
     fun addFocusTime(focusTime: CreateFocusTime) {
@@ -65,5 +82,9 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         return dbQuery
             .selectDaySummaryOnDate(date.toLong(), daySummaryMapper)
             .executeAsOneOrNull();
+    }
+
+    companion object {
+        val logger = logging()
     }
 }

@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
-import dev.zhdanov.apps.shared.TimerState
+import dev.zhdanov.apps.shared.model.TimerState
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel

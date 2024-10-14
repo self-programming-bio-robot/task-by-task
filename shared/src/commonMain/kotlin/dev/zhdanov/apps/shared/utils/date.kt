@@ -1,6 +1,7 @@
 package dev.zhdanov.apps.shared.utils
 
 import kotlinx.datetime.*
+import kotlin.time.Duration
 
 fun LocalDate.toLong() =
     (this.year * 10000 + this.monthNumber * 100 + this.dayOfMonth).toLong()
@@ -15,4 +16,17 @@ fun Long.toLocalDate(): LocalDate {
 
 fun Long.toLocalDateTime(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDateTime =
     Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
+
+fun startOfDayWithShift(
+    time: Instant,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    shift: Duration = Duration.ZERO
+): Instant {
+    return time
+        .minus(shift)
+        .toLocalDateTime(timeZone)
+        .date
+        .atStartOfDayIn(timeZone)
+        .plus(shift)
+}
 

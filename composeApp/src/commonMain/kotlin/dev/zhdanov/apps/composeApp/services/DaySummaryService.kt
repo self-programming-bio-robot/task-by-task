@@ -12,6 +12,7 @@ import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.prompts.REVIEW_DAY_PROMPT
+import dev.zhdanov.apps.shared.utils.startOfDayWithShift
 import dev.zhdanov.apps.shared.utils.toLocalDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,15 +20,14 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class DaySummaryService(
     private val database: Database,
-    private val reviewCache: ReviewCache,
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -61,7 +61,8 @@ class DaySummaryService(
     }
 
     fun migration() {
-        database.getAllFocusTimes()
+        val startOfToday = startOfDayWithShift(Clock.System.now(), shift = 4.hours)
+        database.getAllFocusTimesBetween(0L, startOfToday.minus(1.days).toEpochMilliseconds())
             .groupBy {
                 Instant
                     .fromEpochMilliseconds(it.finishedAt)

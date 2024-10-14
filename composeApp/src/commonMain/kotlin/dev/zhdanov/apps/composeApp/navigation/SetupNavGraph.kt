@@ -2,14 +2,13 @@ package dev.zhdanov.apps.composeApp.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import androidx.navigation.toRoute
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
+import dev.zhdanov.apps.composeApp.screens.settings.SettingsScreen
 
 @Composable
 fun SetupNavGraph(
@@ -24,6 +23,9 @@ fun SetupNavGraph(
             HomeScreen(
                 navigateToHistory = {
                     navController.navigate(Screen.History)
+                },
+                navigateToSettings = {
+                    navController.navigate(Screen.Settings)
                 },
                 onFinishDay = { review ->
                     navController.navigate(Screen.FinishedDay(review.summary, review.response))
@@ -44,6 +46,13 @@ fun SetupNavGraph(
                     }
                 }
             }
+        }
+        composable<Screen.Settings> {
+            SettingsScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

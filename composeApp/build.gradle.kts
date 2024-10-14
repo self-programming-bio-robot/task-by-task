@@ -67,7 +67,11 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(projects.shared)
 
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+            implementation(libs.adaptive)
+            implementation(libs.adaptive.layout)
+            implementation(libs.adaptive.navigation)
+
+            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlin.datetime)
 
             implementation(libs.lifecycle.viewmodel)
@@ -87,7 +91,7 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.jvm)
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0-RC")
+            implementation(libs.kotlinx.coroutines.swing)
         }
     }
 }

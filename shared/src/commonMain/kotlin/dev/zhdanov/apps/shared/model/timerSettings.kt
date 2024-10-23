@@ -7,6 +7,7 @@ data class TimerSettings(
     val shortBreakDuration: Int,  // in seconds
     val longBreakDuration: Int,   // in seconds
     val workCycles: Int,   // number of work sessions before a long break
+    val isInfinite: Boolean = false
 )
 
 enum class TimerState {

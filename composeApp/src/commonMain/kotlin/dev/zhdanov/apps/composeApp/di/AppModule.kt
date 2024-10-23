@@ -20,7 +20,7 @@ val appModule = module {
     single { TimerSettingsService(get()) }
 
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { TimerViewModel(get(), get()) }
+    viewModel { TimerViewModel(get(), get(), get()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }

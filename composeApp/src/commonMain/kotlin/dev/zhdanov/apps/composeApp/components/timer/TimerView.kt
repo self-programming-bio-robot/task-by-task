@@ -3,22 +3,22 @@ package dev.zhdanov.apps.composeApp.components.timer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
+import androidx.compose.material3.*
 import androidx.compose.material3.ButtonDefaults.buttonColors
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
+import dev.zhdanov.apps.shared.model.TimerSettings
 import dev.zhdanov.apps.shared.model.TimerState
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+import kotlin.time.Duration.Companion.seconds
 
 val LightBlue = Color(0xFF87CEFA)
 val LightGreen = Color(0xFF32CD32)
@@ -37,6 +37,7 @@ fun TimerView() {
     val isRunning = viewModel.isRunning.collectAsState()
     val time = viewModel.time.collectAsState("")
     val state = viewModel.state.collectAsState()
+    val settingList = viewModel.settingList.collectAsState(listOf())
 
     val buttonStateColors = if (state.value == TimerState.WORK)
         buttonColors(
@@ -120,7 +121,63 @@ fun TimerView() {
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(time.value, textAlign = TextAlign.Center)
+            Row(
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                SelectionView(
+                    time = time.value,
+                    editable = !isRunning.value,
+                    settingList = settingList.value,
+                    onChange = { viewModel.changeTimerSettings(it) })
+            }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SelectionView(
+    time: String,
+    editable: Boolean,
+    settingList: List<TimerSettings>,
+    onChange: (timerSettings: TimerSettings) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    fun TimerSettings.formatted(): String {
+        val workDuration = if (workDuration < 0) "∞" else workDuration.seconds.toString()
+        val shortBreakDuration = if (shortBreakDuration < 0) "∞" else shortBreakDuration.seconds.toString()
+        val longBreakDuration = if (longBreakDuration < 0) "∞" else longBreakDuration.seconds.toString()
+
+        return "$workCycles $workDuration | $shortBreakDuration | $longBreakDuration"
+    }
+
+    Box(modifier = Modifier) {
+        TextButton(
+            enabled = editable,
+            onClick = { expanded = !expanded },
+        ) {
+            Text(
+                text = time,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            settingList.map {
+                DropdownMenuItem(
+                    text = { Text(it.formatted()) },
+                    onClick = {
+                        onChange(it)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+

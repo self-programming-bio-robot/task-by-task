@@ -5,10 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
+import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
+import dev.zhdanov.apps.shared.INFINITE_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.model.TimerState
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.CreateFocusTime
+import dev.zhdanov.apps.shared.model.TimerSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +22,7 @@ import kotlin.math.max
 class TimerViewModel(
     private val notificationService: NotificationService,
     private val database: Database,
+    private val timerSettingsService: TimerSettingsService,
 ) : ViewModel() {
     private val _time = MutableStateFlow(0)
     private val _workPeriodCounter = mutableStateOf(0)
@@ -32,6 +36,8 @@ class TimerViewModel(
     val isPause = _isPause.asStateFlow()
     val settings = _settings.asStateFlow()
     val state = _state.asStateFlow()
+    val settingList = timerSettingsService.timerSettings.asStateFlow()
+        .map { listOf(INFINITE_TIMER_SETTINGS) + it  }
 
     init {
         _time.value = _settings.value.workDuration
@@ -44,17 +50,21 @@ class TimerViewModel(
         this._isRunning.value = true
 
         viewModelScope.launch {
-            while (_time.value > 0 && _isRunning.value) {
+            while ((_time.value > 0 || settings.isInfinite) && _isRunning.value) {
                 if (!_isPause.value) {
                     if (_isRunning.value) {
-                        _time.value = max(0, _time.value - 1)
+                        if (settings.isInfinite) {
+                            _time.value += 1
+                        } else {
+                            _time.value = max(0, _time.value - 1)
+                        }
                     }
                     delay(1000)
                 } else {
                     delay(100)
                 }
             }
-            if (_isRunning.value) {
+            if (_isRunning.value && !settings.isInfinite) {
                 _isRunning.value = false
 
                 notificationService.addNotification(Notification("Finish ${_state.value}"))
@@ -72,7 +82,10 @@ class TimerViewModel(
 
     fun stopTimer() {
         this._isRunning.value = false
-        updateCurrentTimer()
+        if (_settings.value.isInfinite)
+            nextState()
+        else
+            updateCurrentTimer()
     }
 
     fun pauseTimer() {
@@ -80,7 +93,10 @@ class TimerViewModel(
     }
 
     fun skipTimer() {
-        _time.value = 0
+        if (_settings.value.isInfinite)
+            stopTimer()
+        else
+            _time.value = 0
     }
 
     fun nextState() {
@@ -109,6 +125,11 @@ class TimerViewModel(
         updateCurrentTimer()
     }
 
+    fun changeTimerSettings(settings: TimerSettings) {
+        _settings.value = settings
+       updateCurrentTimer()
+    }
+
     private fun getTime(value: Int): String {
         val minutes = value / 60
         val seconds = value % 60
@@ -117,6 +138,10 @@ class TimerViewModel(
 
     private fun updateCurrentTimer() {
         val settings = this._settings.value
+        if (settings.isInfinite) {
+            _time.value = 0
+            return
+        }
         when (_state.value) {
             TimerState.WORK -> {
                 _time.value = settings.workDuration

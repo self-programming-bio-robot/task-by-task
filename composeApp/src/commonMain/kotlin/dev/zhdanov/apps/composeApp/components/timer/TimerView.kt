@@ -13,7 +13,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
 import dev.zhdanov.apps.shared.model.TimerSettings
-import dev.zhdanov.apps.shared.model.TimerState
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -39,7 +38,7 @@ fun TimerView() {
     val state = viewModel.state.collectAsState()
     val settingList = viewModel.settingList.collectAsState(listOf())
 
-    val buttonStateColors = if (state.value == TimerState.WORK)
+    val buttonStateColors = if (state.value == TimerViewState.WORK)
         buttonColors(
             containerColor = LightGreen,
             contentColor = Color.White,
@@ -54,20 +53,20 @@ fun TimerView() {
             disabledContentColor = DarkGray,
         )
 
-    if (state.value == TimerState.FEEDBACK) {
+    if (state.value == TimerViewState.FEEDBACK) {
         Feedback(
             finishAt = Clock.System.now().toEpochMilliseconds(),
             duration = viewModel.settings.value.workDuration,
             onExit = { feedback ->
                 feedback?.let { viewModel.saveFeedback(it) }
-                viewModel.nextState()
+                viewModel.closeFeedback()
             }
         )
     }
     Box(
         modifier = Modifier
             .background(
-                color = if (state.value == TimerState.WORK) LightBlue else LightGreen,
+                color = if (state.value == TimerViewState.WORK) LightBlue else LightGreen,
                 shape = CircleShape
             )
             .size(200.dp),
@@ -81,7 +80,7 @@ fun TimerView() {
                 if (!isRunning.value) {
                     Button(
                         colors = buttonStateColors,
-                        enabled = !isRunning.value && state.value != TimerState.FEEDBACK,
+                        enabled = !isRunning.value && state.value != TimerViewState.FEEDBACK,
                         onClick = { viewModel.startTimer() }
                     ) {
                         Text("Start")
@@ -101,7 +100,7 @@ fun TimerView() {
                         }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    if (state.value == TimerState.WORK) {
+                    if (state.value == TimerViewState.WORK) {
                         Button(
                             colors = buttonStateColors,
                             enabled = isRunning.value,

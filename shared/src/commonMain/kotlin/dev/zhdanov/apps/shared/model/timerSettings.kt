@@ -9,10 +9,3 @@ data class TimerSettings(
     val workCycles: Int,   // number of work sessions before a long break
     val isInfinite: Boolean = false
 )
-
-enum class TimerState {
-    WORK,
-    BREAK,
-    LONG_BREAK,
-    FEEDBACK
-}

@@ -1,6 +1,5 @@
 package dev.zhdanov.apps.composeApp.components.timer
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.notification.Notification
@@ -8,16 +7,14 @@ import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.INFINITE_TIMER_SETTINGS
-import dev.zhdanov.apps.shared.model.TimerState
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.TimerSettings
-import kotlinx.coroutines.delay
+import dev.zhdanov.apps.shared.model.timer.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlin.math.max
 
 class TimerViewModel(
     private val notificationService: NotificationService,
@@ -25,8 +22,7 @@ class TimerViewModel(
     private val timerSettingsService: TimerSettingsService,
 ) : ViewModel() {
     private val _time = MutableStateFlow(0)
-    private val _workPeriodCounter = mutableStateOf(0)
-    private val _state = MutableStateFlow(TimerState.WORK)
+    private val _state = MutableStateFlow(TimerViewState.WORK)
     private val _isRunning = MutableStateFlow(false)
     private val _isPause = MutableStateFlow(false)
     private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
@@ -37,41 +33,51 @@ class TimerViewModel(
     val settings = _settings.asStateFlow()
     val state = _state.asStateFlow()
     val settingList = timerSettingsService.timerSettings.asStateFlow()
-        .map { listOf(INFINITE_TIMER_SETTINGS) + it  }
+        .map { listOf(INFINITE_TIMER_SETTINGS) + it }
 
-    init {
-        _time.value = _settings.value.workDuration
-        _state.value = TimerState.WORK
-        updateCurrentTimer()
-    }
+    private val timerListener: Timer.TimerListener = object : Timer.TimerListener {
+        override fun onStart(stage: TimerStage) {
+            _isRunning.value = true
+        }
 
-    fun startTimer() {
-        val settings = this._settings.value
-        this._isRunning.value = true
+        override fun onFinish(old: TimerStage, new: TimerStage) {
+            _isRunning.value = false
 
-        viewModelScope.launch {
-            while ((_time.value > 0 || settings.isInfinite) && _isRunning.value) {
-                if (!_isPause.value) {
-                    if (_isRunning.value) {
-                        if (settings.isInfinite) {
-                            _time.value += 1
-                        } else {
-                            _time.value = max(0, _time.value - 1)
-                        }
-                    }
-                    delay(1000)
-                } else {
-                    delay(100)
+            viewModelScope.launch {
+                notificationService.addNotification(
+                    Notification("Finish ${_timer.value.getStage().name.lowercase()}")
+                )
+            }
+
+            when (old) {
+                TimerStage.WORK -> _state.value = TimerViewState.FEEDBACK
+                TimerStage.REST -> when (new) {
+                    TimerStage.WORK -> _state.value = TimerViewState.WORK
+                    TimerStage.REST -> _state.value = TimerViewState.BREAK
                 }
             }
-            if (_isRunning.value && !settings.isInfinite) {
-                _isRunning.value = false
+        }
 
-                notificationService.addNotification(Notification("Finish ${_state.value}"))
+        override fun onPause(isPaused: Boolean) {
+            _isPause.value = isPaused
+        }
 
-                nextState()
+        override fun onTick(time: Int) {
+            _time.value = time
+        }
+
+        override fun onChangeState(state: TimerState) {
+            when (state) {
+                TimerState.IN_PROGRESS, TimerState.PAUSE -> _isRunning.value = true
+                else -> _isRunning.value = false
             }
         }
+    }
+
+    private val _timer = MutableStateFlow<Timer>(createTimer(_settings.value))
+
+    fun startTimer() {
+        _timer.value.start()
     }
 
     fun saveFeedback(feedback: CreateFocusTime) {
@@ -80,54 +86,49 @@ class TimerViewModel(
         }
     }
 
+    fun closeFeedback() {
+        when (_timer.value.getStage()) {
+            TimerStage.WORK -> _state.value = TimerViewState.WORK
+            TimerStage.REST -> _state.value = TimerViewState.BREAK
+        }
+    }
+
     fun stopTimer() {
-        this._isRunning.value = false
-        if (_settings.value.isInfinite)
-            nextState()
-        else
-            updateCurrentTimer()
+        _timer.value.reset()
     }
 
     fun pauseTimer() {
-        _isPause.value = !_isPause.value
+        _timer.value.pause()
     }
 
     fun skipTimer() {
-        if (_settings.value.isInfinite)
-            stopTimer()
-        else
-            _time.value = 0
-    }
-
-    fun nextState() {
-        val settings = this._settings.value
-        when (_state.value) {
-            TimerState.WORK -> {
-                _workPeriodCounter.value++
-                _state.value = TimerState.FEEDBACK
-            }
-            TimerState.BREAK -> {
-                _state.value = TimerState.WORK
-            }
-            TimerState.LONG_BREAK -> {
-                _state.value = TimerState.WORK
-            }
-            TimerState.FEEDBACK -> {
-                if (_workPeriodCounter.value >= settings.workCycles) {
-                    _workPeriodCounter.value = 0
-                    _state.value = TimerState.LONG_BREAK
-                } else {
-                    _state.value = TimerState.BREAK
-                }
-            }
-        }
-
-        updateCurrentTimer()
+        _timer.value.stop()
     }
 
     fun changeTimerSettings(settings: TimerSettings) {
         _settings.value = settings
-       updateCurrentTimer()
+        _timer.value = createTimer(settings)
+    }
+
+    private fun createTimer(settings: TimerSettings) = if (settings.isInfinite) {
+        InfiniteTimer(
+            viewModelScope,
+            when (_state.value) {
+                TimerViewState.WORK -> TimerStage.WORK
+                else -> TimerStage.REST
+            },
+            timerListener
+        )
+    } else {
+        PomodoroTimer(
+            settings,
+            viewModelScope,
+            when (_state.value) {
+                TimerViewState.WORK -> TimerStage.WORK
+                else -> TimerStage.REST
+            },
+            timerListener
+        )
     }
 
     private fun getTime(value: Int): String {
@@ -136,25 +137,10 @@ class TimerViewModel(
         return "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
     }
 
-    private fun updateCurrentTimer() {
-        val settings = this._settings.value
-        if (settings.isInfinite) {
-            _time.value = 0
-            return
-        }
-        when (_state.value) {
-            TimerState.WORK -> {
-                _time.value = settings.workDuration
-            }
-            TimerState.BREAK -> {
-                _time.value = settings.shortBreakDuration
-            }
-            TimerState.LONG_BREAK -> {
-                _time.value = settings.longBreakDuration
-            }
-            TimerState.FEEDBACK -> {
-                _time.value = 0
-            }
-        }
-    }
+}
+
+enum class TimerViewState {
+    WORK,
+    BREAK,
+    FEEDBACK
 }

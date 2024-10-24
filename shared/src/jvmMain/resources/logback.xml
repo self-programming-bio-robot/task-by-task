@@ -1,0 +1,33 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- Current log file location in the user's home directory -->
+        <file>${user.home}/.taskByTask/app.log</file>
+
+        <!-- Rolling policy based on date -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Archive log files with the date pattern in the filename -->
+            <fileNamePattern>${user.home}/.taskByTask/app-%d{yyyy-MM-dd}.log</fileNamePattern>
+
+            <!-- Max history for keeping old log files (e.g., 30 days) -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root Logger -->
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="ROLLING_FILE" />
+    </root>
+
+</configuration>

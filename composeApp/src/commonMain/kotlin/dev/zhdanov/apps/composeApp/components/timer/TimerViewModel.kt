@@ -26,12 +26,14 @@ class TimerViewModel(
     private val _isRunning = MutableStateFlow(false)
     private val _isPause = MutableStateFlow(false)
     private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
+    private val _lastPartDuration = MutableStateFlow(0)
 
     val time = _time.map(this::getTime)
     val isRunning = _isRunning.asStateFlow()
     val isPause = _isPause.asStateFlow()
     val settings = _settings.asStateFlow()
     val state = _state.asStateFlow()
+    val lastPartDuration = _lastPartDuration.asStateFlow()
     val settingList = timerSettingsService.timerSettings.asStateFlow()
         .map { listOf(INFINITE_TIMER_SETTINGS) + it }
 
@@ -40,17 +42,20 @@ class TimerViewModel(
             _isRunning.value = true
         }
 
-        override fun onFinish(old: TimerStage, new: TimerStage) {
+        override fun onFinish(old: TimerStage, new: TimerStage, duration: Int) {
             _isRunning.value = false
 
             viewModelScope.launch {
                 notificationService.addNotification(
-                    Notification("Finish ${_timer.value.getStage().name.lowercase()}")
+                    Notification("Finish ${old.name.lowercase()}")
                 )
             }
 
             when (old) {
-                TimerStage.WORK -> _state.value = TimerViewState.FEEDBACK
+                TimerStage.WORK -> {
+                    _state.value = TimerViewState.FEEDBACK
+                    _lastPartDuration.value = duration
+                }
                 TimerStage.REST -> when (new) {
                     TimerStage.WORK -> _state.value = TimerViewState.WORK
                     TimerStage.REST -> _state.value = TimerViewState.BREAK

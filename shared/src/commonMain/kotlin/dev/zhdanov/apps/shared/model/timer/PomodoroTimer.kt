@@ -38,7 +38,12 @@ class PomodoroTimer(
                 if (stage == PomodoroTimerStage.WORK) {
                     cycles++
                 }
-                timerListener.onFinish(stage.mappingStage, changeStage().mappingStage)
+                val duration =  when (stage) {
+                    PomodoroTimerStage.WORK -> settings.workDuration
+                    PomodoroTimerStage.SHORT_BREAK -> settings.shortBreakDuration
+                    PomodoroTimerStage.LONG_BREAK -> settings.longBreakDuration
+                }
+                timerListener.onFinish(stage.mappingStage, changeStage().mappingStage, duration)
                 timerListener.onChangeState(state)
                 setInitialTime()
             }

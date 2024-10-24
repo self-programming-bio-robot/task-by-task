@@ -50,6 +50,10 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(libs.jvm.driver)
+
+            implementation(libs.slf4j.api)
+            implementation(libs.logback.core)
+            implementation(libs.logback)
         }
     }
 }

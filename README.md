@@ -7,3 +7,4 @@
 - [ ] Add adaptive navigation
 - [ ] Added count of work cycles in day
 - [ ] Get default timer from database on start
+- [ ] Change feedback view to separate screen

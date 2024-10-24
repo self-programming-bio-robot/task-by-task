@@ -4,7 +4,7 @@ interface Timer {
 
     interface TimerListener {
         fun onStart(stage: TimerStage)
-        fun onFinish(old: TimerStage, new: TimerStage)
+        fun onFinish(old: TimerStage, new: TimerStage, duration: Int)
         fun onPause(isPaused: Boolean)
         fun onTick(time: Int)
         fun onChangeState(state: TimerState)

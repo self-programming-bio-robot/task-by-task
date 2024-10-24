@@ -37,6 +37,7 @@ fun TimerView() {
     val time = viewModel.time.collectAsState("")
     val state = viewModel.state.collectAsState()
     val settingList = viewModel.settingList.collectAsState(listOf())
+    val lastPartDuration = viewModel.lastPartDuration.collectAsState()
 
     val buttonStateColors = if (state.value == TimerViewState.WORK)
         buttonColors(
@@ -56,7 +57,7 @@ fun TimerView() {
     if (state.value == TimerViewState.FEEDBACK) {
         Feedback(
             finishAt = Clock.System.now().toEpochMilliseconds(),
-            duration = viewModel.settings.value.workDuration,
+            duration = lastPartDuration.value,
             onExit = { feedback ->
                 feedback?.let { viewModel.saveFeedback(it) }
                 viewModel.closeFeedback()

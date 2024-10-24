@@ -22,6 +22,7 @@ logback = "1.5.6"
 multiplatformMarkdownRendererM3 = "0.26.0"
 navigation = "2.8.0-alpha10"
 openaiClient = "3.8.2"
+slf4jApi = "2.0.13"
 viewmodel = "2.8.0"
 koin = "3.5.6"
 koinCompose = "1.1.5"
@@ -57,10 +58,12 @@ ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "k
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-tests = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
 ktor-client-jvm = { module = "io.ktor:ktor-client-jetty", version.ref = "ktor" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
 multiplatform-markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
 multiplatform-markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "multiplatformMarkdownRendererM3" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
 openai-client = { module = "com.aallam.openai:openai-client", version.ref = "openaiClient" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4jApi" }
 viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "viewmodel" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinCompose" }

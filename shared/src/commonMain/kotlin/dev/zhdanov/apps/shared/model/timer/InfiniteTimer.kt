@@ -27,7 +27,7 @@ class InfiniteTimer(
                 timerListener.onTick(time)
             }
             if (this.isActive && state == TimerState.FINISHED) {
-                timerListener.onFinish(stage, changeStage())
+                timerListener.onFinish(stage, changeStage(), time)
                 timerListener.onChangeState(state)
                 setInitialTime()
             }

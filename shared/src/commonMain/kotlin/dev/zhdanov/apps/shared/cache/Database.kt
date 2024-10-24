@@ -8,6 +8,7 @@ import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.datetime.LocalDate
 import org.lighthousegames.logging.logging
+import kotlin.math.log
 
 class Database(databaseDriverFactory: DatabaseDriverFactory) {
     private val driver = databaseDriverFactory.createDriver()
@@ -21,8 +22,12 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     init {
         val currentVersion = getDatabaseVersion()
         logger.i { "Current version: $currentVersion; actual version: ${AppDatabase.Schema.version}" }
-        AppDatabase.Schema.migrate(driver, currentVersion,  AppDatabase.Schema.version)
-        AppDatabase.Schema.create(driver)
+        try {
+            AppDatabase.Schema.migrate(driver, currentVersion, AppDatabase.Schema.version)
+            AppDatabase.Schema.create(driver)
+        } catch (e: Exception) {
+            logger.e(e) { "Failed to migrate app database" }
+        }
     }
 
     private fun getDatabaseVersion(): Long {

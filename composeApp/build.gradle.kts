@@ -143,7 +143,7 @@ compose.desktop {
             packageName = "TaskByTask"
             packageVersion = "1.0.0"
 
-            modules("java.sql")
+            modules("java.sql", "java.naming")
 
             macOS {
                 dockName = "Task By Task"

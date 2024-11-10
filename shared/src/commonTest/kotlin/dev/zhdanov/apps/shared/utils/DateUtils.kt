@@ -1,10 +1,13 @@
 package dev.zhdanov.apps.shared.utils
 
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 
 class DateUtils {
 
@@ -89,5 +92,12 @@ class DateUtils {
 
         // Then
         assertEquals(expected, result)
+    }
+
+    @Test
+    fun `Correct conver local time to duration`() {
+        val time = LocalTime(6, 0, 6)
+
+        assertEquals(21606.seconds, time.toDuration())
     }
 }

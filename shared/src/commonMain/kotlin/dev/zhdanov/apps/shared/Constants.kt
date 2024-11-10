@@ -1,6 +1,7 @@
 package dev.zhdanov.apps.shared
 
 import dev.zhdanov.apps.shared.model.TimerSettings
+import kotlinx.datetime.LocalTime
 
 const val SERVER_PORT = 8080
 
@@ -22,3 +23,5 @@ val INFINITE_TIMER_SETTINGS = TimerSettings(
     workCycles = 1,
     isInfinite = true,
 )
+
+val START_OF_DAY = LocalTime(5, 0)

@@ -8,3 +8,5 @@
 - [ ] Added count of work cycles in day
 - [ ] Get default timer from database on start
 - [ ] Change feedback view to separate screen
+- [ ] Fix bug: finish day button should review day with shift
+- [ ] Add abstract scheduler service and implementation for desktop

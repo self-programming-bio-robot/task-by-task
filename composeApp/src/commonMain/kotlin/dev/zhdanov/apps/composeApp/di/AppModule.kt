@@ -16,7 +16,7 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { NotificationService() }
-    single { DaySummaryService(get()) }
+    single { DaySummaryService(get(), get()) }
     single { TimerSettingsService(get()) }
 
     viewModel { HomeViewModel(get(), get()) }

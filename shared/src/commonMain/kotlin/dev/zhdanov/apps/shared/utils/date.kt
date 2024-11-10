@@ -2,6 +2,7 @@ package dev.zhdanov.apps.shared.utils
 
 import kotlinx.datetime.*
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 fun LocalDate.toLong() =
     (this.year * 10000 + this.monthNumber * 100 + this.dayOfMonth).toLong()
@@ -16,6 +17,8 @@ fun Long.toLocalDate(): LocalDate {
 
 fun Long.toLocalDateTime(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDateTime =
     Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
+
+fun LocalTime.toDuration() = this.toSecondOfDay().seconds
 
 fun startOfDayWithShift(
     time: Instant,

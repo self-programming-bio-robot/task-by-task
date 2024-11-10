@@ -11,6 +11,7 @@ androidx-core-ktx = "1.13.1"
 androidx-espresso-core = "3.5.1"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.1.5"
+kcronCommon = "0.14.4"
 kotlinx-coroutines-android = "1.8.0"
 koltin-datetime="0.6.0"
 compose-plugin = "1.7.0-rc01"
@@ -37,6 +38,7 @@ buildKonfig = "0.15.2"
 adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 adaptive-layout = { module = "org.jetbrains.compose.material3.adaptive:adaptive-layout", version.ref = "adaptive" }
 adaptive-navigation = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation", version.ref = "adaptive" }
+kcron-common = { module = "com.ucasoft.kcron:kcron-common", version.ref = "kcronCommon" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

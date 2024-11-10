@@ -1,5 +1,7 @@
 package dev.zhdanov.apps.composeApp.di
 
+import dev.zhdanov.apps.composeApp.services.DesktopScheduler
+import dev.zhdanov.apps.composeApp.services.SchedulerService
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
 import dev.zhdanov.apps.shared.cache.JvmDatabaseDriverFactory
@@ -13,5 +15,8 @@ actual val platformModule = module {
     }
     single<Database> {
         Database(get())
+    }
+    single<SchedulerService> {
+        DesktopScheduler()
     }
 }

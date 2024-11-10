@@ -85,6 +85,8 @@ kotlin {
 
             implementation(libs.openai.client)
 
+            implementation(libs.kcron.common)
+
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.multiplatform.markdown.renderer)
         }

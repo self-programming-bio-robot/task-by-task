@@ -2,13 +2,8 @@ package dev.zhdanov.apps.composeApp.screens.history
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -20,7 +15,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun HistoryScreen(onBack: () -> Unit) {
+fun HistoryScreen() {
     val viewModel: HistoryViewModel = koinViewModel<HistoryViewModel>()
 
     val history = viewModel.history.collectAsState(listOf())
@@ -36,23 +31,11 @@ fun HistoryScreen(onBack: () -> Unit) {
             )
         } else {
             Box(
-                modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 HistoryList(history.value)
             }
-        }
-
-        IconButton(
-            onClick = { onBack() },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back"
-            )
         }
     }
 }

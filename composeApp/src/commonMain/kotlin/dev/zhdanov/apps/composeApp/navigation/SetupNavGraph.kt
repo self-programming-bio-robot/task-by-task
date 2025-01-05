@@ -22,21 +22,13 @@ fun SetupNavGraph(
     ) {
         composable<Screen.Home> {
             HomeScreen(
-                navigateToHistory = {
-                    navController.navigate(Screen.History)
-                },
-                navigateToSettings = {
-                    navController.navigate(Screen.Settings)
-                },
                 onFinishDay = { review ->
                     navController.navigate(Screen.FinishedDay(review.summary, review.response))
                 }
             )
         }
         composable<Screen.History> {
-            HistoryScreen(onBack = {
-                navController.popBackStack()
-            })
+            HistoryScreen()
         }
         composable<Screen.FinishedDay> { backStackEntry ->
             val route = backStackEntry.toRoute<Screen.FinishedDay>()

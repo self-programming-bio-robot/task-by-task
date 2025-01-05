@@ -3,8 +3,7 @@ package dev.zhdanov.apps.composeApp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.navigation.compose.rememberNavController
-import dev.zhdanov.apps.composeApp.navigation.SetupNavGraph
+import dev.zhdanov.apps.composeApp.components.layout.AdaptiveLayout
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -26,8 +25,7 @@ fun App() {
 
     MaterialTheme {
         KoinContext {
-            val navController = rememberNavController()
-            SetupNavGraph(navController = navController)
+            AdaptiveLayout()
         }
     }
 }

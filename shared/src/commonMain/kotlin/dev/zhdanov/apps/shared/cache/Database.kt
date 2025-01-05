@@ -1,6 +1,7 @@
 package dev.zhdanov.apps.shared.cache
 
 import app.cash.sqldelight.db.QueryResult
+import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import dev.zhdanov.apps.shared.cache.repository.TimerSettingRepository
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.DaySummary
@@ -18,6 +19,7 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     private val dbQuery = database.appDatabaseQueries
 
     val timerSettingRepository = TimerSettingRepository(dbQuery)
+    val taskRepository = TaskRepository(database.appDatabaseQueries)
 
     init {
         val currentVersion = getDatabaseVersion()

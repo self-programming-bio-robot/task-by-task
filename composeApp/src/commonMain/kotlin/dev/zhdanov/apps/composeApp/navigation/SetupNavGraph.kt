@@ -9,6 +9,7 @@ import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
 import dev.zhdanov.apps.composeApp.screens.settings.SettingsScreen
+import dev.zhdanov.apps.composeApp.screens.tasks.TaskListScreen
 
 @Composable
 fun SetupNavGraph(
@@ -53,6 +54,9 @@ fun SetupNavGraph(
                     navController.popBackStack()
                 }
             )
+        }
+        composable<Screen.TaskList> {
+            TaskListScreen()
         }
     }
 }

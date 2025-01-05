@@ -15,4 +15,7 @@ sealed class Screen(val route: String) {
 
     @Serializable
     data class FinishedDay(val summary: String, val response: String) : Screen("finish-day")
+
+    @Serializable
+    object TaskList : Screen("task_list")
 }

@@ -10,3 +10,4 @@
 - [ ] Change feedback view to separate screen
 - [ ] Fix bug: finish day button should review day with shift
 - [ ] Add abstract scheduler service and implementation for desktop
+- [ ] Extract start of a day to the settings

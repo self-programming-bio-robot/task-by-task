@@ -93,6 +93,37 @@ SELECT * FROM TimerSetting
 WHERE isDefault = 1;
 
 
+-- Tasks
+
+CREATE TABLE IF NOT EXISTS Task (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    createdAt INTEGER NOT NULL,
+    completedAt INTEGER,
+    isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+insertTask:
+INSERT INTO Task (title, description, createdAt)
+VALUES (?, ?, ?);
+
+updateTaskCompletion:
+UPDATE Task
+SET isCompleted = ?, completedAt = ?
+WHERE id = ?;
+
+selectAllTasks:
+SELECT * FROM Task
+ORDER BY createdAt DESC;
+
+selectTaskById:
+SELECT * FROM Task
+WHERE id = ?;
+
+deleteTask:
+DELETE FROM Task WHERE id = ?;
+
 -- COMMON
 lastInsertRowId:
 SELECT last_insert_rowid();

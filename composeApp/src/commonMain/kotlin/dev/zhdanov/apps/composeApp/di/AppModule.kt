@@ -6,6 +6,7 @@ import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
 import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.composeApp.screens.history.HistoryViewModel
 import dev.zhdanov.apps.composeApp.screens.home.HomeViewModel
+import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import org.koin.compose.viewmodel.dsl.viewModel
@@ -24,6 +25,7 @@ val appModule = module {
     viewModel { HistoryViewModel(get()) }
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }
+    viewModel { TaskListViewModel(get()) }
 }
 
 expect val platformModule: Module

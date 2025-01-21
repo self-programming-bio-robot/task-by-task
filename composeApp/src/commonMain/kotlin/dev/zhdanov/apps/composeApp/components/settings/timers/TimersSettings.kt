@@ -31,29 +31,32 @@ fun TimersSettings(
     val timerSettings by viewModel.timerSettings.collectAsState(emptyList())
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onBack() }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Timers",
-                modifier = Modifier.padding(8.dp),
-                style = MaterialTheme.typography.headlineLarge
-            )
-            Spacer(Modifier.weight(1f))
-            Button(onClick = { onCreate() }) {
-                Text(
-                    "New",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+    ) {
+//        Row(verticalAlignment = Alignment.CenterVertically) {
+//            IconButton(onClick = { onBack() }) {
+//                Icon(
+//                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+//                    contentDescription = "Back",
+//                    tint = Color.Black
+//                )
+//            }
+//            Spacer(Modifier.width(8.dp))
+//            Text(
+//                "Timers",
+//                modifier = Modifier.padding(8.dp),
+//                style = MaterialTheme.typography.headlineLarge
+//            )
+//            Spacer(Modifier.weight(1f))
+//            Button(onClick = { onCreate() }) {
+//                Text(
+//                    "New",
+//                    style = MaterialTheme.typography.bodyMedium
+//                )
+//            }
+//        }
 
         if (isLoading) {
             CircularProgressIndicator()

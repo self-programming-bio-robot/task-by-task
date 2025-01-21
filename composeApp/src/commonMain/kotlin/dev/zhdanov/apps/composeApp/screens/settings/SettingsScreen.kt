@@ -1,8 +1,10 @@
 package dev.zhdanov.apps.composeApp.screens.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.sharp.Timer
@@ -21,9 +23,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettings
 import dev.zhdanov.apps.shared.model.TimerSettings
@@ -40,37 +45,42 @@ fun SettingsScreen(
         )
     )
 
+    val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
+    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
+    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
+        RectangleShape else MaterialTheme.shapes.medium
 
     ListDetailPaneScaffold(
+        modifier = Modifier
+            .padding(start = padding, end = padding, bottom = padding),
         directive = navigator.scaffoldDirective,
         value = navigator.scaffoldValue,
         listPane = {
-            AnimatedPane(modifier = Modifier.padding(16.dp)) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { onBack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.Black
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Text("Settings", style = MaterialTheme.typography.headlineMedium)
-                    }
-                    SettingList(
-                        onItemClick = { item ->
-                            coroutineScope.launch {
-                                navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
-                            }
-                        },
+            AnimatedPane(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = shape
                     )
-                }
+            ) {
+                SettingList(
+                    onItemClick = { item ->
+                        coroutineScope.launch {
+                            navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
+                        }
+                    },
+                )
             }
         },
         detailPane = {
-            AnimatedPane(modifier = Modifier.padding(16.dp)) {
+            AnimatedPane(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = shape
+                    )
+            ) {
                 navigator.currentDestination?.contentKey?.let {
                     when {
                         it is TimersSettingsProps -> TimersSettings(
@@ -99,7 +109,13 @@ fun SettingsScreen(
             }
         },
         extraPane = {
-            AnimatedPane(modifier = Modifier.padding(16.dp)) {
+            AnimatedPane(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = shape
+                    )
+            ) {
                 navigator.currentDestination?.contentKey?.let {
                     when {
                         it is TimersSettingsProps ->
@@ -120,6 +136,7 @@ fun SettingsScreen(
 fun SettingList(onItemClick: (item: TimersSettingsProps) -> Unit) {
     LazyColumn(
         modifier = Modifier
+            .padding(16.dp)
     ) {
         item {
             SettingItem(
@@ -137,31 +154,30 @@ private fun SettingItem(
     title: String,
     onItemClick: (item: TimersSettingsProps) -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable {
-                onItemClick(TimersSettingsProps())
-            }
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .clip(MaterialTheme.shapes.extraLarge)
+        .clickable {
+            onItemClick(TimersSettingsProps())
+        }
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .padding(start = 16.dp),
                 imageVector = icon,
                 contentDescription = title,
                 tint = Color.Black
             )
-
+            Spacer(modifier = Modifier.width(16.dp))
             Text(
-                modifier = Modifier
-                    .padding(8.dp),
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
             )
         }
-
     }
 }
 

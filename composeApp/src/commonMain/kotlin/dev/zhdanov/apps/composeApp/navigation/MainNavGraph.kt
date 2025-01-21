@@ -1,5 +1,6 @@
 package dev.zhdanov.apps.composeApp.navigation
 
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -11,8 +12,9 @@ import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
 import dev.zhdanov.apps.composeApp.screens.settings.SettingsScreen
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListScreen
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SetupNavGraph(
+fun MainNavGraph(
     navController: NavHostController,
     startDestination: Screen = Screen.Home
 ) {
@@ -27,9 +29,11 @@ fun SetupNavGraph(
                 }
             )
         }
+
         composable<Screen.History> {
             HistoryScreen()
         }
+
         composable<Screen.FinishedDay> { backStackEntry ->
             val route = backStackEntry.toRoute<Screen.FinishedDay>()
             FinishedDayScreen(route.summary, route.response) {
@@ -40,6 +44,7 @@ fun SetupNavGraph(
                 }
             }
         }
+
         composable<Screen.Settings> {
             SettingsScreen(
                 onBack = {
@@ -47,6 +52,7 @@ fun SetupNavGraph(
                 }
             )
         }
+
         composable<Screen.TaskList> {
             TaskListScreen()
         }

@@ -27,11 +27,14 @@ fun EditableTimerSettings(
 
     val viewModel = koinViewModel<EditableTimerSettingsViewModel>()
 
-    Column {
-        Text(
-            text = "Timer Settings",
-            style = MaterialTheme.typography.headlineMedium,
-        )
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+    ) {
+//        Text(
+//            text = "Timer Settings",
+//            style = MaterialTheme.typography.headlineMedium,
+//        )
 
         // Work Duration Slider
         Text(

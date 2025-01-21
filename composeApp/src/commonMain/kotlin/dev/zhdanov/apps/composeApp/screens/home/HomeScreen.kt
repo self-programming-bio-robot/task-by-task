@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.FactCheck
+import androidx.compose.material.icons.outlined.FactCheck
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -23,12 +27,13 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
+import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onFinishDay: (review: AssistantReviewResponse) -> Unit
@@ -44,24 +49,12 @@ fun HomeScreen(
     val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
         RectangleShape else MaterialTheme.shapes.medium
 
-    SupportingPaneScaffold(
-        modifier = Modifier
-            .padding(start = padding, end = padding, bottom = padding),
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
-        mainPane = {
-            AnimatedPane {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = shape
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    TimerView()
-
-                    Button(
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = "Home",
+                actions = {
+                    IconButton(
                         enabled = isActive,
                         onClick = {
                             coroutineScope.launch {
@@ -71,43 +64,68 @@ fun HomeScreen(
                             }
                         },
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(16.dp)
                     ) {
-                        Text("Finish day")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.FactCheck,
+                            contentDescription = "Finish day"
+                        )
                     }
+                }
+            )
+        },
+        content = { paddings ->
+            Box(modifier = Modifier.padding(paddings)) {
+                SupportingPaneScaffold(
+                    modifier = Modifier
+                        .padding(start = padding, end = padding, bottom = padding),
+                    directive = navigator.scaffoldDirective,
+                    value = navigator.scaffoldValue,
+                    mainPane = {
+                        AnimatedPane {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = shape
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                TimerView()
 
-                    if (isLoading) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    onClick = { }
-                                )
-                                .background(Color.White.copy(alpha = 0.3f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(50.dp)
-                            )
+                                if (isLoading) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clickable(
+                                                indication = null,
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                onClick = { }
+                                            )
+                                            .background(Color.White.copy(alpha = 0.3f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(50.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    supportingPane = {
+                        AnimatedPane {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = shape
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                            }
                         }
                     }
-                }
-            }
-        },
-        supportingPane = {
-            AnimatedPane {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = shape
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                }
+                )
             }
         }
     )

@@ -8,10 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.sharp.Timer
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
@@ -31,10 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettings
+import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.TimerSettings
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -51,82 +49,95 @@ fun SettingsScreen(
     val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
         RectangleShape else MaterialTheme.shapes.medium
 
-    ListDetailPaneScaffold(
-        modifier = Modifier
-            .padding(start = padding, end = padding, bottom = padding),
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
-        listPane = {
-            AnimatedPane(
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = shape
-                    )
-            ) {
-                SettingList(
-                    onItemClick = { item ->
-                        coroutineScope.launch {
-                            navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = "Settings",
+                hasBack = navigator.canNavigateBack(),
+                onBack = { navigator.navigateBack() }
+            )
+        },
+        content = { paddings ->
+            Box(modifier = Modifier.padding(paddings)) {
+                ListDetailPaneScaffold(
+                    modifier = Modifier
+                        .padding(start = padding, end = padding, bottom = padding),
+                    directive = navigator.scaffoldDirective,
+                    value = navigator.scaffoldValue,
+                    listPane = {
+                        AnimatedPane(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = shape
+                                )
+                        ) {
+                            SettingList(
+                                onItemClick = { item ->
+                                    coroutineScope.launch {
+                                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
+                                    }
+                                },
+                            )
                         }
                     },
-                )
-            }
-        },
-        detailPane = {
-            AnimatedPane(
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = shape
-                    )
-            ) {
-                navigator.currentDestination?.contentKey?.let {
-                    when {
-                        it is TimersSettingsProps -> TimersSettings(
-                            onItemClick = { timer ->
-                                coroutineScope.launch {
-                                    navigator.navigateTo(
-                                        ListDetailPaneScaffoldRole.Extra,
-                                        TimersSettingsProps(timer)
+                    detailPane = {
+                        AnimatedPane(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = shape
+                                )
+                        ) {
+                            navigator.currentDestination?.contentKey?.let {
+                                when {
+                                    it is TimersSettingsProps -> TimersSettings(
+                                        onItemClick = { timer ->
+                                            coroutineScope.launch {
+                                                navigator.navigateTo(
+                                                    ListDetailPaneScaffoldRole.Extra,
+                                                    TimersSettingsProps(timer)
+                                                )
+                                            }
+                                        },
+                                        onCreate = {
+                                            coroutineScope.launch {
+                                                navigator.navigateTo(
+                                                    ListDetailPaneScaffoldRole.Extra,
+                                                    TimersSettingsProps(null)
+                                                )
+                                            }
+                                        },
+                                        onBack = {
+                                            coroutineScope.launch { navigator.navigateBack() }
+                                        }
                                     )
                                 }
-                            },
-                            onCreate = {
-                                coroutineScope.launch {
-                                    navigator.navigateTo(
-                                        ListDetailPaneScaffoldRole.Extra,
-                                        TimersSettingsProps(null)
-                                    )
-                                }
-                            },
-                            onBack = {
-                                coroutineScope.launch { navigator.navigateBack() }
                             }
-                        )
-                    }
-                }
-            }
-        },
-        extraPane = {
-            AnimatedPane(
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        shape = shape
-                    )
-            ) {
-                navigator.currentDestination?.contentKey?.let {
-                    when {
-                        it is TimersSettingsProps ->
-                            EditableTimerSettings(
-                                timerSettings = it.selectedItem,
-                                onBack = {
-                                    coroutineScope.launch { navigator.navigateBack() }
+                        }
+                    },
+                    extraPane = {
+                        AnimatedPane(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    shape = shape
+                                )
+                        ) {
+                            navigator.currentDestination?.contentKey?.let {
+                                when {
+                                    it is TimersSettingsProps ->
+                                        EditableTimerSettings(
+                                            timerSettings = it.selectedItem,
+                                            onBack = {
+                                                coroutineScope.launch { navigator.navigateBack() }
+                                            }
+                                        )
                                 }
-                            )
+                            }
+                        }
                     }
-                }
+                )
             }
         }
     )

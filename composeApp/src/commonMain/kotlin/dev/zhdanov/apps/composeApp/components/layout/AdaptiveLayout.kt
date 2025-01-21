@@ -43,7 +43,6 @@ fun AdaptiveLayout() {
             NavigationRailLayout(
                 menuItems = menuItems,
                 navController = navController,
-                topBarContent = { }
             ) {
                 MainNavGraph(navController = navController)
             }
@@ -57,7 +56,6 @@ fun NavigationRailLayout(
     modifier: Modifier = Modifier,
     menuItems: List<Screen> = listOf(),
     navController: NavHostController,
-    topBarContent: @Composable () -> Unit,
     content: @Composable () -> Unit,
 ) {
     var selectedItem by remember { mutableIntStateOf(0) }
@@ -95,27 +93,7 @@ fun NavigationRailLayout(
             }
         }
 
-        Scaffold(
-            modifier = modifier,
-            topBar = {
-                TopAppBar(
-                    title = { topBarContent() },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
-                            )
-                        }
-                    }
-                )
-            },
-            content = { paddings ->
-                Box(modifier = Modifier.padding(paddings)) {
-                    content()
-                }
-            }
-        )
+        content()
     }
 }
 

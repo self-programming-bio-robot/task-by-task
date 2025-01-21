@@ -19,65 +19,76 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
+import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.Task
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen() {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val tasks by viewModel.tasks.collectAsState()
     val windowInfo = currentWindowAdaptiveInfo()
+    val coroutineScope = rememberCoroutineScope()
     val navigator = rememberSupportingPaneScaffoldNavigator<String>()
     val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
     val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
         RectangleShape else MaterialTheme.shapes.medium
 
-    SupportingPaneScaffold(
-        modifier = Modifier
-            .padding(start = padding, end = padding, bottom = padding),
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
-        mainPane = {
-            AnimatedPane {
-                Column(
+    Scaffold(
+        topBar = {
+            TopBar("Tasks")
+        },
+        content = { paddings ->
+            Box(modifier = Modifier.padding(paddings)) {
+                SupportingPaneScaffold(
                     modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = shape
-                        )
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(vertical = 8.dp)
-                    ) {
-                        items(tasks) { task ->
-                            TaskItem(
-                                task = task,
-                                onToggleCompletion = { viewModel.toggleTaskCompletion(task) }
-                            )
+                        .padding(start = padding, end = padding, bottom = padding),
+                    directive = navigator.scaffoldDirective,
+                    value = navigator.scaffoldValue,
+                    mainPane = {
+                        AnimatedPane {
+                            Column(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = shape
+                                    )
+                            ) {
+                                LazyColumn(
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(vertical = 8.dp)
+                                ) {
+                                    items(tasks) { task ->
+                                        TaskItem(
+                                            task = task,
+                                            onToggleCompletion = { viewModel.toggleTaskCompletion(task) }
+                                        )
+                                    }
+                                    item {
+                                        NewTaskInput(
+                                            onAddTask = viewModel::addNewTask
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        item {
-                            NewTaskInput(
-                                onAddTask = viewModel::addNewTask
-                            )
+                    },
+                    supportingPane = {
+                        AnimatedPane {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = shape
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                            }
                         }
                     }
-                }
-            }
-        },
-        supportingPane = {
-            AnimatedPane {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = shape
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                }
+                )
             }
         }
     )

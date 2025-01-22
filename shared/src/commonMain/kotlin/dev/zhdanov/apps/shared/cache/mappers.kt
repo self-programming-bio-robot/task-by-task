@@ -26,7 +26,8 @@ val focusTimeMapper = { id: Long, duration: Long, feedback: String?, finishedAt:
     )
 }
 
-val timerSettings = { id: Long, workDuration: Long, shortBreakDuration: Long, longBreakDuration: Long, workCycles: Long, isDefault: Boolean ->
+val timerSettings = { id: Long, workDuration: Long, shortBreakDuration: Long, longBreakDuration: Long, workCycles: Long,
+                      isDefault: Boolean ->
     TimerSettings(
         id = id,
         default = isDefault,
@@ -37,13 +38,17 @@ val timerSettings = { id: Long, workDuration: Long, shortBreakDuration: Long, lo
     )
 }
 
-val taskMapper = { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?, isCompleted: Boolean ->
+val taskMapper = { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?,
+                   isCompleted: Boolean, isToday: Boolean ->
     Task(
         id = id,
         title = title,
         description = description,
         createdAt = Instant.fromEpochMilliseconds(createdAt).toLocalDateTime(TimeZone.currentSystemDefault()),
-        completedAt = completedAt?.let { Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()) },
-        isCompleted = isCompleted
+        completedAt = completedAt?.let {
+            Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault())
+        },
+        isCompleted = isCompleted,
+        isToday = isToday,
     )
 }

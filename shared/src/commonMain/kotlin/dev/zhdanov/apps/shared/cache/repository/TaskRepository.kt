@@ -13,6 +13,7 @@ class TaskRepository(private val database: AppDatabaseQueries) {
         database.insertTask(
             title = task.title,
             description = task.description,
+            isToday = task.isToday == true,
             createdAt = Clock.System.now().toEpochMilliseconds()
         )
     }
@@ -35,5 +36,22 @@ class TaskRepository(private val database: AppDatabaseQueries) {
 
     fun deleteTask(id: Long) {
         database.deleteTask(id)
+    }
+
+    fun updateTask(task: Task) {
+        database.updateTask(
+            title = task.title,
+            description = task.description,
+            id = task.id,
+            isToday = task.isToday
+        )
+    }
+
+    fun cleanTodayTaskList() {
+        database.cleanTodayTaskList()
+    }
+
+    fun selectAllTodayTasks(): List<Task> {
+        return database.selectTodayTasks(taskMapper).executeAsList()
     }
 }

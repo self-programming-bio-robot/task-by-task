@@ -101,12 +101,13 @@ CREATE TABLE IF NOT EXISTS Task (
     description TEXT,
     createdAt INTEGER NOT NULL,
     completedAt INTEGER,
-    isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0
+    isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isToday INTEGER AS Boolean NOT NULL DEFAULT 0
 );
 
 insertTask:
-INSERT INTO Task (title, description, createdAt)
-VALUES (?, ?, ?);
+INSERT INTO Task (title, description, isToday,createdAt)
+VALUES (?, ?, ?, ?);
 
 updateTaskCompletion:
 UPDATE Task
@@ -116,6 +117,21 @@ WHERE id = ?;
 selectAllTasks:
 SELECT * FROM Task
 ORDER BY createdAt DESC;
+
+selectTodayTasks:
+SELECT * FROM Task
+WHERE isToday = 1
+ORDER BY createdAt DESC;
+
+cleanTodayTaskList:
+UPDATE Task
+SET isToday = 0
+WHERE isToday = 1;
+
+updateTask:
+UPDATE Task
+SET title = ?, description = ?, isToday = ?
+WHERE id = ?;
 
 selectTaskById:
 SELECT * FROM Task

@@ -47,6 +47,8 @@ class DaySummaryService(
                 } else {
                     logger.i { "Skip finishing day at ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())}" }
                 }
+
+                database.taskRepository.cleanTodayTaskList()
             }
         }
     }

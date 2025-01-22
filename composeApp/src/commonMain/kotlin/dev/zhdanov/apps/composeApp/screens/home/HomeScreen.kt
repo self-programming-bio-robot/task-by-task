@@ -3,21 +3,19 @@ package dev.zhdanov.apps.composeApp.screens.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.FactCheck
-import androidx.compose.material.icons.outlined.FactCheck
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,16 +27,20 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
+import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
+import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
+import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun HomeScreen(
     onFinishDay: (review: AssistantReviewResponse) -> Unit
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
+
     val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
@@ -53,7 +55,23 @@ fun HomeScreen(
         topBar = {
             TopBar(
                 title = "Home",
+                hasBack = navigator.canNavigateBack(),
+                onBack = { navigator.navigateBack() },
                 actions = {
+                    IconButton(
+                        enabled = isActive,
+                        onClick = {
+                            coroutineScope.launch {
+                                navigator.navigateTo(ThreePaneScaffoldRole.Secondary)
+                            }
+                        },
+                        modifier = Modifier
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Today tasks"
+                        )
+                    }
                     IconButton(
                         enabled = isActive,
                         onClick = {
@@ -114,14 +132,25 @@ fun HomeScreen(
                     },
                     supportingPane = {
                         AnimatedPane {
-                            Box(
+                            Column(
                                 modifier = Modifier
                                     .background(
                                         color = MaterialTheme.colorScheme.secondaryContainer,
                                         shape = shape
                                     ),
-                                contentAlignment = Alignment.Center,
                             ) {
+                                Text(
+                                    text = "For today",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                )
+
+                                TaskList(
+                                    onTaskClick = {},
+                                    onFocusOn = { },
+                                )
                             }
                         }
                     }
@@ -129,4 +158,73 @@ fun HomeScreen(
             }
         }
     )
+}
+
+@OptIn(KoinExperimentalAPI::class)
+@Composable
+fun TaskList(
+    onTaskClick: (Task) -> Unit,
+    onFocusOn: (Task) -> Unit,
+) {
+    val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
+    val todayTasks by viewModel.todayTask.collectAsState(listOf())
+
+    if (todayTasks.isEmpty()) {
+        Text("No tasks for today")
+    } else {
+        LazyColumn(
+            modifier = Modifier,
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(todayTasks) { task ->
+                TaskItem(
+                    task = task,
+                    onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
+                    onFocus = { onFocusOn(task) },
+                    onClick = { onTaskClick(task) },
+                )
+            }
+            item {
+                NewTaskInput(
+                    onAddTask = viewModel::addTodayTask
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskItem(
+    task: Task,
+    onToggleCompletion: () -> Unit,
+    onFocus: () -> Unit,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = task.isCompleted,
+            onCheckedChange = { onToggleCompletion() }
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = task.title,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        IconButton(
+            onClick = { onFocus() }
+        ) {
+            Icon(
+                imageVector = Icons.Default.CenterFocusStrong,
+                contentDescription = "Focus on",
+            )
+        }
+    }
 }

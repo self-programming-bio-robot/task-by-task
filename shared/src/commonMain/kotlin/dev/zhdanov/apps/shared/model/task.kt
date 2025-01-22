@@ -11,11 +11,13 @@ data class Task(
     val description: String? = null,
     val createdAt: LocalDateTime,
     val completedAt: LocalDateTime? = null,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val isToday: Boolean = false,
 )
 
 @Serializable
 data class CreateTask(
     val title: String,
-    val description: String? = null
+    val description: String? = null,
+    val isToday: Boolean? = null
 )

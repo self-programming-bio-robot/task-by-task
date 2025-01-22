@@ -7,11 +7,14 @@ import dev.zhdanov.apps.shared.model.CreateTask
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class TaskListViewModel(private val database: Database) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
+
     val tasks = _tasks.asStateFlow()
+    val todayTask = _tasks.map { tasks -> tasks.filter { it.isToday } }
 
     init {
         loadTasks()
@@ -38,6 +41,16 @@ class TaskListViewModel(private val database: Database) : ViewModel() {
         }
     }
 
+    fun addTodayTask(title: String) {
+        val trimmedTitle = title.trim()
+        if (trimmedTitle.isNotEmpty()) {
+            viewModelScope.launch {
+                database.taskRepository.addTask(CreateTask(trimmedTitle, isToday = true))
+                loadTasks()
+            }
+        }
+    }
+
     fun toggleTaskCompletion(task: Task) {
         viewModelScope.launch {
             if (task.isCompleted) {
@@ -45,6 +58,13 @@ class TaskListViewModel(private val database: Database) : ViewModel() {
             } else {
                 database.taskRepository.completeTask(task.id)
             }
+            loadTasks()
+        }
+    }
+
+    fun updateTask(updatedTask: Task) {
+        viewModelScope.launch {
+            database.taskRepository.updateTask(updatedTask)
             loadTasks()
         }
     }

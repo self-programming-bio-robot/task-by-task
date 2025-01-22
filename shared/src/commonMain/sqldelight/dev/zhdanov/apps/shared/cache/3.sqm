@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS Task (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    createdAt INTEGER NOT NULL,
+    completedAt INTEGER,
+    isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isToday INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+PRAGMA user_version = 4;

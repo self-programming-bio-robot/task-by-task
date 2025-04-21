@@ -160,6 +160,5 @@ buildkonfig {
     // exposeObjectWithName = "YourAwesomePublicConfig"
 
     defaultConfigs {
-        buildConfigField(STRING, "OPENAI_KEY", System.getenv("OPENAI_KEY") ?: "")
     }
 }

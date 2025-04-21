@@ -6,12 +6,12 @@ import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import dev.zhdanov.apps.composeApp.BuildKonfig.OPENAI_KEY
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.shared.START_OF_DAY
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
+import dev.zhdanov.apps.shared.model.SettingKey
 import dev.zhdanov.apps.shared.prompts.REVIEW_DAY_PROMPT
 import dev.zhdanov.apps.shared.utils.startOfDayWithShift
 import dev.zhdanov.apps.shared.utils.toDuration
@@ -89,21 +89,28 @@ class DaySummaryService(
             .forEach { group ->
                 coroutineScope.launch {
                     database.getDaySummary(group.key) ?: run {
-                        database.addDaySummary(
-                            DaySummary(
-                                date = group.key,
-                                focusTime = group.value.sumOf { it.duration }.toLong(),
-                                review = reviewDay(group.value).summary
+                        try {
+                            database.addDaySummary(
+                                DaySummary(
+                                    date = group.key,
+                                    focusTime = group.value.sumOf { it.duration }.toLong(),
+                                    review = reviewDay(group.value).summary
+                                )
                             )
-                        )
+                        } catch (e: Exception) {
+                            logger.e(e) { "Failed to add day summary" }
+                        }
                     }
                 }
             }
     }
 
     private suspend fun reviewDay(focusTimes: List<FocusTime>): AssistantReviewResponse {
+        val token = database.settingRepository.getSetting<String>(SettingKey.OPENAI_TOKEN)
+            ?: run { throw IllegalStateException("OpenAI token not found") }
+
         val openai = OpenAI(
-            token = OPENAI_KEY
+            token = token
         )
 
         val historyOfDay = focusTimes.joinToString(separator = "\n") {
@@ -114,7 +121,7 @@ class DaySummaryService(
         }
 
         val chatCompletionRequest = ChatCompletionRequest(
-            model = ModelId("gpt-4o"),
+            model = ModelId("gpt-4.1"),
             responseFormat = ChatResponseFormat.JsonObject,
             messages = listOf(
                 ChatMessage(

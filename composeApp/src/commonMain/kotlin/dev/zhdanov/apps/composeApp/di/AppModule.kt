@@ -1,5 +1,6 @@
 package dev.zhdanov.apps.composeApp.di
 
+import dev.zhdanov.apps.composeApp.components.settings.general.GeneralSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
@@ -26,6 +27,7 @@ val appModule = module {
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }
     viewModel { TaskListViewModel(get()) }
+    viewModel { GeneralSettingsViewModel(get()) }
 }
 
 expect val platformModule: Module

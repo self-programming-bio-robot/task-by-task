@@ -4,9 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.sharp.Timer
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -17,6 +16,8 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
+import dev.zhdanov.apps.composeApp.components.settings.general.GeneralSettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettings
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
@@ -42,6 +44,7 @@ fun SettingsScreen(
             defaultPanePreferredWidth = 300.dp,
         )
     )
+    val (title, setTitle) = remember { mutableStateOf("Settings") }
 
     val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
@@ -52,7 +55,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopBar(
-                title = "Settings",
+                title = title,
                 hasBack = navigator.canNavigateBack(),
                 onBack = { navigator.navigateBack() }
             )
@@ -75,6 +78,11 @@ fun SettingsScreen(
                             SettingList(
                                 onItemClick = { item ->
                                     coroutineScope.launch {
+                                        when (item) {
+                                            is TimersSettingsProps -> setTitle("Settings / Timers")
+                                            is GeneralSettingsProps -> setTitle("Settings / General")
+                                            else -> setTitle("Settings")
+                                        }
                                         navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
                                     }
                                 },
@@ -90,8 +98,8 @@ fun SettingsScreen(
                                 )
                         ) {
                             navigator.currentDestination?.contentKey?.let {
-                                when {
-                                    it is TimersSettingsProps -> TimersSettings(
+                                when (it) {
+                                    is TimersSettingsProps -> TimersSettings(
                                         onItemClick = { timer ->
                                             coroutineScope.launch {
                                                 navigator.navigateTo(
@@ -112,6 +120,7 @@ fun SettingsScreen(
                                             coroutineScope.launch { navigator.navigateBack() }
                                         }
                                     )
+                                    is GeneralSettingsProps -> GeneralSettings()
                                 }
                             }
                         }
@@ -125,8 +134,8 @@ fun SettingsScreen(
                                 )
                         ) {
                             navigator.currentDestination?.contentKey?.let {
-                                when {
-                                    it is TimersSettingsProps ->
+                                when (it) {
+                                    is TimersSettingsProps ->
                                         EditableTimerSettings(
                                             timerSettings = it.selectedItem,
                                             onBack = {
@@ -144,16 +153,23 @@ fun SettingsScreen(
 }
 
 @Composable
-fun SettingList(onItemClick: (item: TimersSettingsProps) -> Unit) {
+fun SettingList(onItemClick: (item: Any) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .padding(16.dp)
     ) {
         item {
             SettingItem(
+                icon = Icons.Outlined.Settings,
+                title = "General",
+                onItemClick = { onItemClick(GeneralSettingsProps()) }
+            )
+        }
+        item {
+            SettingItem(
                 icon = Icons.Sharp.Timer,
                 title = "Timers",
-                onItemClick
+                onItemClick = { onItemClick(TimersSettingsProps()) }
             )
         }
     }
@@ -163,13 +179,13 @@ fun SettingList(onItemClick: (item: TimersSettingsProps) -> Unit) {
 private fun SettingItem(
     icon: ImageVector,
     title: String,
-    onItemClick: (item: TimersSettingsProps) -> Unit
+    onItemClick: () -> Unit
 ) {
     Box(modifier = Modifier
         .fillMaxSize()
         .clip(MaterialTheme.shapes.extraLarge)
         .clickable {
-            onItemClick(TimersSettingsProps())
+            onItemClick()
         }
     ) {
         Row(
@@ -195,3 +211,5 @@ private fun SettingItem(
 data class TimersSettingsProps(
     val selectedItem: TimerSettings? = null,
 )
+
+class GeneralSettingsProps()

@@ -22,6 +22,7 @@ class TimerViewModel(
     private val timerSettingsService: TimerSettingsService,
 ) : ViewModel() {
     private val _time = MutableStateFlow(0)
+    private val _progress = MutableStateFlow(0f)
     private val _state = MutableStateFlow(TimerViewState.WORK)
     private val _isRunning = MutableStateFlow(false)
     private val _isPause = MutableStateFlow(false)
@@ -29,6 +30,7 @@ class TimerViewModel(
     private val _lastPartDuration = MutableStateFlow(0)
 
     val time = _time.map(this::getTime)
+    val progress = _progress.asStateFlow()
     val isRunning = _isRunning.asStateFlow()
     val isPause = _isPause.asStateFlow()
     val settings = _settings.asStateFlow()
@@ -67,8 +69,9 @@ class TimerViewModel(
             _isPause.value = isPaused
         }
 
-        override fun onTick(time: Int) {
+        override fun onTick(time: Int, progress: Float) {
             _time.value = time
+            _progress.value = progress
         }
 
         override fun onChangeState(state: TimerState) {

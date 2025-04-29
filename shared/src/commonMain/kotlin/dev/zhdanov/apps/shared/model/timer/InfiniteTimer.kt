@@ -24,7 +24,7 @@ class InfiniteTimer(
             while (this.isActive && state == TimerState.IN_PROGRESS) {
                 delay(1000)
                 time += 1
-                timerListener.onTick(time)
+                timerListener.onTick(time, (time % 60) / 60f)
             }
             if (this.isActive && state == TimerState.FINISHED) {
                 timerListener.onFinish(stage, changeStage(), time)
@@ -75,7 +75,7 @@ class InfiniteTimer(
 
     private fun setInitialTime(): Int {
         time = 0
-        timerListener.onTick(time)
+        timerListener.onTick(time, 0f)
         return time
     }
 }

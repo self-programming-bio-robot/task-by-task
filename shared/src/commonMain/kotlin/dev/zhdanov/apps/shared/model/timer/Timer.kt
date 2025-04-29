@@ -6,7 +6,7 @@ interface Timer {
         fun onStart(stage: TimerStage)
         fun onFinish(old: TimerStage, new: TimerStage, duration: Int)
         fun onPause(isPaused: Boolean)
-        fun onTick(time: Int)
+        fun onTick(time: Int, progress: Float)
         fun onChangeState(state: TimerState)
     }
 

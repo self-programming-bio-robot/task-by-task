@@ -16,6 +16,7 @@ class PomodoroTimer(
     }
     private var state: TimerState = TimerState.IDLE
     private var time: Int = setInitialTime()
+    private var totalTime: Int = time
     private var cycles: Int = 0
     private var timerJob: Job? = null
 
@@ -31,7 +32,7 @@ class PomodoroTimer(
             while (this.isActive && time > 0 && state == TimerState.IN_PROGRESS) {
                 delay(1000)
                 time -= 1
-                timerListener.onTick(time)
+                timerListener.onTick(time, 1f - (time.toFloat() / totalTime.toFloat()))
             }
             if (time == 0 && this.isActive || state == TimerState.FINISHED) {
                 state = TimerState.FINISHED
@@ -58,7 +59,6 @@ class PomodoroTimer(
         timerJob?.cancel()
         state = TimerState.IDLE
         time = setInitialTime()
-        timerListener.onTick(time)
         timerListener.onChangeState(state)
     }
 
@@ -103,7 +103,8 @@ class PomodoroTimer(
             PomodoroTimerStage.LONG_BREAK -> settings.longBreakDuration
             PomodoroTimerStage.SHORT_BREAK -> settings.shortBreakDuration
         }
-        timerListener.onTick(time)
+        totalTime = time
+        timerListener.onTick(time, 0f)
         return time
     }
 

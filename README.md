@@ -4,10 +4,10 @@
 - [ ] Add start of focus time, to calculate pause time
 - [x] Add choosing timer type on start
 - [x] Add infinite timer
-- [ ] Add adaptive navigation
+- [x] Add adaptive navigation
 - [ ] Added count of work cycles in day
 - [ ] Get default timer from database on start
 - [ ] Change feedback view to separate screen
-- [ ] Fix bug: finish day button should review day with shift
+- [x] Fix bug: finish day button should review day with shift
 - [ ] Add abstract scheduler service and implementation for desktop
 - [ ] Extract start of a day to the settings

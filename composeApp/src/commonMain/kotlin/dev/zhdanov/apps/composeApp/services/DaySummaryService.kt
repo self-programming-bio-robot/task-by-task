@@ -38,14 +38,14 @@ class DaySummaryService(
             "Finish day",
             "${START_OF_DAY.minute} ${START_OF_DAY.hour} * * *",
             TimeZone.currentSystemDefault()
-        ) {
+        ) {  plannedTime, actualTime, timeZone ->
             coroutineScope.launch {
-                val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val currentDate = plannedTime.toLocalDateTime(timeZone).date
                 if (database.getDaySummary(currentDate) == null) {
-                    logger.i { "Finish day at ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())}" }
+                    logger.i { "Finish day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${plannedTime.toLocalDateTime(timeZone)}" }
                     finishDay()
                 } else {
-                    logger.i { "Skip finishing day at ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())}" }
+                    logger.i { "Skip finishing day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${plannedTime.toLocalDateTime(timeZone)}" }
                 }
 
                 database.taskRepository.cleanTodayTaskList()
@@ -53,20 +53,22 @@ class DaySummaryService(
         }
     }
 
-    suspend fun finishDay(): AssistantReviewResponse {
-        val currentDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    suspend fun finishDay(currentDateTime: Instant = Clock.System.now()): AssistantReviewResponse {
+        val dayDate = currentDateTime.minus(START_OF_DAY.toDuration())
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-        val fiveAmToday = LocalDateTime(currentDate.date, START_OF_DAY)
+        val startDateTime = LocalDateTime(dayDate, START_OF_DAY)
+        val endDateTime = LocalDateTime(dayDate.plus(1, DateTimeUnit.DAY), START_OF_DAY)
 
         val focusTimes = database.getAllFocusTimesBetween(
-            from = fiveAmToday.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
-            to = currentDate.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            from = startDateTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+            to = endDateTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         )
 
         val review = reviewDay(focusTimes)
         database.addDaySummary(
             DaySummary(
-                date = fiveAmToday.date,
+                date = dayDate,
                 focusTime = focusTimes.sumOf { it.duration }.toLong(),
                 review = review.summary
             )

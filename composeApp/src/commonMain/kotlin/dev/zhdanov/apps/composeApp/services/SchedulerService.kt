@@ -1,5 +1,6 @@
 package dev.zhdanov.apps.composeApp.services
 
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 
 interface SchedulerService {
@@ -10,4 +11,4 @@ interface SchedulerService {
 
 }
 
-typealias SchedulerAction = () -> Unit
+typealias SchedulerAction = (plannedTime: Instant, actualTime: Instant, timeZone: TimeZone) -> Unit

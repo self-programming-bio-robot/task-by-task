@@ -13,7 +13,6 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.minutes
 
 class DesktopScheduler(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
@@ -50,7 +49,7 @@ class DesktopScheduler(
                         logger.i { "Run scheduler: '${scheduler.tag}'" }
 
                         addRun(scheduler.cron, scheduler.tag, scheduler.timeZone, scheduler.action)
-                        scheduler.action.invoke()
+                        scheduler.action.invoke(scheduler.nextRun, Clock.System.now(), scheduler.timeZone)
                     }
                 }
             },

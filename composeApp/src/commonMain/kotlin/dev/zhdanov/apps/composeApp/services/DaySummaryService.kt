@@ -6,6 +6,7 @@ import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.diamondedge.logging.logging
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.shared.START_OF_DAY
 import dev.zhdanov.apps.shared.cache.Database
@@ -22,7 +23,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.serialization.json.Json
-import org.lighthousegames.logging.logging
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -40,11 +40,10 @@ class DaySummaryService(
             TimeZone.currentSystemDefault()
         ) {  plannedTime, actualTime, timeZone ->
             coroutineScope.launch {
-                val currentDate = plannedTime.toLocalDateTime(timeZone).date
-                if (database.getDaySummary(currentDate) == null) {
+                try {
+                    finishDay(plannedTime.minus(1.seconds))
                     logger.i { "Finish day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${plannedTime.toLocalDateTime(timeZone)}" }
-                    finishDay()
-                } else {
+                } catch (e: Exception) {
                     logger.i { "Skip finishing day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${plannedTime.toLocalDateTime(timeZone)}" }
                 }
 
@@ -56,6 +55,11 @@ class DaySummaryService(
     suspend fun finishDay(currentDateTime: Instant = Clock.System.now()): AssistantReviewResponse {
         val dayDate = currentDateTime.minus(START_OF_DAY.toDuration())
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        if (database.getDaySummary(dayDate) != null) {
+            logger.i { "Day summary already exists for $dayDate" }
+            throw IllegalStateException("Day summary already exists for $dayDate")
+        }
 
         val startDateTime = LocalDateTime(dayDate, START_OF_DAY)
         val endDateTime = LocalDateTime(dayDate.plus(1, DateTimeUnit.DAY), START_OF_DAY)
@@ -147,6 +151,6 @@ class DaySummaryService(
     }
 
     companion object {
-        private val logger = logging(DaySummaryService::class.qualifiedName)
+       private val logger = logging()
     }
 }

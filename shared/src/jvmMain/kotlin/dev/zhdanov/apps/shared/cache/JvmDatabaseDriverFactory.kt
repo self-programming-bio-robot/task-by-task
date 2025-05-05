@@ -2,7 +2,7 @@ package dev.zhdanov.apps.shared.cache
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import org.lighthousegames.logging.logging
+import com.diamondedge.logging.logging
 import java.io.File
 
 class JvmDatabaseDriverFactory(
@@ -21,6 +21,6 @@ class JvmDatabaseDriverFactory(
     }
 
     companion object {
-        val logger = logging()
+        val logger = logging(JvmDatabaseDriverFactory::class.qualifiedName)
     }
 }

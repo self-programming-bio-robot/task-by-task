@@ -9,8 +9,7 @@ import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.datetime.LocalDate
-import org.lighthousegames.logging.logging
-import kotlin.math.log
+import com.diamondedge.logging.logging
 
 class Database(databaseDriverFactory: DatabaseDriverFactory) {
     private val driver = databaseDriverFactory.createDriver()
@@ -94,6 +93,6 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     }
 
     companion object {
-        val logger = logging()
+        val logger = logging(Database::class.qualifiedName)
     }
 }

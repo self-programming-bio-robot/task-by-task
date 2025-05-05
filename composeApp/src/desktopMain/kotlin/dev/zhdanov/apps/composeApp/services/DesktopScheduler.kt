@@ -8,7 +8,7 @@ import com.ucasoft.kcron.kotlinx.datetime.CronLocalDateTime
 import com.ucasoft.kcron.kotlinx.datetime.CronLocalDateTimeProvider
 import kotlinx.datetime.*
 import kotlinx.datetime.TimeZone
-import org.lighthousegames.logging.logging
+import com.diamondedge.logging.logging
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService

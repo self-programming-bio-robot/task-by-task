@@ -89,6 +89,8 @@ kotlin {
 
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.multiplatform.markdown.renderer)
+
+            api(libs.logging)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

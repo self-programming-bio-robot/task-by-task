@@ -20,9 +20,9 @@ val appModule = module {
     single { NotificationService() }
     single { DaySummaryService(get(), get()) }
     single { TimerSettingsService(get()) }
+    single { TimerViewModel(get(), get(), get()) }
 
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { TimerViewModel(get(), get(), get()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }

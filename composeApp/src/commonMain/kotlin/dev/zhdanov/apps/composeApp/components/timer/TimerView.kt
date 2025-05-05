@@ -17,10 +17,9 @@ import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.TimerSettings
-import dev.zhdanov.apps.composeApp.components.timer.TimerViewState
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.viewmodel.koinViewModel
+import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
 
 // Константы для общих размеров
@@ -35,7 +34,7 @@ private val BUTTON_SPACING = 8.dp
 @Composable
 @Preview
 fun TimerView() {
-    val viewModel = koinViewModel<TimerViewModel>()
+    val viewModel = koinInject<TimerViewModel>()
     val isPaused = viewModel.isPause.collectAsState()
     val isRunning = viewModel.isRunning.collectAsState()
     val time = viewModel.time.collectAsState("")
@@ -73,9 +72,9 @@ fun TimerView() {
             isRunning = isRunning.value,
             onSettingsChange = { viewModel.changeTimerSettings(it) }
         )
-        
+
         Spacer(modifier = Modifier.height(VERTICAL_SPACING))
-        
+
         // Блок кнопок управления таймером
         TimerControlButtons(
             isRunning = isRunning.value,
@@ -173,7 +172,7 @@ private fun StartButton(
     onClick: () -> Unit
 ) {
     val buttonColors = getStartButtonColors(state)
-    
+
     Button(
         colors = buttonColors,
         enabled = state != TimerViewState.FEEDBACK,
@@ -199,9 +198,9 @@ private fun ControlButtonsGroup(
         isPaused = isPaused,
         onClick = onPause
     )
-    
+
     Spacer(modifier = Modifier.width(BUTTON_SPACING))
-    
+
     // Кнопка остановки или пропуска в зависимости от состояния
     if (state == TimerViewState.WORK) {
         StopButton(onClick = onStop)

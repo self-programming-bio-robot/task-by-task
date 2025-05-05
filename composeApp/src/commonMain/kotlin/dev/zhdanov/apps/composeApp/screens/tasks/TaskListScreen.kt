@@ -132,17 +132,17 @@ fun TaskList(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
+            item {
+                NewTaskInput(
+                    onAddTask = viewModel::addNewTask
+                )
+            }
             items(tasks) { task ->
                 TaskItem(
                     task = task,
                     onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
                     onAddToday = { viewModel.updateTask(task.copy(isToday = it)) },
                     onClick = { onTaskClick(task) },
-                )
-            }
-            item {
-                NewTaskInput(
-                    onAddTask = viewModel::addNewTask
                 )
             }
         }
@@ -206,7 +206,10 @@ fun NewTaskInput(
             singleLine = true
         )
         Spacer(modifier = Modifier.width(16.dp))
-        IconButton(onClick = { onAddTask(value) }) {
+        IconButton(onClick = {
+            onAddTask(value)
+            value = ""
+        }) {
             Icon(Icons.Default.Add, contentDescription = "Add task")
         }
     }

@@ -169,24 +169,32 @@ fun TaskList(
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val todayTasks by viewModel.todayTask.collectAsState(listOf())
 
-    if (todayTasks.isEmpty()) {
-        Text("No tasks for today")
-    } else {
-        LazyColumn(
-            modifier = Modifier,
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
+
+    LazyColumn(
+        modifier = Modifier,
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        item {
+            NewTaskInput(
+                onAddTask = viewModel::addTodayTask
+            )
+        }
+        if (todayTasks.isEmpty()) {
+            item {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    text = "No tasks for today"
+                )
+            }
+        } else {
             items(todayTasks) { task ->
                 TaskItem(
                     task = task,
                     onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
                     onFocus = { onFocusOn(task) },
                     onClick = { onTaskClick(task) },
-                )
-            }
-            item {
-                NewTaskInput(
-                    onAddTask = viewModel::addTodayTask
                 )
             }
         }

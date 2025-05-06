@@ -9,5 +9,5 @@
 - [ ] Get default timer from database on start
 - [ ] Change feedback view to separate screen
 - [x] Fix bug: finish day button should review day with shift
-- [ ] Add abstract scheduler service and implementation for desktop
+- [x] Add abstract scheduler service and implementation for desktop
 - [ ] Extract start of a day to the settings

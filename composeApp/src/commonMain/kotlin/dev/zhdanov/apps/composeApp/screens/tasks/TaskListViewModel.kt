@@ -2,15 +2,17 @@ package dev.zhdanov.apps.composeApp.screens.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.CreateTask
 import dev.zhdanov.apps.shared.model.Task
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class TaskListViewModel(private val database: Database) : ViewModel() {
+class TaskListViewModel(
+    private val database: Database,
+    private val daySummaryService: DaySummaryService
+) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
 
     val tasks = _tasks.asStateFlow()
@@ -18,6 +20,9 @@ class TaskListViewModel(private val database: Database) : ViewModel() {
 
     init {
         loadTasks()
+        daySummaryService.finishDayEvents
+            .onEach { loadTasks() }
+            .launchIn(viewModelScope)
     }
 
     private fun loadTasks() {

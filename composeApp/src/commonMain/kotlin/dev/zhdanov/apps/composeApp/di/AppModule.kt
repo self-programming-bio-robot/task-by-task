@@ -26,7 +26,7 @@ val appModule = module {
     viewModel { HistoryViewModel(get()) }
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }
-    viewModel { TaskListViewModel(get()) }
+    viewModel { TaskListViewModel(get(), get()) }
     viewModel { GeneralSettingsViewModel(get()) }
 }
 

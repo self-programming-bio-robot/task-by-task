@@ -20,6 +20,7 @@ import dev.zhdanov.apps.shared.utils.toLocalDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.serialization.json.Json
@@ -31,6 +32,8 @@ class DaySummaryService(
     private val database: Database,
     private val schedulerService: SchedulerService,
 ) {
+    val finishDayEvents = MutableSharedFlow<Unit>(0)
+
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
@@ -48,6 +51,7 @@ class DaySummaryService(
                 }
 
                 database.taskRepository.cleanTodayTaskList()
+                finishDayEvents.emit(Unit)
             }
         }
     }

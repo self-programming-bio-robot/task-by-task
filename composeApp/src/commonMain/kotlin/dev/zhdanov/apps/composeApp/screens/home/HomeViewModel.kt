@@ -19,16 +19,24 @@ class HomeViewModel(
     private val _isActive = MutableStateFlow<Boolean>(false)
 
     val isActive = _isActive
-        .onStart {
-            val today = Clock.System.now()
-                .minus(5.hours)
-                .toLocalDateTime(TimeZone.currentSystemDefault())
-                .date
-            database.getDaySummary(today) ?: run {
-                _isActive.value = true
-            }
-        }
+        .onStart { checkActiveDay() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(1.seconds), false)
+
+    init {
+        daySummaryService.finishDayEvents
+            .onEach { checkActiveDay() }
+            .launchIn(viewModelScope)
+    }
+
+    private fun checkActiveDay() {
+        val today = Clock.System.now()
+            .minus(5.hours)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
+        database.getDaySummary(today) ?: run {
+            _isActive.value = true
+        }
+    }
 
     suspend fun finishDay(): AssistantReviewResponse {
         _isActive.value = false

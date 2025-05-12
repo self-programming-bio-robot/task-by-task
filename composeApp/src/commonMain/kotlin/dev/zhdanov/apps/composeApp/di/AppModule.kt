@@ -21,13 +21,13 @@ val appModule = module {
     single { DaySummaryService(get(), get()) }
     single { TimerSettingsService(get()) }
     single { TimerViewModel(get(), get(), get()) }
+    single { GeneralSettingsViewModel(get()) }
 
     viewModel { HomeViewModel(get(), get()) }
     viewModel { HistoryViewModel(get()) }
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }
     viewModel { TaskListViewModel(get(), get()) }
-    viewModel { GeneralSettingsViewModel(get()) }
 }
 
 expect val platformModule: Module

@@ -12,11 +12,14 @@ class GeneralSettingsViewModel(
     private val database: Database,
 ) : ViewModel() {
     private val _openAiToken = MutableStateFlow("")
+    private val _theme = MutableStateFlow("auto") // auto, light, dark
 
     val openAiToken = _openAiToken.asStateFlow()
+    val theme = _theme.asStateFlow()
 
     init {
         loadToken()
+        loadTheme()
     }
 
     fun loadToken() {
@@ -26,10 +29,24 @@ class GeneralSettingsViewModel(
         }
     }
 
+    fun loadTheme() {
+        viewModelScope.launch {
+            val themeValue = database.settingRepository.getSetting<String>(SettingKey.THEME)
+            _theme.value = themeValue ?: "auto"
+        }
+    }
+
     fun updateToken(newToken: String) {
         _openAiToken.value = newToken
         viewModelScope.launch {
             database.settingRepository.saveSetting(SettingKey.OPENAI_TOKEN, newToken)
+        }
+    }
+
+    fun updateTheme(newTheme: String) {
+        _theme.value = newTheme
+        viewModelScope.launch {
+            database.settingRepository.saveSetting(SettingKey.THEME, newTheme)
         }
     }
 }

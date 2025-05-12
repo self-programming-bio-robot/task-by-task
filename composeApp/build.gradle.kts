@@ -148,6 +148,8 @@ compose.desktop {
             packageName = "TaskByTask"
             packageVersion = "1.0.0"
 
+            jvmArgs += "-Dapple.awt.application.appearance=system"
+
             modules("java.sql", "java.naming")
 
             macOS {

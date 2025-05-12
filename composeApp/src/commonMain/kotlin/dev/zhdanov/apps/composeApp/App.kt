@@ -1,6 +1,9 @@
 package dev.zhdanov.apps.composeApp
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import dev.zhdanov.apps.composeApp.components.layout.AdaptiveLayout
@@ -17,13 +20,15 @@ import org.koin.core.annotation.KoinExperimentalAPI
 fun App() {
     val daySummaryService = koinInject<DaySummaryService>()
     val timerSettingsService = koinInject<TimerSettingsService>()
+    val colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
 
     LaunchedEffect(Unit) {
         daySummaryService.migration()
         timerSettingsService.migration()
     }
-
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = colors
+    ) {
         KoinContext {
             AdaptiveLayout()
         }

@@ -29,12 +29,12 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun CircularCountdownTimer(
     modifier: Modifier = Modifier,
-    accentColor: Color = Color(0xFFFF4B3E),
-    trackColor: Color = Color(0xFFEDEDED),
+    accentColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     strokeWidth: Dp = 16.dp,
-    textColor: Color = Color(0xFF232B36),
+    textColor: Color = MaterialTheme.typography.headlineLarge.color,
     label: String = "Work",
-    labelColor: Color = Color(0xFF232B36),
+    labelColor: Color = MaterialTheme.typography.titleLarge.color,
     progress: Float = 0f,
     timeString: String,
     editable: Boolean = true,
@@ -99,7 +99,7 @@ fun CircularCountdownTimer(
 fun SelectionView(
     time: String,
     editable: Boolean,
-    textColor: Color = Color(0xFF232B36),
+    textColor: Color = MaterialTheme.typography.headlineLarge.color,
     settingList: List<TimerSettings>,
     onChange: (timerSettings: TimerSettings) -> Unit
 ) {

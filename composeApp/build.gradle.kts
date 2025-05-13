@@ -13,6 +13,12 @@ plugins {
     alias(libs.plugins.compose.hotload)
 }
 
+repositories {
+    google()
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+}
+
 kotlin {
 //    @OptIn(ExperimentalWasmDsl::class)
 //    wasmJs {
@@ -97,6 +103,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.jvm)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.jsystemthemedetector)
         }
     }
 }

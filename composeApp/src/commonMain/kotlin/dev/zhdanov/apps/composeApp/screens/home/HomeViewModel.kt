@@ -6,12 +6,14 @@ import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.shared.cache.Database
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class HomeViewModel(
     private val database: Database,
     private val daySummaryService: DaySummaryService,

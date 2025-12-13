@@ -5,9 +5,10 @@ import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.model.Task
 import dev.zhdanov.apps.shared.model.TimerSettings
 import dev.zhdanov.apps.shared.utils.toLocalDate
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
 
 val daySummaryMapper = { date: Long, focusTime: Long, review: String ->
     DaySummary(
@@ -38,6 +39,7 @@ val timerSettings = { id: Long, workDuration: Long, shortBreakDuration: Long, lo
     )
 }
 
+@OptIn(ExperimentalTime::class)
 val taskMapper = { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?,
                    isCompleted: Boolean, isToday: Boolean ->
     Task(

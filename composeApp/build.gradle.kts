@@ -142,7 +142,7 @@ android {
     }
     dependencies {
         debugImplementation(compose.uiTooling)
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0-RC")
+        implementation(libs.kotlin.coroutines)
     }
 }
 

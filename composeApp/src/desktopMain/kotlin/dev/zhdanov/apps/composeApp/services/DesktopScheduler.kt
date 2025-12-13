@@ -6,14 +6,19 @@ import com.ucasoft.kcron.core.builders.DelicateIterableApi
 import com.ucasoft.kcron.core.common.WeekDays
 import com.ucasoft.kcron.kotlinx.datetime.CronLocalDateTime
 import com.ucasoft.kcron.kotlinx.datetime.CronLocalDateTimeProvider
-import kotlinx.datetime.*
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import com.diamondedge.logging.logging
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalTime::class)
 class DesktopScheduler(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 ) : SchedulerService {

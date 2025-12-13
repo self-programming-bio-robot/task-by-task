@@ -1,6 +1,7 @@
 package dev.zhdanov.apps.shared.utils
 
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -9,6 +10,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(ExperimentalTime::class)
 class DateUtils {
 
     @Test

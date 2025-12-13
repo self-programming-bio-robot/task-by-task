@@ -5,8 +5,10 @@ import dev.zhdanov.apps.shared.cache.AppDatabaseQueries
 import dev.zhdanov.apps.shared.cache.taskMapper
 import dev.zhdanov.apps.shared.model.CreateTask
 import dev.zhdanov.apps.shared.model.Task
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class TaskRepository(private val database: AppDatabaseQueries) {
 
     fun addTask(task: CreateTask) {

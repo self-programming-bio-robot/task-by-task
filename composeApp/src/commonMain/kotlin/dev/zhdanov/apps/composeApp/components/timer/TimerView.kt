@@ -17,7 +17,8 @@ import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.TimerSettings
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -30,7 +31,7 @@ private val BUTTON_SPACING = 8.dp
 /**
  * Основной компонент таймера, включающий в себя круговой таймер и кнопки управления
  */
-@OptIn(KoinExperimentalAPI::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalTime::class)
 @Composable
 @Preview
 fun TimerView() {
@@ -92,6 +93,7 @@ fun TimerView() {
  * Компонент для отображения экрана обратной связи
  */
 @Composable
+@OptIn(ExperimentalTime::class)
 private fun FeedbackScreen(
     lastPartDuration: Int,
     onExit: (CreateFocusTime?) -> Unit

@@ -93,4 +93,10 @@ class TimerSettingRepository(
             }
         }
     }
+
+    // Get the default timer setting
+    fun getDefaultTimerSetting(): TimerSettings? {
+        return database.findDefaultTimerSettings(timerSettings)
+            .executeAsOneOrNull()
+    }
 }

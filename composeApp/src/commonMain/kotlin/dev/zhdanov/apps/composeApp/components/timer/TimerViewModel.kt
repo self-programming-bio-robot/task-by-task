@@ -13,7 +13,9 @@ import dev.zhdanov.apps.shared.model.TimerSettings
 import dev.zhdanov.apps.shared.model.timer.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class TimerViewModel(
@@ -29,16 +31,7 @@ class TimerViewModel(
     private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
     private val _lastPartDuration = MutableStateFlow(0)
 
-    val time = _time.map(this::getTime)
-    val progress = _progress.asStateFlow()
-    val isRunning = _isRunning.asStateFlow()
-    val isPause = _isPause.asStateFlow()
-    val settings = _settings.asStateFlow()
-    val state = _state.asStateFlow()
-    val lastPartDuration = _lastPartDuration.asStateFlow()
-    val settingList = timerSettingsService.timerSettings.asStateFlow()
-        .map { listOf(INFINITE_TIMER_SETTINGS) + it }
-
+    // Initialize timerListener BEFORE init block
     private val timerListener: Timer.TimerListener = object : Timer.TimerListener {
         override fun onStart(stage: TimerStage) {
             _isRunning.value = true
@@ -83,6 +76,31 @@ class TimerViewModel(
     }
 
     private val _timer = MutableStateFlow<Timer>(createTimer(_settings.value))
+
+    init {
+        // Observe timer settings and load default when available
+        timerSettingsService.timerSettings
+            .onEach { loadDefaultTimer() }
+            .launchIn(viewModelScope)
+    }
+
+    private fun loadDefaultTimer() {
+        val defaultSetting = timerSettingsService.loadDefaultTimerSetting()
+        if (defaultSetting != null) {
+            _settings.value = defaultSetting
+            _timer.value = createTimer(defaultSetting)
+        }
+    }
+
+    val time = _time.map(this::getTime)
+    val progress = _progress.asStateFlow()
+    val isRunning = _isRunning.asStateFlow()
+    val isPause = _isPause.asStateFlow()
+    val settings = _settings.asStateFlow()
+    val state = _state.asStateFlow()
+    val lastPartDuration = _lastPartDuration.asStateFlow()
+    val settingList = timerSettingsService.timerSettings.asStateFlow()
+        .map { listOf(INFINITE_TIMER_SETTINGS) + it }
 
     fun startTimer() {
         _timer.value.start()

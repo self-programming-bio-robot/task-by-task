@@ -59,4 +59,9 @@ class TimerSettingsService(
         database.timerSettingRepository.setDefaultTimerSetting(id)
         loadSettings()
     }
+
+    // Load the default timer setting from database
+    fun loadDefaultTimerSetting(): TimerSettings? {
+        return database.timerSettingRepository.getDefaultTimerSetting()
+    }
 }

@@ -47,9 +47,9 @@ This document is used as a living checklist and progress tracker for the develop
 - [ ] 7.7 Integrate statistics data source
 - [ ] 7.8 Add navigation to statistics screen
 
-## 8. Get default timer from database on start
-- [ ] 8.1 Read default timer from DB
-- [ ] 8.2 Apply timer on start
+## 8. Get default timer from database on start ✅
+- [x] 8.1 Read default timer from DB
+- [x] 8.2 Apply timer on start
 
 ## 9. Change feedback view to separate screen
 - [ ] 9.1 New feedback screen UI

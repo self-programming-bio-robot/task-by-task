@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
@@ -13,14 +14,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.shared.model.TimerSettings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(KoinExperimentalAPI::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TimersSettings(
     onItemClick: (item: TimerSettings) -> Unit,
@@ -31,41 +31,44 @@ fun TimersSettings(
     val timerSettings by viewModel.timerSettings.collectAsState(emptyList())
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-    ) {
-//        Row(verticalAlignment = Alignment.CenterVertically) {
-//            IconButton(onClick = { onBack() }) {
-//                Icon(
-//                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-//                    contentDescription = "Back",
-//                    tint = Color.Black
-//                )
-//            }
-//            Spacer(Modifier.width(8.dp))
-//            Text(
-//                "Timers",
-//                modifier = Modifier.padding(8.dp),
-//                style = MaterialTheme.typography.headlineLarge
-//            )
-//            Spacer(Modifier.weight(1f))
-//            Button(onClick = { onCreate() }) {
-//                Text(
-//                    "New",
-//                    style = MaterialTheme.typography.bodyMedium
-//                )
-//            }
-//        }
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Timers") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    FilledTonalIconButton(onClick = onCreate) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "New Timer"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
         if (isLoading) {
-            CircularProgressIndicator()
-        } else {
-            LazyColumn(
-                // todo: add scroll
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(timerSettings) { item ->
@@ -91,9 +94,7 @@ fun TimerSettingsCompactView(
     val isDefault = settings.default
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp),
         onClick = { onClick() }
     ) {

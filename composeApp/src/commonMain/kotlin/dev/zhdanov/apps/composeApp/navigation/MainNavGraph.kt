@@ -2,10 +2,9 @@ package dev.zhdanov.apps.composeApp.navigation
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.ui.NavDisplay
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
@@ -15,46 +14,48 @@ import dev.zhdanov.apps.composeApp.screens.tasks.TaskListScreen
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun MainNavGraph(
-    navController: NavHostController,
-    startDestination: Screen = Screen.Home
+    viewModel: NavigationViewModel
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
-        composable<Screen.Home> {
-            HomeScreen(
-                onFinishDay = { review ->
-                    navController.navigate(Screen.FinishedDay(review.summary, review.response))
+    NavDisplay(
+        backStack = viewModel.backStack,
+        onBack = { viewModel.goBack() },
+        entryProvider = { key ->
+            when (key) {
+                is Screen.Home -> NavEntry(key as NavKey) {
+                    HomeScreen(
+                        onFinishDay = { review ->
+                            viewModel.navigateTo(Screen.FinishedDay(review.summary, review.response))
+                        }
+                    )
                 }
-            )
-        }
 
-        composable<Screen.History> {
-            HistoryScreen()
-        }
+                is Screen.History -> NavEntry(key as NavKey) {
+                    HistoryScreen()
+                }
 
-        composable<Screen.FinishedDay> { backStackEntry ->
-            val route = backStackEntry.toRoute<Screen.FinishedDay>()
-            FinishedDayScreen(route.summary, route.response) {
-                navController.navigate(Screen.History) {
-                    popUpTo(Screen.FinishedDay(route.summary, route.response)) {
-                        inclusive = true
+                is Screen.FinishedDay -> NavEntry(key as NavKey) {
+                    FinishedDayScreen(key.summary, key.response) {
+                        viewModel.popUpTo(key, inclusive = true)
+                        viewModel.navigateTo(Screen.History)
                     }
+                }
+
+                is Screen.Settings -> NavEntry(key as NavKey) {
+                    SettingsScreen(
+                        onBack = {
+                            viewModel.goBack()
+                        }
+                    )
+                }
+
+                is Screen.TaskList -> NavEntry(key as NavKey) {
+                    TaskListScreen()
+                }
+
+                else -> NavEntry(Unit as NavKey) {
+                    // Unknown route
                 }
             }
         }
-
-        composable<Screen.Settings> {
-            SettingsScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable<Screen.TaskList> {
-            TaskListScreen()
-        }
-    }
+    )
 }

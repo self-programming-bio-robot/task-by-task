@@ -2,7 +2,6 @@ package dev.zhdanov.apps.composeApp.components.layout
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -10,10 +9,11 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.NavKey
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.navigation.MainNavGraph
+import dev.zhdanov.apps.composeApp.navigation.NavigationViewModel
 import dev.zhdanov.apps.composeApp.navigation.Screen
 
 val menuItems = listOf(
@@ -27,24 +27,24 @@ val menuItems = listOf(
 @Composable
 fun AdaptiveLayout() {
     val windowInfo = currentWindowAdaptiveInfo()
-    val navController = rememberNavController()
+    val viewModel: NavigationViewModel = viewModel { NavigationViewModel() }
 
     when (windowInfo.windowSizeClass.windowWidthSizeClass) {
         WindowWidthSizeClass.COMPACT -> {
             NavigationBarLayout(
                 menuItems = menuItems,
-                navController = navController,
+                viewModel = viewModel,
             ) {
-                MainNavGraph(navController = navController)
+                MainNavGraph(viewModel = viewModel)
             }
         }
 
         else -> {
             NavigationRailLayout(
                 menuItems = menuItems,
-                navController = navController,
+                viewModel = viewModel,
             ) {
-                MainNavGraph(navController = navController)
+                MainNavGraph(viewModel = viewModel)
             }
         }
     }
@@ -55,10 +55,11 @@ fun AdaptiveLayout() {
 fun NavigationRailLayout(
     modifier: Modifier = Modifier,
     menuItems: List<Screen> = listOf(),
-    navController: NavHostController,
+    viewModel: NavigationViewModel,
     content: @Composable () -> Unit,
 ) {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    val currentKey = viewModel.backStack.lastOrNull()
+    val selectedIndex = rememberSelectedIndex(menuItems, currentKey)
 
     Row {
         NavigationRail(
@@ -72,7 +73,7 @@ fun NavigationRailLayout(
         ) {
             Column(
                 modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.Center, // Aligns items vertically to the center
+                verticalArrangement = Arrangement.Center,
             ) {
                 menuItems.forEachIndexed { index, item ->
                     NavigationRailItem(
@@ -83,10 +84,9 @@ fun NavigationRailLayout(
                             )
                         },
                         label = { Text(item.title) },
-                        selected = selectedItem == index,
+                        selected = selectedIndex == index,
                         onClick = {
-                            selectedItem = index
-                            navController.navigate(item)
+                            viewModel.navigateAndClear(item)
                         }
                     )
                 }
@@ -102,10 +102,11 @@ fun NavigationRailLayout(
 fun NavigationBarLayout(
     modifier: Modifier = Modifier,
     menuItems: List<Screen> = listOf(),
-    navController: NavHostController,
+    viewModel: NavigationViewModel,
     content: @Composable () -> Unit,
 ) {
-    var selectedItem by remember { mutableIntStateOf(0) }
+    val currentKey = viewModel.backStack.lastOrNull()
+    val selectedIndex = rememberSelectedIndex(menuItems, currentKey)
 
     Scaffold(
         modifier = modifier,
@@ -122,10 +123,9 @@ fun NavigationBarLayout(
                             )
                         },
                         label = { Text(item.title) },
-                        selected = selectedItem == index,
+                        selected = selectedIndex == index,
                         onClick = {
-                            selectedItem = index
-                            navController.navigate(item)
+                            viewModel.navigateAndClear(item)
                         }
                     )
                 }
@@ -137,4 +137,11 @@ fun NavigationBarLayout(
             }
         }
     )
+}
+
+@Composable
+private fun rememberSelectedIndex(menuItems: List<Screen>, currentKey: NavKey?): Int {
+    return remember(menuItems, currentKey) {
+        menuItems.indexOfFirst { it == currentKey }.takeIf { it >= 0 } ?: 0
+    }
 }

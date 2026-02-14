@@ -8,6 +8,7 @@ import androidx.compose.material.icons.sharp.HistoryEdu
 import androidx.compose.material.icons.sharp.Home
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -15,7 +16,7 @@ import kotlinx.serialization.Transient
 sealed class Screen(
     val title: String,
     @Transient val icon: ImageVector = Icons.Outlined.Close,
-) {
+) : NavKey {
     @Serializable
     data object Home : Screen("Home", Icons.Sharp.Home)
 

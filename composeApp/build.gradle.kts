@@ -86,6 +86,11 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.viewmodel.compose)
 
+            // Navigation 3
+            implementation(libs.navigation3.ui)
+            implementation(libs.lifecycle.viewmodel.navigation3)
+            implementation(libs.adaptive.navigation3)
+
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)

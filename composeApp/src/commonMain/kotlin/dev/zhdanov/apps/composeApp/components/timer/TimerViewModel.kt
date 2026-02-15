@@ -17,7 +17,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class TimerViewModel(
     private val notificationService: NotificationService,
     private val database: Database,
@@ -31,10 +34,24 @@ class TimerViewModel(
     private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
     private val _lastPartDuration = MutableStateFlow(0)
 
+    // Track focus session start time
+    private val _focusSessionStart = MutableStateFlow<Long?>(null)
+
+    // Track cumulative pause time
+    private val _totalPauseTime = MutableStateFlow(0)
+
+    // Track when pause began for calculating pause duration
+    private var _pauseStartTime: Long? = null
+
     // Initialize timerListener BEFORE init block
     private val timerListener: Timer.TimerListener = object : Timer.TimerListener {
         override fun onStart(stage: TimerStage) {
             _isRunning.value = true
+
+            // Track focus session start when work stage begins
+            if (stage == TimerStage.WORK && _focusSessionStart.value == null) {
+                _focusSessionStart.value = Clock.System.now().toEpochMilliseconds()
+            }
         }
 
         override fun onFinish(old: TimerStage, new: TimerStage, duration: Int) {
@@ -60,6 +77,19 @@ class TimerViewModel(
 
         override fun onPause(isPaused: Boolean) {
             _isPause.value = isPaused
+
+            // Track pause time accumulation
+            if (isPaused) {
+                // Pause started - record timestamp
+                _pauseStartTime = Clock.System.now().toEpochMilliseconds()
+            } else {
+                // Pause ended - calculate duration and add to total
+                _pauseStartTime?.let { pauseStart ->
+                    val pauseDuration = ((Clock.System.now().toEpochMilliseconds() - pauseStart) / 1000).toInt()
+                    _totalPauseTime.value += pauseDuration
+                }
+                _pauseStartTime = null
+            }
         }
 
         override fun onTick(time: Int, progress: Float) {
@@ -108,8 +138,38 @@ class TimerViewModel(
 
     fun saveFeedback(feedback: CreateFocusTime) {
         viewModelScope.launch {
-            database.addFocusTime(feedback)
+            val pauseTime = calculatePauseTime()
+
+            val focusTimeWithPause = CreateFocusTime(
+                duration = feedback.duration,
+                feedback = feedback.feedback,
+                finishedAt = feedback.finishedAt,
+                startedAt = _focusSessionStart.value,
+                pauseTime = pauseTime
+            )
+
+            database.addFocusTime(focusTimeWithPause)
+            resetFocusTracking()
         }
+    }
+
+    private fun calculatePauseTime(): Int? {
+        val focusStart = _focusSessionStart.value ?: return null
+        val now = Clock.System.now().toEpochMilliseconds()
+        val totalElapsedSeconds = (now - focusStart) / 1000
+        val timerDuration = _lastPartDuration.value
+
+        // Calculate pause time: total elapsed - active timer time
+        val calculatedPause = (totalElapsedSeconds - timerDuration).toInt().coerceAtLeast(0)
+
+        // Use the maximum of tracked pauses and calculated value for accuracy
+        return maxOf(_totalPauseTime.value, calculatedPause).takeIf { it > 0 }
+    }
+
+    private fun resetFocusTracking() {
+        _focusSessionStart.value = null
+        _totalPauseTime.value = 0
+        _pauseStartTime = null
     }
 
     fun closeFeedback() {
@@ -121,6 +181,7 @@ class TimerViewModel(
 
     fun stopTimer() {
         _timer.value.reset()
+        resetFocusTracking()
     }
 
     fun pauseTimer() {

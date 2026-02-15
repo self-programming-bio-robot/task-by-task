@@ -21,10 +21,10 @@ This document is used as a living checklist and progress tracker for the develop
 ## 2. Detail day review screen with list of notes
 - [ ] 2.1 UI for notes list in a extra pane
 
-## 3. Add a start of focus time, to calculate pause time
-- [ ] 3.1 Track focus start
-- [ ] 3.2 Calculate total pause time((current time - start of focus time) - timer duration)
-- [ ] 3.3 Save total pause time
+## 3. Add a start of focus time, to calculate pause time ✅
+- [x] 3.1 Track focus start
+- [x] 3.2 Calculate total pause time((current time - start of focus time) - timer duration)
+- [x] 3.3 Save total pause time
 
 ## 4. Choosing timer type on start ✅
 - [x] 4.1 UI for timer type selection

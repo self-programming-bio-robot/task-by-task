@@ -44,16 +44,20 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         addFocusTime(
             duration = focusTime.duration.toLong(),
             finishedAt = focusTime.finishedAt,
-            feedback = focusTime.feedback
+            feedback = focusTime.feedback,
+            startedAt = focusTime.startedAt,
+            pauseTime = focusTime.pauseTime?.toLong()
         )
     }
 
-    fun addFocusTime(duration: Long, finishedAt: Long, feedback: String?) {
+    fun addFocusTime(duration: Long, finishedAt: Long, feedback: String?, startedAt: Long? = null, pauseTime: Long? = null) {
         dbQuery.transaction {
             dbQuery.insertFocusTime(
                 duration = duration,
                 feedback = feedback,
-                finishedAt = finishedAt
+                finishedAt = finishedAt,
+                startedAt = startedAt,
+                pauseTime = pauseTime
             )
         }
     }

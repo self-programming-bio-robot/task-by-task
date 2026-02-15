@@ -8,6 +8,8 @@ data class FocusTime(
     val duration: Int,
     val feedback: String,
     val finishedAt: Long,
+    val startedAt: Long? = null,
+    val pauseTime: Int? = null,
 )
 
 @Serializable
@@ -15,4 +17,6 @@ data class CreateFocusTime(
     val duration: Int,
     val feedback: String,
     val finishedAt: Long,
+    val startedAt: Long? = null,
+    val pauseTime: Int? = null,
 )

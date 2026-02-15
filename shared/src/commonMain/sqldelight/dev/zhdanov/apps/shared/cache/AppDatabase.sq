@@ -4,12 +4,14 @@ CREATE TABLE IF NOT EXISTS FocusTime (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     duration INTEGER NOT NULL,
     feedback TEXT,
-    finishedAt INTEGER NOT NULL
+    finishedAt INTEGER NOT NULL,
+    startedAt INTEGER,
+    pauseTime INTEGER
 );
 
 insertFocusTime:
-INSERT INTO FocusTime (duration, feedback, finishedAt)
-VALUES (?, ?, ?);
+INSERT INTO FocusTime (duration, feedback, finishedAt, startedAt, pauseTime)
+VALUES (?, ?, ?, ?, ?);
 
 selectAllFocusTimes:
 SELECT * FROM FocusTime;

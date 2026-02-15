@@ -20,6 +20,8 @@ This document is used as a living checklist and progress tracker for the develop
 
 ## 2. Detail day review screen with list of notes ✅
 - [x] 2.1 UI for notes list in a extra pane
+- [ ] 2.2 Add support detail review screen in separate screen. Open it on new screen with back navigation.
+- [ ] 2.3 Add support several tasks in one focus time.
 
 ## 3. Add a start of focus time, to calculate pause time ✅
 - [x] 3.1 Track focus start
@@ -62,9 +64,9 @@ This document is used as a living checklist and progress tracker for the develop
 - [x] 11.1 Abstract scheduler service
 - [x] 11.2 Desktop implementation
 
-## 12. Extract start of a day to the settings ✅
-- [x] 12.1 Move start of day logic to settings(general settings)
-- [x] 12.2 UI for setting start of day
+## 12. Extract start of a day to the settings
+- [ ] 12.1 Move start of day logic to settings(general settings)
+- [ ] 12.2 UI for setting start of day
 
 ## 13. Focus on task ✅
 - [x] 13.1 Add button to task list for selecting a focus task from today's tasks

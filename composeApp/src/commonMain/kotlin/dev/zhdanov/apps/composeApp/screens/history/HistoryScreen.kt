@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notes
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -28,7 +26,6 @@ import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.Task
 import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -45,15 +42,27 @@ fun HistoryScreen(
     val history = viewModel.history.collectAsState(listOf())
     val isLoading = viewModel.isLoading.collectAsState(initial = false)
     val windowInfo = currentWindowAdaptiveInfo()
-    val coroutineScope = rememberCoroutineScope()
     val navigator = rememberSupportingPaneScaffoldNavigator<LocalDate>()
-    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
-    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
-        RectangleShape else MaterialTheme.shapes.medium
 
-    // Selected day for detail view
+    val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.MEDIUM
+    val padding = if (isCompact) 0.dp else 16.dp
+    val shape = if (isCompact) RectangleShape else MaterialTheme.shapes.medium
+
+    // Selected day for detail view (only used in wide mode)
     var selectedDay by remember { mutableStateOf<DaySummary?>(null) }
     var focusTimesForDay by remember { mutableStateOf<List<FocusTimeWithTasks>>(emptyList()) }
+
+    // Handle day click based on screen size
+    val handleDayClick: (DaySummary) -> Unit = { daySummary ->
+        if (isCompact) {
+            // On compact screens, navigate to detail screen
+            onNavigateToDayDetail(daySummary.date)
+        } else {
+            // On wide screens, show in supporting pane
+            selectedDay = daySummary
+            focusTimesForDay = viewModel.getFocusTimesWithTasksForDate(daySummary.date)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -61,74 +70,96 @@ fun HistoryScreen(
         },
         content = { paddings ->
             Box(modifier = Modifier.padding(paddings)) {
-                SupportingPaneScaffold(
-                    modifier = Modifier
-                        .padding(start = padding, end = padding, bottom = padding),
-                    directive = navigator.scaffoldDirective,
-                    value = navigator.scaffoldValue,
-                    mainPane = {
-                        AnimatedPane {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = shape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isLoading.value) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(50.dp)
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        HistoryList(
-                                            items = history.value,
-                                            onDayClick = { daySummary ->
-                                                selectedDay = daySummary
-                                                focusTimesForDay = viewModel.getFocusTimesWithTasksForDate(daySummary.date)
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    supportingPane = {
-                        AnimatedPane {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        shape = shape
-                                    ),
-                            ) {
-                                selectedDay?.let { day ->
-                                    DayNotesList(
-                                        daySummary = day,
-                                        focusTimes = focusTimesForDay,
-                                        onNavigateToTask = onNavigateToTask,
-                                        onOpenDetail = { onNavigateToDayDetail(day.date) }
-                                    )
-                                } ?: run {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            "Select a day to view notes",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    }
-                                }
-                            }
+                if (isCompact) {
+                    // Compact mode: just show the list
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = shape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading.value) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(50.dp)
+                            )
+                        } else {
+                            HistoryList(
+                                items = history.value,
+                                onDayClick = handleDayClick
+                            )
                         }
                     }
-                )
+                } else {
+                    // Wide mode: show supporting pane scaffold
+                    SupportingPaneScaffold(
+                        modifier = Modifier
+                            .padding(start = padding, end = padding, bottom = padding),
+                        directive = navigator.scaffoldDirective,
+                        value = navigator.scaffoldValue,
+                        mainPane = {
+                            AnimatedPane {
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = shape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isLoading.value) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(50.dp)
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            HistoryList(
+                                                items = history.value,
+                                                onDayClick = handleDayClick
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        supportingPane = {
+                            AnimatedPane {
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = shape
+                                        ),
+                                ) {
+                                    selectedDay?.let { day ->
+                                        DayNotesList(
+                                            daySummary = day,
+                                            focusTimes = focusTimesForDay,
+                                            onNavigateToTask = onNavigateToTask
+                                        )
+                                    } ?: run {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "Select a day to view notes",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
     )
@@ -138,34 +169,20 @@ fun HistoryScreen(
 private fun DayNotesList(
     daySummary: DaySummary,
     focusTimes: List<FocusTimeWithTasks>,
-    onNavigateToTask: (Long) -> Unit,
-    onOpenDetail: () -> Unit
+    onNavigateToTask: (Long) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header with open detail button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Notes for ${daySummary.date}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            IconButton(onClick = onOpenDetail) {
-                Icon(
-                    imageVector = Icons.Default.OpenInNew,
-                    contentDescription = "Open in detail screen",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-        }
+        // Header
+        Text(
+            text = "Notes for ${daySummary.date}",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         // Focus sessions with notes

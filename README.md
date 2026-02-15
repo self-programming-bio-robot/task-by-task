@@ -62,13 +62,13 @@ This document is used as a living checklist and progress tracker for the develop
 - [x] 11.1 Abstract scheduler service
 - [x] 11.2 Desktop implementation
 
-## 12. Extract start of a day to the settings
-- [ ] 12.1 Move start of day logic to settings(general settings)
-- [ ] 12.2 UI for setting start of day
+## 12. Extract start of a day to the settings ✅
+- [x] 12.1 Move start of day logic to settings(general settings)
+- [x] 12.2 UI for setting start of day
 
-## 13. Focus on task
+## 13. Focus on task ✅
 - [x] 13.1 Add button to task list for selecting a focus task from today's tasks
-- [ ] 13.2 Link selected task to focus time entity
-- [ ] 13.3 Update statistics logic to support focus-task linkage
-- [ ] 13.4 UI indication of focused task during focus session
-- [ ] 13.5 Display linked focus task in day statistics of focus time
+- [x] 13.2 Link selected task to focus time entity
+- [x] 13.3 Update statistics logic to support focus-task linkage
+- [x] 13.4 UI indication of focused task during focus session
+- [x] 13.5 Display linked focus task in day statistics of focus time

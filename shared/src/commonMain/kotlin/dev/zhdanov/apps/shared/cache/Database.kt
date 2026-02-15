@@ -55,6 +55,12 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         } catch (e: Exception) {
             // Column already exists, ignore
         }
+        try {
+            // Add taskId column if it doesn't exist
+            driver.execute(4, "ALTER TABLE FocusTime ADD COLUMN taskId INTEGER", 0)
+        } catch (e: Exception) {
+            // Column already exists, ignore
+        }
     }
 
     fun addFocusTime(focusTime: CreateFocusTime) {
@@ -63,18 +69,20 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
             finishedAt = focusTime.finishedAt,
             feedback = focusTime.feedback,
             startedAt = focusTime.startedAt,
-            pauseTime = focusTime.pauseTime?.toLong()
+            pauseTime = focusTime.pauseTime?.toLong(),
+            taskId = focusTime.taskId
         )
     }
 
-    fun addFocusTime(duration: Long, finishedAt: Long, feedback: String?, startedAt: Long? = null, pauseTime: Long? = null) {
+    fun addFocusTime(duration: Long, finishedAt: Long, feedback: String?, startedAt: Long? = null, pauseTime: Long? = null, taskId: Long? = null) {
         dbQuery.transaction {
             dbQuery.insertFocusTime(
                 duration = duration,
                 feedback = feedback,
                 finishedAt = finishedAt,
                 startedAt = startedAt,
-                pauseTime = pauseTime
+                pauseTime = pauseTime,
+                taskId = taskId
             )
         }
     }

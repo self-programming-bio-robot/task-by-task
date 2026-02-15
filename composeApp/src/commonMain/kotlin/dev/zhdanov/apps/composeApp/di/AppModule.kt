@@ -9,7 +9,9 @@ import dev.zhdanov.apps.composeApp.screens.history.HistoryViewModel
 import dev.zhdanov.apps.composeApp.screens.home.HomeViewModel
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
+import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
+import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -18,13 +20,15 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { NotificationService() }
-    single { DaySummaryService(get(), get()) }
+    single<TaskRepository> { get<dev.zhdanov.apps.shared.cache.Database>().taskRepository }
+    single { DaySummaryService(get(), get(), get()) }
     single { TimerSettingsService(get()) }
-    single { TimerViewModel(get(), get(), get()) }
+    single { FocusTaskService() }
+    single { TimerViewModel(get(), get(), get(), get()) }
     single { GeneralSettingsViewModel(get()) }
 
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { HistoryViewModel(get()) }
+    viewModel { HistoryViewModel(get(), get()) }
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }
     viewModel { TaskListViewModel(get(), get()) }

@@ -18,14 +18,15 @@ val daySummaryMapper = { date: Long, focusTime: Long, review: String ->
     )
 }
 
-val focusTimeMapper = { id: Long, duration: Long, feedback: String?, finishedAt: Long, startedAt: Long?, pauseTime: Long? ->
+val focusTimeMapper = { id: Long, duration: Long, feedback: String?, finishedAt: Long, startedAt: Long?, pauseTime: Long?, taskId: Long? ->
     FocusTime(
         id = id,
         duration = duration.toInt(),
         feedback = feedback ?: "",
         finishedAt = finishedAt,
         startedAt = startedAt,
-        pauseTime = pauseTime?.toInt()
+        pauseTime = pauseTime?.toInt(),
+        taskId = taskId
     )
 }
 

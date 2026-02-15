@@ -1,14 +1,22 @@
 package dev.zhdanov.apps.composeApp.components.timer
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.ButtonDefaults.outlinedButtonColors
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.capitalize
@@ -22,11 +30,64 @@ import kotlin.time.ExperimentalTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
+import dev.zhdanov.apps.composeApp.services.FocusTaskService
+import dev.zhdanov.apps.shared.model.Task
 
 // Константы для общих размеров
 private val TIMER_SIZE = 250.dp
 private val VERTICAL_SPACING = 16.dp
 private val BUTTON_SPACING = 8.dp
+
+/**
+ * UI Component: FocusedTaskIndicator
+ * Location: Above circular timer in TimerView
+ * Shows: Focus icon + task title + clear button
+ * Background: MaterialTheme.colorScheme.primaryContainer
+ */
+@Composable
+private fun FocusedTaskIndicator(
+    task: Task,
+    onClear: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CenterFocusStrong,
+                contentDescription = "Focused task",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = onClear,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Clear focused task",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
+}
 
 /**
  * Основной компонент таймера, включающий в себя круговой таймер и кнопки управления
@@ -36,6 +97,7 @@ private val BUTTON_SPACING = 8.dp
 @Preview
 fun TimerView() {
     val viewModel = koinInject<TimerViewModel>()
+    val focusTaskService = koinInject<FocusTaskService>()
     val isPaused = viewModel.isPause.collectAsState()
     val isRunning = viewModel.isRunning.collectAsState()
     val time = viewModel.time.collectAsState("")
@@ -43,6 +105,7 @@ fun TimerView() {
     val state = viewModel.state.collectAsState()
     val settingList = viewModel.settingList.collectAsState(listOf<TimerSettings>())
     val lastPartDuration = viewModel.lastPartDuration.collectAsState()
+    val focusedTask by focusTaskService.focusedTask.collectAsState()
 
     // Определение цветов в зависимости от состояния таймера
     val accentColor = getAccentColorForState(state.value)
@@ -63,6 +126,15 @@ fun TimerView() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Show focused task indicator if present
+        focusedTask?.let { task ->
+            FocusedTaskIndicator(
+                task = task,
+                onClear = { focusTaskService.clearFocusedTask() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         // Компонент кругового таймера
         TimerCircle(
             progress = progress.value,

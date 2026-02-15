@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
+import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.INFINITE_TIMER_SETTINGS
@@ -25,6 +26,7 @@ class TimerViewModel(
     private val notificationService: NotificationService,
     private val database: Database,
     private val timerSettingsService: TimerSettingsService,
+    private val focusTaskService: FocusTaskService,
 ) : ViewModel() {
     private val _time = MutableStateFlow(0)
     private val _progress = MutableStateFlow(0f)
@@ -139,13 +141,15 @@ class TimerViewModel(
     fun saveFeedback(feedback: CreateFocusTime) {
         viewModelScope.launch {
             val pauseTime = calculatePauseTime()
+            val focusedTaskId = focusTaskService.getFocusedTaskId()
 
             val focusTimeWithPause = CreateFocusTime(
                 duration = feedback.duration,
                 feedback = feedback.feedback,
                 finishedAt = feedback.finishedAt,
                 startedAt = _focusSessionStart.value,
-                pauseTime = pauseTime
+                pauseTime = pauseTime,
+                taskId = focusedTaskId
             )
 
             database.addFocusTime(focusTimeWithPause)

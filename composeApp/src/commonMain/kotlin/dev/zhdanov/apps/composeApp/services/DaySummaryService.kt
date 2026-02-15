@@ -10,9 +10,11 @@ import com.diamondedge.logging.logging
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.shared.START_OF_DAY
 import dev.zhdanov.apps.shared.cache.Database
+import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.model.SettingKey
+import dev.zhdanov.apps.shared.model.TaskSummary
 import dev.zhdanov.apps.shared.prompts.REVIEW_DAY_PROMPT
 import dev.zhdanov.apps.shared.utils.startOfDayWithShift
 import dev.zhdanov.apps.shared.utils.toDuration
@@ -39,6 +41,7 @@ import kotlin.uuid.ExperimentalUuidApi
 class DaySummaryService(
     private val database: Database,
     private val schedulerService: SchedulerService,
+    private val taskRepository: TaskRepository,
 ) {
     val finishDayEvents = MutableSharedFlow<Unit>(0)
 
@@ -81,17 +84,38 @@ class DaySummaryService(
             to = endDateTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         )
 
+        // Build linked tasks summary
+        val linkedTasks = buildLinkedTasks(focusTimes)
+
         val review = reviewDay(focusTimes)
         database.addDaySummary(
             DaySummary(
                 date = dayDate,
                 focusTime = focusTimes.sumOf { it.duration }.toLong(),
-                review = review.summary
+                review = review.summary,
+                linkedTasks = linkedTasks
             )
         )
 
         logger.d { review }
         return review
+    }
+
+    private fun buildLinkedTasks(focusTimes: List<FocusTime>): List<TaskSummary> {
+        val tasksMap = taskRepository.getAllTasks().associateBy { it.id }
+
+        return focusTimes
+            .filter { it.taskId != null }
+            .groupBy { it.taskId!! }
+            .map { (taskId, times) ->
+                val task = tasksMap[taskId]
+                TaskSummary(
+                    taskId = taskId,
+                    title = task?.title ?: "Unknown task",
+                    totalDuration = times.sumOf { it.duration }.toLong()
+                )
+            }
+            .sortedByDescending { it.totalDuration }
     }
 
     fun migration() {

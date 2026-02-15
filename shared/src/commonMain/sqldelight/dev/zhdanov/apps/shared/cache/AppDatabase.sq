@@ -6,12 +6,13 @@ CREATE TABLE IF NOT EXISTS FocusTime (
     feedback TEXT,
     finishedAt INTEGER NOT NULL,
     startedAt INTEGER,
-    pauseTime INTEGER
+    pauseTime INTEGER,
+    taskId INTEGER
 );
 
 insertFocusTime:
-INSERT INTO FocusTime (duration, feedback, finishedAt, startedAt, pauseTime)
-VALUES (?, ?, ?, ?, ?);
+INSERT INTO FocusTime (duration, feedback, finishedAt, startedAt, pauseTime, taskId)
+VALUES (?, ?, ?, ?, ?, ?);
 
 selectAllFocusTimes:
 SELECT * FROM FocusTime;

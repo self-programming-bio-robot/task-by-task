@@ -29,7 +29,7 @@ val appModule = module {
     single { FocusTaskService() }
     single { ChatService(get(), get()) }
     single { TimerViewModel(get(), get(), get(), get()) }
-    single { GeneralSettingsViewModel(get()) }
+    single { GeneralSettingsViewModel(get(), get()) }
     single { FinishedDayViewModel(get()) }
     single { StatisticsViewModel(get()) }
 

@@ -49,7 +49,7 @@ This document is used as a living checklist and progress tracker for the develop
 - [x] 7.7 Integrate statistics data source
 - [x] 7.8 Add navigation to statistics screen
 
-## 8. Get default timer from database on start ✅
+## 8. Get default timer from database on start ✅    
 - [x] 8.1 Read default timer from DB
 - [x] 8.2 Apply timer on start
 
@@ -64,9 +64,9 @@ This document is used as a living checklist and progress tracker for the develop
 - [x] 11.1 Abstract scheduler service
 - [x] 11.2 Desktop implementation
 
-## 12. Extract start of a day to the settings
-- [ ] 12.1 Move start of day logic to settings(general settings)
-- [ ] 12.2 UI for setting start of day
+## 12. Extract start of a day to the settings ✅
+- [x] 12.1 Move start of day logic to settings(general settings)
+- [x] 12.2 UI for setting start of day
 
 ## 13. Focus on task ✅
 - [x] 13.1 Add button to task list for selecting a focus task from today's tasks

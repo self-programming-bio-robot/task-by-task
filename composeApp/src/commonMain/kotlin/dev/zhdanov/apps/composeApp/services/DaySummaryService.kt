@@ -8,7 +8,8 @@ import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
 import com.diamondedge.logging.logging
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
-import dev.zhdanov.apps.shared.START_OF_DAY
+import dev.zhdanov.apps.shared.DEFAULT_START_OF_DAY
+import dev.zhdanov.apps.shared.StartOfDaySetting
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import dev.zhdanov.apps.shared.model.DaySummary
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
@@ -33,6 +35,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -57,12 +60,39 @@ class DaySummaryService(
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
+    /**
+     * Get start of day from settings, or return default if not set.
+     */
+    private fun getStartOfDay(): LocalTime {
+        return database.settingRepository.getSetting<StartOfDaySetting>(SettingKey.START_OF_DAY)
+            ?.toLocalTime()
+            ?: DEFAULT_START_OF_DAY
+    }
+
+    /**
+     * Get start of day as Duration from midnight.
+     */
+    private fun getStartOfDayDuration(): Duration {
+        val startOfDay = getStartOfDay()
+        return startOfDay.toDuration()
+    }
+
     init {
+        // Initial scheduler setup with current start of day setting
+        updateScheduler()
+    }
+
+    /**
+     * Update the scheduler with the current start of day setting.
+     * Call this when the start of day setting changes.
+     */
+    fun updateScheduler() {
+        val startOfDay = getStartOfDay()
         schedulerService.addScheduler(
             "Finish day",
-            "${START_OF_DAY.minute} ${START_OF_DAY.hour} * * *",
+            "${startOfDay.minute} ${startOfDay.hour} * * *",
             TimeZone.currentSystemDefault()
-        ) {  plannedTime, actualTime, timeZone ->
+        ) { plannedTime, actualTime, timeZone ->
             coroutineScope.launch {
                 try {
                     finishDay(plannedTime.minus(1.seconds))
@@ -78,7 +108,8 @@ class DaySummaryService(
     }
 
     suspend fun finishDay(currentDateTime: Instant = Clock.System.now()): AssistantReviewResponse {
-        val dayDate = currentDateTime.minus(START_OF_DAY.toDuration())
+        val startOfDayDuration = getStartOfDayDuration()
+        val dayDate = currentDateTime.minus(startOfDayDuration)
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
 
         if (database.getDaySummary(dayDate) != null) {
@@ -86,8 +117,9 @@ class DaySummaryService(
             throw IllegalStateException("Day summary already exists for $dayDate")
         }
 
-        val startDateTime = LocalDateTime(dayDate, START_OF_DAY)
-        val endDateTime = LocalDateTime(dayDate.plus(1, DateTimeUnit.DAY), START_OF_DAY)
+        val startOfDay = getStartOfDay()
+        val startDateTime = LocalDateTime(dayDate, startOfDay)
+        val endDateTime = LocalDateTime(dayDate.plus(1, DateTimeUnit.DAY), startOfDay)
 
         val focusTimes = database.getAllFocusTimesBetween(
             from = startDateTime.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
@@ -133,12 +165,13 @@ class DaySummaryService(
     }
 
     fun migration() {
-        val startOfToday = startOfDayWithShift(Clock.System.now(), shift = START_OF_DAY.toDuration())
+        val startOfDayDuration = getStartOfDayDuration()
+        val startOfToday = startOfDayWithShift(Clock.System.now(), shift = startOfDayDuration)
         database.getAllFocusTimesBetween(0L, startOfToday.toEpochMilliseconds())
             .groupBy {
                 Instant
                     .fromEpochMilliseconds(it.finishedAt)
-                    .minus(START_OF_DAY.toDuration())
+                    .minus(startOfDayDuration)
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .date
             }

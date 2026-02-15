@@ -2,6 +2,7 @@ package dev.zhdanov.apps.shared
 
 import dev.zhdanov.apps.shared.model.TimerSettings
 import kotlinx.datetime.LocalTime
+import kotlinx.serialization.Serializable
 
 const val SERVER_PORT = 8080
 
@@ -24,4 +25,22 @@ val INFINITE_TIMER_SETTINGS = TimerSettings(
     isInfinite = true,
 )
 
-val START_OF_DAY = LocalTime(5, 0)
+val DEFAULT_START_OF_DAY = LocalTime(5, 0)
+
+/**
+ * Serializable representation of start of day time for storing in settings.
+ */
+@Serializable
+data class StartOfDaySetting(
+    val hour: Int,
+    val minute: Int
+) {
+    fun toLocalTime(): LocalTime = LocalTime(hour, minute)
+
+    companion object {
+        fun fromLocalTime(time: LocalTime): StartOfDaySetting =
+            StartOfDaySetting(time.hour, time.minute)
+
+        val DEFAULT: StartOfDaySetting = StartOfDaySetting(5, 0)
+    }
+}

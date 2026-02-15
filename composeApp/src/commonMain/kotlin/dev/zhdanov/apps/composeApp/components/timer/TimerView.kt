@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
-import dev.zhdanov.apps.composeApp.screens.feedback.Feedback
+import dev.zhdanov.apps.composeApp.screens.feedback.FeedbackContent
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.TimerSettings
 import kotlin.time.Clock
@@ -223,70 +223,56 @@ fun TimerView() {
 
     // Показываем экран обратной связи, если в соответствующем состоянии
     if (state.value == TimerViewState.FEEDBACK) {
-        FeedbackScreen(
-            lastPartDuration = lastPartDuration.value.toInt(),
-            onExit = { feedback ->
+        FeedbackContent(
+            duration = lastPartDuration.value.toInt(),
+            completedTasks = completedTasks,
+            activeTask = focusedTask,
+            onSubmit = { feedback ->
                 feedback?.let { viewModel.saveFeedback(it) }
                 viewModel.closeFeedback()
             }
         )
-    }
+    } else {
+        Column(
+            Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Show session tasks indicator if there are any tasks in the session
+            if (completedTasks.isNotEmpty() || focusedTask != null) {
+                SessionTasksIndicator(
+                    completedTasks = completedTasks,
+                    activeTask = focusedTask,
+                    onClearActive = { focusTaskService.clearFocusedTask() }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-    Column(
-        Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Show session tasks indicator if there are any tasks in the session
-        if (completedTasks.isNotEmpty() || focusedTask != null) {
-            SessionTasksIndicator(
-                completedTasks = completedTasks,
-                activeTask = focusedTask,
-                onClearActive = { focusTaskService.clearFocusedTask() }
+            // Компонент кругового таймера
+            TimerCircle(
+                progress = progress.value,
+                timeString = time.value,
+                state = state.value,
+                settingList = settingList.value,
+                accentColor = accentColor,
+                isRunning = isRunning.value,
+                onSettingsChange = { viewModel.changeTimerSettings(it) }
             )
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(VERTICAL_SPACING))
+
+            // Блок кнопок управления таймером
+            TimerControlButtons(
+                isRunning = isRunning.value,
+                isPaused = isPaused.value,
+                state = state.value,
+                onStart = { viewModel.startTimer() },
+                onPause = { viewModel.pauseTimer() },
+                onStop = { viewModel.stopTimer() },
+                onSkip = { viewModel.skipTimer() }
+            )
         }
-
-        // Компонент кругового таймера
-        TimerCircle(
-            progress = progress.value,
-            timeString = time.value,
-            state = state.value,
-            settingList = settingList.value,
-            accentColor = accentColor,
-            isRunning = isRunning.value,
-            onSettingsChange = { viewModel.changeTimerSettings(it) }
-        )
-
-        Spacer(modifier = Modifier.height(VERTICAL_SPACING))
-
-        // Блок кнопок управления таймером
-        TimerControlButtons(
-            isRunning = isRunning.value,
-            isPaused = isPaused.value,
-            state = state.value,
-            onStart = { viewModel.startTimer() },
-            onPause = { viewModel.pauseTimer() },
-            onStop = { viewModel.stopTimer() },
-            onSkip = { viewModel.skipTimer() }
-        )
     }
-}
-
-/**
- * Компонент для отображения экрана обратной связи
- */
-@Composable
-@OptIn(ExperimentalTime::class)
-private fun FeedbackScreen(
-    lastPartDuration: Int,
-    onExit: (CreateFocusTime?) -> Unit
-) {
-    Feedback(
-        finishAt = Clock.System.now().toEpochMilliseconds(),
-        duration = lastPartDuration,
-        onExit = onExit
-    )
 }
 
 /**

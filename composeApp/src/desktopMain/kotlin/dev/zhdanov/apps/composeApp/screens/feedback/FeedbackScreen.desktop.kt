@@ -1,53 +1,145 @@
 package dev.zhdanov.apps.composeApp.screens.feedback
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.foundation.layout.size
 import dev.zhdanov.apps.shared.model.CreateFocusTime
+import dev.zhdanov.apps.shared.model.Task
+import dev.zhdanov.apps.composeApp.services.FocusTaskService
+import org.koin.compose.koinInject
+import org.koin.core.annotation.KoinExperimentalAPI
 
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 actual fun Feedback(
     finishAt: Long,
     duration: Int,
     onExit: (feedback: CreateFocusTime?) -> Unit
 ) {
-    var text = remember { mutableStateOf("") }
+    val focusTaskService = koinInject<FocusTaskService>()
+    val focusedTask by focusTaskService.focusedTask.collectAsState()
+    var feedbackText by remember { mutableStateOf("") }
+
+    val windowState = rememberWindowState(width = 400.dp, height = 400.dp)
 
     Window(
-        onCloseRequest = {
-            onExit(null)
-        },
-        title = "Feedback",
+        onCloseRequest = { onExit(null) },
+        title = "Session Feedback",
+        state = windowState
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                TextField(
-                    value = text.value,
-                    onValueChange = { text.value = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(16.dp),
-                    label = { Text("Enter your feedback") }
+            // Header
+            Text(
+                text = "Focus session complete!",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Duration: ${duration / 60} minutes",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Show focused task if present
+            focusedTask?.let { task ->
+                Spacer(modifier = Modifier.height(12.dp))
+                FocusedTaskIndicator(
+                    task = task,
+                    onClear = { focusTaskService.clearFocusedTask() }
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { onExit(CreateFocusTime(duration, text.value, finishAt)) }) {
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Feedback text field
+            OutlinedTextField(
+                value = feedbackText,
+                onValueChange = { feedbackText = it },
+                label = { Text("How did it go?") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                maxLines = 5
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+            ) {
+                OutlinedButton(onClick = { onExit(null) }) {
+                    Text("Skip")
+                }
+                Button(
+                    onClick = {
+                        onExit(CreateFocusTime(
+                            duration = duration,
+                            feedback = feedbackText,
+                            finishedAt = finishAt
+                        ))
+                    }
+                ) {
                     Text("Save")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FocusedTaskIndicator(
+    task: Task,
+    onClear: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CenterFocusStrong,
+                contentDescription = "Focused task",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onClear) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Clear focused task",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
         }
     }

@@ -51,9 +51,9 @@ This document is used as a living checklist and progress tracker for the develop
 - [x] 8.1 Read default timer from DB
 - [x] 8.2 Apply timer on start
 
-## 9. Change feedback view to separate screen
-- [ ] 9.1 New feedback screen UI
-- [ ] 9.2 Route to feedback screen
+## 9. Change feedback view to separate screen ✅
+- [x] 9.1 New feedback screen UI
+- [x] 9.2 Route to feedback screen
 
 ## 10. Fix bug: finish day button should review day with shift ✅
 - [x] 10.1 Fix logic for finish day button

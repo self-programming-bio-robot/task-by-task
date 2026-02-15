@@ -36,4 +36,10 @@ sealed class Screen(
 
     @Serializable
     data object TaskList : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)
+
+    @Serializable
+    data class Feedback(
+        val duration: Int,
+        val finishAt: Long
+    ) : Screen("Feedback", Icons.AutoMirrored.Sharp.FactCheck)
 }

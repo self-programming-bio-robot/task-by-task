@@ -16,6 +16,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
@@ -31,6 +32,12 @@ class StatisticsViewModel(
 
     private val _selectedPeriod = MutableStateFlow(StatisticsPeriod.DAY)
     val selectedPeriod: StateFlow<StatisticsPeriod> = _selectedPeriod.asStateFlow()
+
+    private val _periodOffset = MutableStateFlow(0)
+    val periodOffset: StateFlow<Int> = _periodOffset.asStateFlow()
+
+    private val _periodLabel = MutableStateFlow("")
+    val periodLabel: StateFlow<String> = _periodLabel.asStateFlow()
 
     private val _focusTimeData = MutableStateFlow(0L)
     val focusTimeData: StateFlow<Long> = _focusTimeData.asStateFlow()
@@ -57,6 +64,22 @@ class StatisticsViewModel(
 
     fun setPeriod(period: StatisticsPeriod) {
         _selectedPeriod.value = period
+        _periodOffset.value = 0
+        loadData()
+    }
+
+    fun goToPreviousPeriod() {
+        _periodOffset.value -= 1
+        loadData()
+    }
+
+    fun goToNextPeriod() {
+        _periodOffset.value += 1
+        loadData()
+    }
+
+    fun goToCurrentPeriod() {
+        _periodOffset.value = 0
         loadData()
     }
 
@@ -72,6 +95,7 @@ class StatisticsViewModel(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun loadData() {
         viewModelScope.launch {
             val (from, to, startDate) = getDateRange()
@@ -87,10 +111,23 @@ class StatisticsViewModel(
             // Work cycles count
             _workCyclesData.value = focusTimes.size
 
-            // Tasks data
+            // Tasks data - filter by selected period
             val allTasks = database.taskRepository.getAllTasks()
-            _tasksCreatedData.value = allTasks.size
-            _tasksDoneData.value = allTasks.count { it.isCompleted }
+            val timeZone = TimeZone.currentSystemDefault()
+
+            // Tasks created in period
+            _tasksCreatedData.value = allTasks.count { task ->
+                val createdEpochMs = task.createdAt.toInstant(timeZone).toEpochMilliseconds()
+                createdEpochMs in from..to
+            }
+
+            // Tasks completed in period
+            _tasksDoneData.value = allTasks.count { task ->
+                task.completedAt?.let { completedAt ->
+                    val completedEpochMs = completedAt.toInstant(timeZone).toEpochMilliseconds()
+                    completedEpochMs in from..to
+                } ?: false
+            }
 
             // Chart data with default column count
             _chartData.value = buildChartData(focusTimes, startDate, getMaxColumnsForPeriod())
@@ -192,16 +229,70 @@ class StatisticsViewModel(
         val timeZone = TimeZone.currentSystemDefault()
         val currentDateTime = now.toLocalDateTime(timeZone)
         val today = currentDateTime.date
+        val offset = _periodOffset.value
 
-        val fromDate = when (_selectedPeriod.value) {
-            StatisticsPeriod.DAY -> today
-            StatisticsPeriod.WEEK -> today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
-            StatisticsPeriod.MONTH -> LocalDate(today.year, today.month, 1)
+        val (baseFromDate, periodEnd) = when (_selectedPeriod.value) {
+            StatisticsPeriod.DAY -> {
+                val baseDate = today.plus(offset, DateTimeUnit.DAY)
+                Pair(baseDate, baseDate)
+            }
+            StatisticsPeriod.WEEK -> {
+                val weekStart = today.plus(offset * 7, DateTimeUnit.DAY)
+                    .let { it.minus(it.dayOfWeek.ordinal, DateTimeUnit.DAY) }
+                val weekEnd = weekStart.plus(6, DateTimeUnit.DAY)
+                Pair(weekStart, weekEnd)
+            }
+            StatisticsPeriod.MONTH -> {
+                // Calculate target month
+                var targetYear = today.year
+                var targetMonth = today.monthNumber + offset
+                while (targetMonth > 12) {
+                    targetMonth -= 12
+                    targetYear++
+                }
+                while (targetMonth < 1) {
+                    targetMonth += 12
+                    targetYear--
+                }
+                val baseDate = LocalDate(targetYear, targetMonth, 1)
+                val lastDayOfMonth = baseDate.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+                Pair(baseDate, lastDayOfMonth)
+            }
         }
 
-        val fromInstant = LocalDateTime(fromDate, LocalTime(0, 0))
+        // Update period label
+        _periodLabel.value = when (_selectedPeriod.value) {
+            StatisticsPeriod.DAY -> {
+                val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+                val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                "${dayNames[baseFromDate.dayOfWeek.ordinal % 7]}, ${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth}"
+            }
+            StatisticsPeriod.WEEK -> {
+                val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                if (baseFromDate.month == periodEnd.month) {
+                    "${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth} - ${periodEnd.dayOfMonth}"
+                } else {
+                    "${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth} - ${months[periodEnd.monthNumber - 1]} ${periodEnd.dayOfMonth}"
+                }
+            }
+            StatisticsPeriod.MONTH -> {
+                val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+                "${months[baseFromDate.monthNumber - 1]} ${baseFromDate.year}"
+            }
+        }
+
+        val fromInstant = LocalDateTime(baseFromDate, LocalTime(0, 0))
             .toInstant(timeZone)
 
-        return Triple(fromInstant.toEpochMilliseconds(), now.toEpochMilliseconds(), fromDate)
+        // For past periods, end at the end of that period; for current/future, end at now
+        val toEpochMs = if (periodEnd < today) {
+            LocalDateTime(periodEnd, LocalTime(23, 59, 59, 999_000_000))
+                .toInstant(timeZone)
+                .toEpochMilliseconds()
+        } else {
+            now.toEpochMilliseconds()
+        }
+
+        return Triple(fromInstant.toEpochMilliseconds(), toEpochMs, baseFromDate)
     }
 }

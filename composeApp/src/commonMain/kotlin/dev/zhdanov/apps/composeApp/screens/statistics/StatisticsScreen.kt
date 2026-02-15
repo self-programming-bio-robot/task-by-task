@@ -1,11 +1,12 @@
 package dev.zhdanov.apps.composeApp.screens.statistics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CalendarViewWeek
@@ -17,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -36,13 +36,18 @@ private val MIN_COLUMN_WIDTH = 40.dp
 private val MAX_COLUMNS = 24
 
 // Minimum height to show chart in dp
-private val MIN_CHART_HEIGHT = 400.dp
+private val MIN_CHART_HEIGHT = 350.dp
+
+// Approximate height of header elements (period selector + 2 stat card rows + spacing)
+private val HEADER_HEIGHT = 200.dp
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun StatisticsScreen() {
     val viewModel: StatisticsViewModel = koinViewModel()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
+    val periodLabel by viewModel.periodLabel.collectAsState()
+    val periodOffset by viewModel.periodOffset.collectAsState()
     val focusTimeData by viewModel.focusTimeData.collectAsState()
     val workCyclesData by viewModel.workCyclesData.collectAsState()
     val tasksCreatedData by viewModel.tasksCreatedData.collectAsState()
@@ -50,7 +55,10 @@ fun StatisticsScreen() {
     val chartData by viewModel.chartData.collectAsState()
 
     val density = LocalDensity.current
-    var showChart by remember { mutableStateOf(true) }
+    var availableHeightDp by remember { mutableStateOf(0.dp) }
+
+    // Calculate if we have enough space for the chart
+    val hasSpaceForChart = availableHeightDp >= HEADER_HEIGHT + MIN_CHART_HEIGHT
 
     Scaffold(
         topBar = { TopBar("Statistics") }
@@ -59,8 +67,12 @@ fun StatisticsScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(16.dp)
+                .onSizeChanged { size ->
+                    val heightDp = with(density) { size.height.toDp() }
+                    availableHeightDp = heightDp
+                },
+            verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
         ) {
             // Period Selection
             PeriodSelector(
@@ -68,9 +80,20 @@ fun StatisticsScreen() {
                 onPeriodChange = { viewModel.setPeriod(it) }
             )
 
+            // Period Navigator
+            PeriodNavigator(
+                label = periodLabel,
+                isCurrentPeriod = periodOffset == 0,
+                onPrevious = { viewModel.goToPreviousPeriod() },
+                onNext = { viewModel.goToNextPeriod() },
+                onTodayClick = { viewModel.goToCurrentPeriod() }
+            )
+
             // Statistics Cards
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 StatCard(
@@ -86,7 +109,9 @@ fun StatisticsScreen() {
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 StatCard(
@@ -101,27 +126,21 @@ fun StatisticsScreen() {
                 )
             }
 
-            // Focus Time Chart
-            if (chartData.isNotEmpty() && showChart) {
+            // Focus Time Chart - only show when height is sufficient
+            if (chartData.isNotEmpty() && hasSpaceForChart) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .onSizeChanged { size ->
                             val widthDp = with(density) { size.width.toDp() }
-                            val heightDp = with(density) { size.height.toDp() }
 
-                            // Check if height is sufficient for chart
-                            showChart = heightDp >= MIN_CHART_HEIGHT
-
-                            if (showChart) {
-                                // Calculate max columns based on available width
-                                // Account for padding (16dp * 2 = 32dp)
-                                val availableWidth = widthDp - 32.dp
-                                val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
-                                    .coerceIn(1, MAX_COLUMNS)
-                                viewModel.updateColumnCount(maxColumns)
-                            }
+                            // Calculate max columns based on available width
+                            // Account for padding (16dp * 2 = 32dp)
+                            val availableWidth = widthDp - 32.dp
+                            val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
+                                .coerceIn(1, MAX_COLUMNS)
+                            viewModel.updateColumnCount(maxColumns)
                         }
                 ) {
                     Column(
@@ -137,26 +156,6 @@ fun StatisticsScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
-                        )
-                    }
-                }
-            }
-
-            // Show message when height is too small
-            if (!showChart) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Increase window height to view chart",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -221,10 +220,11 @@ private fun SimpleBarChart(
 @Composable
 private fun PeriodSelector(
     selectedPeriod: StatisticsPeriod,
-    onPeriodChange: (StatisticsPeriod) -> Unit
+    onPeriodChange: (StatisticsPeriod) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         PeriodButton(
@@ -245,6 +245,52 @@ private fun PeriodSelector(
             icon = Icons.Default.CalendarMonth,
             label = "Month"
         )
+    }
+}
+
+@Composable
+private fun PeriodNavigator(
+    label: String,
+    isCurrentPeriod: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onTodayClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Previous button
+        IconButton(onClick = onPrevious) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Previous period"
+            )
+        }
+
+        // Period label (clickable to return to today)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (isCurrentPeriod) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
+            modifier = Modifier
+                .clickable(enabled = !isCurrentPeriod) { onTodayClick() }
+                .padding(horizontal = 8.dp)
+        )
+
+        // Next button
+        IconButton(onClick = onNext) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next period"
+            )
+        }
     }
 }
 
@@ -282,7 +328,8 @@ private fun StatCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = title,

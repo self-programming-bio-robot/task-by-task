@@ -3,7 +3,7 @@ package dev.zhdanov.apps.composeApp.screens.feedback
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CenterFocusStrong
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,9 +28,10 @@ actual fun Feedback(
 ) {
     val focusTaskService = koinInject<FocusTaskService>()
     val focusedTask by focusTaskService.focusedTask.collectAsState()
+    val completedTasks by focusTaskService.completedTasks.collectAsState()
     var feedbackText by remember { mutableStateOf("") }
 
-    val windowState = rememberWindowState(width = 400.dp, height = 400.dp)
+    val windowState = rememberWindowState(width = 400.dp, height = 450.dp)
 
     Window(
         onCloseRequest = { onExit(null) },
@@ -57,12 +58,12 @@ actual fun Feedback(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // Show focused task if present
-            focusedTask?.let { task ->
+            // Show session tasks
+            if (completedTasks.isNotEmpty() || focusedTask != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                FocusedTaskIndicator(
-                    task = task,
-                    onClear = { focusTaskService.clearFocusedTask() }
+                SessionTasksCard(
+                    completedTasks = completedTasks,
+                    activeTask = focusedTask
                 )
             }
 
@@ -106,40 +107,87 @@ actual fun Feedback(
 }
 
 @Composable
-private fun FocusedTaskIndicator(
-    task: Task,
-    onClear: () -> Unit
+private fun SessionTasksCard(
+    completedTasks: List<Task>,
+    activeTask: Task?
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(12.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.CenterFocusStrong,
-                contentDescription = "Focused task",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = task.title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = onClear) {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Clear focused task",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    imageVector = Icons.Default.CenterFocusStrong,
+                    contentDescription = "Session tasks",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Tasks in this session",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            // Completed tasks
+            completedTasks.forEach { task ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, start = 28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Completed",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Active task
+            activeTask?.let { task ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, start = 28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CenterFocusStrong,
+                        contentDescription = "Active",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }

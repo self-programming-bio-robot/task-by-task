@@ -63,7 +63,12 @@ fun MainNavGraph(
                 }
 
                 is Screen.TaskList -> NavEntry(key as NavKey) {
-                    TaskListScreen(initialTaskId = key.initialTaskId)
+                    TaskListScreen(
+                        initialTaskId = key.initialTaskId,
+                        onNavigateToTimer = {
+                            viewModel.navigateTo(Screen.Home)
+                        }
+                    )
                 }
 
                 is Screen.Statistics -> NavEntry(key as NavKey) {

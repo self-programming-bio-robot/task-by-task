@@ -35,7 +35,10 @@ import dev.zhdanov.apps.composeApp.services.FocusTaskService
 
 @OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TaskListScreen(initialTaskId: Long? = null) {
+fun TaskListScreen(
+    initialTaskId: Long? = null,
+    onNavigateToTimer: () -> Unit = {}
+) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val tasks by viewModel.tasks.collectAsState()
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
@@ -89,7 +92,9 @@ fun TaskListScreen(initialTaskId: Long? = null) {
                                                 TaskScreens.TaskDetails(task)
                                             )
                                         }
-                                    })
+                                    },
+                                    onTaskFocused = onNavigateToTimer
+                                )
                             }
                         }
                     },
@@ -141,11 +146,13 @@ fun TaskListScreen(initialTaskId: Long? = null) {
 @Composable
 fun TaskList(
     tasks: List<Task>,
-    onTaskClick: (Task) -> Unit
+    onTaskClick: (Task) -> Unit,
+    onTaskFocused: () -> Unit = {},
+    isTimerRunning: Boolean = false
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
-    val selectedTasks by focusTaskService.selectedTasks.collectAsState()
+    val focusedTask by focusTaskService.focusedTask.collectAsState()
 
     Column {
         LazyColumn(
@@ -157,16 +164,31 @@ fun TaskList(
                     onAddTask = viewModel::addNewTask
                 )
             }
-            items(tasks) { task ->
+            items(tasks, key = { it.id }) { task ->
+                val currentTask = task // Capture for lambda
                 TaskItem(
-                    task = task,
-                    isSelected = selectedTasks.any { it.id == task.id },
-                    onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
-                    onAddToday = { viewModel.updateTask(task.copy(isToday = it)) },
-                    onSelectionToggle = {
-                        focusTaskService.toggleTaskSelection(task)
+                    task = currentTask,
+                    isFocused = focusedTask?.id == currentTask.id,
+                    onToggleCompletion = {
+                        viewModel.toggleTaskCompletion(currentTask)
+                        // Update focused task if this is the focused one
+                        if (focusedTask?.id == currentTask.id) {
+                            focusTaskService.updateFocusedTask(currentTask.copy(isCompleted = !currentTask.isCompleted))
+                        }
                     },
-                    onClick = { onTaskClick(task) },
+                    onAddToday = { viewModel.updateTask(currentTask.copy(isToday = it)) },
+                    onFocusToggle = {
+                        // Add to today if not already
+                        if (!currentTask.isToday) {
+                            viewModel.updateTask(currentTask.copy(isToday = true))
+                        }
+                        // Try to select the task
+                        val success = focusTaskService.toggleTaskSelection(currentTask, isTimerRunning)
+                        if (success) {
+                            onTaskFocused()
+                        }
+                    },
+                    onClick = { onTaskClick(currentTask) },
                 )
             }
         }
@@ -176,20 +198,16 @@ fun TaskList(
 @Composable
 fun TaskItem(
     task: Task,
-    isSelected: Boolean,
+    isFocused: Boolean,
     onToggleCompletion: () -> Unit,
     onAddToday: (Boolean) -> Unit,
-    onSelectionToggle: () -> Unit,
+    onFocusToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else MaterialTheme.colorScheme.surface
-            )
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -205,14 +223,13 @@ fun TaskItem(
             modifier = Modifier.weight(1f)
         )
         Spacer(modifier = Modifier.width(8.dp))
-        IconToggleButton(
-            checked = isSelected,
-            onCheckedChange = { onSelectionToggle() },
+        IconButton(
+            onClick = { onFocusToggle() }
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,
-                contentDescription = if (isSelected) "Unfocus task" else "Focus task",
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                contentDescription = if (isFocused) "Unfocus task" else "Focus task",
+                tint = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Spacer(modifier = Modifier.width(4.dp))

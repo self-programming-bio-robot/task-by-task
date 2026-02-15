@@ -90,14 +90,14 @@ private fun FocusedTaskIndicator(
 }
 
 /**
- * UI Component: SelectedTasksIndicator
- * Shows multiple selected tasks with truncation
+ * UI Component: SessionTasksIndicator
+ * Shows all tasks in the current session (completed + active)
  */
 @Composable
-private fun SelectedTasksIndicator(
-    tasks: List<Task>,
-    onClearTask: (Task) -> Unit,
-    onClearAll: () -> Unit
+private fun SessionTasksIndicator(
+    completedTasks: List<Task>,
+    activeTask: Task?,
+    onClearActive: () -> Unit
 ) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
@@ -109,76 +109,91 @@ private fun SelectedTasksIndicator(
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
+            // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
                     imageVector = Icons.Default.CenterFocusStrong,
-                    contentDescription = "Selected tasks",
+                    contentDescription = "Session tasks",
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${tasks.size} task${if (tasks.size > 1) "s" else ""} selected",
+                    text = if (completedTasks.isNotEmpty() || activeTask != null) {
+                        val count = completedTasks.size + (if (activeTask != null) 1 else 0)
+                        "$count task${if (count > 1) "s" else ""} in session"
+                    } else {
+                        "No tasks"
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(
-                    onClick = onClearAll,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Clear all tasks",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
             }
-            // Show task titles
-            tasks.take(3).forEach { task ->
+
+            // Completed tasks (non-clickable, shown with checkmark)
+            completedTasks.forEach { task ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp)
+                        .padding(top = 4.dp, start = 24.dp)
                 ) {
                     Text(
-                        text = "•",
+                        text = "✓",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(end = 4.dp)
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(end = 6.dp)
                     )
                     Text(
                         text = task.title,
                         style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Active task (highlighted, with clear button)
+            activeTask?.let { task ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, start = 24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CenterFocusStrong,
+                        contentDescription = "Active task",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(
-                        onClick = { onClearTask(task) },
+                        onClick = onClearActive,
                         modifier = Modifier.size(20.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Remove task",
+                            contentDescription = "Clear active task",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                             modifier = Modifier.size(14.dp)
                         )
                     }
                 }
-            }
-            if (tasks.size > 3) {
-                Text(
-                    text = "... and ${tasks.size - 3} more",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 4.dp, start = 12.dp)
-                )
             }
         }
     }
@@ -200,7 +215,8 @@ fun TimerView() {
     val state = viewModel.state.collectAsState()
     val settingList = viewModel.settingList.collectAsState(listOf<TimerSettings>())
     val lastPartDuration = viewModel.lastPartDuration.collectAsState()
-    val selectedTasks by focusTaskService.selectedTasks.collectAsState()
+    val focusedTask by focusTaskService.focusedTask.collectAsState()
+    val completedTasks by focusTaskService.completedTasks.collectAsState()
 
     // Определение цветов в зависимости от состояния таймера
     val accentColor = getAccentColorForState(state.value)
@@ -221,12 +237,12 @@ fun TimerView() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Show selected tasks indicator if any tasks are selected
-        if (selectedTasks.isNotEmpty()) {
-            SelectedTasksIndicator(
-                tasks = selectedTasks,
-                onClearTask = { task -> focusTaskService.toggleTaskSelection(task) },
-                onClearAll = { focusTaskService.clearSelectedTasks() }
+        // Show session tasks indicator if there are any tasks in the session
+        if (completedTasks.isNotEmpty() || focusedTask != null) {
+            SessionTasksIndicator(
+                completedTasks = completedTasks,
+                activeTask = focusedTask,
+                onClearActive = { focusTaskService.clearFocusedTask() }
             )
             Spacer(modifier = Modifier.height(8.dp))
         }

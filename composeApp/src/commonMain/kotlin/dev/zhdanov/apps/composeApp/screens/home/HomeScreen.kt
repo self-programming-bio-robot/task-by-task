@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
+import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
@@ -149,8 +150,14 @@ fun HomeScreen(
                                         .padding(16.dp)
                                 )
 
-                                TaskList(
+                                TodayTaskList(
                                     onTaskClick = {},
+                                    onTaskFocused = {
+                                        // Navigate back to timer (main pane) after selecting a task
+                                        coroutineScope.launch {
+                                            navigator.navigateTo(ThreePaneScaffoldRole.Primary)
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -163,13 +170,16 @@ fun HomeScreen(
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun TaskList(
+fun TodayTaskList(
     onTaskClick: (Task) -> Unit,
+    onTaskFocused: () -> Unit = {},
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
+    val timerViewModel: TimerViewModel = koinInject<TimerViewModel>()
     val todayTasks by viewModel.todayTask.collectAsState(listOf())
-    val selectedTasks by focusTaskService.selectedTasks.collectAsState()
+    val focusedTask by focusTaskService.focusedTask.collectAsState()
+    val isTimerRunning by timerViewModel.isRunning.collectAsState()
 
 
     LazyColumn(
@@ -191,13 +201,32 @@ fun TaskList(
                 )
             }
         } else {
-            items(todayTasks) { task ->
-                TaskItem(
-                    task = task,
-                    isSelected = selectedTasks.any { it.id == task.id },
-                    onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
-                    onSelectionToggle = { focusTaskService.toggleTaskSelection(task) },
-                    onClick = { onTaskClick(task) },
+            items(todayTasks, key = { it.id }) { task ->
+                val currentTask = task // Capture for lambda
+                TodayTaskItem(
+                    task = currentTask,
+                    isFocused = focusedTask?.id == currentTask.id,
+                    isTimerRunning = isTimerRunning,
+                    onToggleCompletion = {
+                        // Toggle completion in DB
+                        viewModel.toggleTaskCompletion(currentTask)
+                        // Update focused task if this is the focused one
+                        if (focusedTask?.id == currentTask.id) {
+                            focusTaskService.updateFocusedTask(currentTask.copy(isCompleted = !currentTask.isCompleted))
+                        }
+                    },
+                    onFocusToggle = {
+                        // Add to today if not already
+                        if (!currentTask.isToday) {
+                            viewModel.updateTask(currentTask.copy(isToday = true))
+                        }
+                        // Try to select the task
+                        val success = focusTaskService.toggleTaskSelection(currentTask, isTimerRunning)
+                        if (success) {
+                            onTaskFocused()
+                        }
+                    },
+                    onClick = { onTaskClick(currentTask) },
                 )
             }
         }
@@ -205,21 +234,18 @@ fun TaskList(
 }
 
 @Composable
-fun TaskItem(
+fun TodayTaskItem(
     task: Task,
-    isSelected: Boolean,
+    isFocused: Boolean,
+    isTimerRunning: Boolean,
     onToggleCompletion: () -> Unit,
-    onSelectionToggle: () -> Unit,
+    onFocusToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else Color.Transparent
-            )
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -235,14 +261,14 @@ fun TaskItem(
             modifier = Modifier.weight(1f)
         )
         Spacer(modifier = Modifier.width(16.dp))
-        IconToggleButton(
-            checked = isSelected,
-            onCheckedChange = { onSelectionToggle() }
+        IconButton(
+            onClick = { onFocusToggle() }
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,
-                contentDescription = if (isSelected) "Unfocus task" else "Focus task",
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                contentDescription = if (isFocused) "Unfocus task" else "Focus task",
+                tint = if (isFocused) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

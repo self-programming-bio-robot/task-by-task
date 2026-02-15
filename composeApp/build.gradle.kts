@@ -102,6 +102,8 @@ kotlin {
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.multiplatform.markdown.renderer)
 
+            implementation(libs.koalaplot.core)
+
             api(libs.logging)
         }
         desktopMain.dependencies {

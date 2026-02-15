@@ -38,6 +38,7 @@ sqlDelight = "2.0.2"
 logging = "2.0.3"
 buildKonfig = "0.15.2"
 kotlinx-serialization = "1.7.3"
+koalaplot = "0.6.4"
 
 
 [libraries]
@@ -86,6 +87,7 @@ jvm-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqlD
 runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }
 logging = { module = "com.diamondedge:logging", version.ref = "logging"}
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+koalaplot-core = { module = "io.github.koalaplot:koalaplot-core", version.ref = "koalaplot" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

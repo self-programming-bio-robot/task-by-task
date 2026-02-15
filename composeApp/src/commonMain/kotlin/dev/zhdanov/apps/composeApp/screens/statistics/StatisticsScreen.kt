@@ -1,6 +1,10 @@
 package dev.zhdanov.apps.composeApp.screens.statistics
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
@@ -9,10 +13,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+import kotlin.math.max
 
 enum class StatisticsPeriod {
     DAY,
@@ -29,6 +35,7 @@ fun StatisticsScreen() {
     val workCyclesData by viewModel.workCyclesData.collectAsState()
     val tasksCreatedData by viewModel.tasksCreatedData.collectAsState()
     val tasksDoneData by viewModel.tasksDoneData.collectAsState()
+    val chartData by viewModel.chartData.collectAsState()
 
     Scaffold(
         topBar = { TopBar("Statistics") }
@@ -79,22 +86,82 @@ fun StatisticsScreen() {
                 )
             }
 
-            // Graph placeholder
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+            // Focus Time Chart
+            if (chartData.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 ) {
-                    Text(
-                        text = "Graph visualization coming soon",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Focus Time (minutes)",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        SimpleBarChart(
+                            data = chartData,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimpleBarChart(
+    data: List<ChartEntry>,
+    modifier: Modifier = Modifier
+) {
+    if (data.isEmpty()) {
+        Box(
+            modifier = modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            Text("No data available")
+        }
+        return
+    }
+
+    val maxFocusTime = max(1, data.maxOf { it.focusTimeMinutes })
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        data.forEach { entry ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f)
+            ) {
+                // Bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            if (entry.focusTimeMinutes > 0) {
+                                (entry.focusTimeMinutes.toFloat() / maxFocusTime * 150).dp
+                            } else {
+                                4.dp
+                            }
+                        )
+                        .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                // Label
+                Text(
+                    text = entry.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1
+                )
             }
         }
     }

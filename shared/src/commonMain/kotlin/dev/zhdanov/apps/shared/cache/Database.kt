@@ -28,6 +28,8 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         try {
             AppDatabase.Schema.migrate(driver, currentVersion, AppDatabase.Schema.version)
             AppDatabase.Schema.create(driver)
+            // Manual migration for new columns
+            migrateFocusTimeTable()
         } catch (e: Exception) {
             logger.e(e) { "Failed to migrate app database" }
         }
@@ -38,6 +40,21 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
             QueryResult.Value(it.getLong(0) ?: 0L)
         }, 0)
         return executeQuery.value
+    }
+
+    private fun migrateFocusTimeTable() {
+        try {
+            // Add startedAt column if it doesn't exist
+            driver.execute(2, "ALTER TABLE FocusTime ADD COLUMN startedAt INTEGER", 0)
+        } catch (e: Exception) {
+            // Column already exists, ignore
+        }
+        try {
+            // Add pauseTime column if it doesn't exist
+            driver.execute(3, "ALTER TABLE FocusTime ADD COLUMN pauseTime INTEGER", 0)
+        } catch (e: Exception) {
+            // Column already exists, ignore
+        }
     }
 
     fun addFocusTime(focusTime: CreateFocusTime) {

@@ -9,8 +9,15 @@ import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTimeWithTask
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 class HistoryViewModel(
     private val database: Database,
@@ -35,6 +42,25 @@ class HistoryViewModel(
 
     fun getFocusTimesWithTasks(): List<FocusTimeWithTask> {
         val focusTimes = database.getAllFocusTimes()
+        val tasksMap = _tasks.value
+        return focusTimes.map { focusTime ->
+            FocusTimeWithTask(
+                focusTime = focusTime,
+                task = focusTime.taskId?.let { taskId ->
+                    tasksMap[taskId]
+                }
+            )
+        }
+    }
+
+    @ExperimentalTime
+    fun getFocusTimesWithTasksForDate(date: LocalDate): List<FocusTimeWithTask> {
+        val timeZone = TimeZone.currentSystemDefault()
+        val startOfDay = LocalDateTime(date, LocalTime(0, 0))
+            .toInstant(timeZone).toEpochMilliseconds()
+        val endOfDay = startOfDay + (24 * 60 * 60 * 1000) // +1 day in milliseconds
+
+        val focusTimes = database.getAllFocusTimesBetween(startOfDay, endOfDay)
         val tasksMap = _tasks.value
         return focusTimes.map { focusTime ->
             FocusTimeWithTask(

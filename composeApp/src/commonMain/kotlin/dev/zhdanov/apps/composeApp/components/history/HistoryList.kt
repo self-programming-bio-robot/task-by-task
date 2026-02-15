@@ -23,7 +23,10 @@ import dev.zhdanov.apps.shared.model.TaskSummary
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun HistoryList(items: List<DaySummary>) {
+fun HistoryList(
+    items: List<DaySummary>,
+    onDayClick: (DaySummary) -> Unit = {}
+) {
     if (items.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -33,26 +36,34 @@ fun HistoryList(items: List<DaySummary>) {
         }
     } else {
         LazyColumn(
-            // todo: add scroll
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(items, key = { it.date }) { item ->
-                ListItemView(item)
+                ListItemView(item, onClick = { onDayClick(item) })
             }
         }
     }
 }
 
 @Composable
-fun ListItemView(item: DaySummary) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
+fun ListItemView(
+    item: DaySummary,
+    onClick: () -> Unit = {}
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
         // Header (Date and Focus Time)
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -80,6 +91,7 @@ fun ListItemView(item: DaySummary) {
         }
 
         Markdown(item.review)
+        }
     }
 }
 

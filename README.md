@@ -18,8 +18,8 @@ This document is used as a living checklist and progress tracker for the develop
 - [x] 1.3 Integration with review data
 - [x] 1.4 Notification on new message
 
-## 2. Detail day review screen with list of notes
-- [ ] 2.1 UI for notes list in a extra pane
+## 2. Detail day review screen with list of notes ✅
+- [x] 2.1 UI for notes list in a extra pane
 
 ## 3. Add a start of focus time, to calculate pause time ✅
 - [x] 3.1 Track focus start

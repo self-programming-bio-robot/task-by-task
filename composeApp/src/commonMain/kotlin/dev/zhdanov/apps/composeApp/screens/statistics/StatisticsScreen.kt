@@ -14,7 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -26,6 +29,12 @@ enum class StatisticsPeriod {
     MONTH
 }
 
+// Minimum width per bar column in dp
+private val MIN_COLUMN_WIDTH = 40.dp
+
+// Maximum columns to show regardless of width
+private val MAX_COLUMNS = 24
+
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun StatisticsScreen() {
@@ -36,6 +45,8 @@ fun StatisticsScreen() {
     val tasksCreatedData by viewModel.tasksCreatedData.collectAsState()
     val tasksDoneData by viewModel.tasksDoneData.collectAsState()
     val chartData by viewModel.chartData.collectAsState()
+
+    val density = LocalDensity.current
 
     Scaffold(
         topBar = { TopBar("Statistics") }
@@ -92,6 +103,15 @@ fun StatisticsScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .onSizeChanged { size ->
+                            // Calculate max columns based on available width
+                            val widthDp = with(density) { size.width.toDp() }
+                            // Account for padding (16dp * 2 = 32dp)
+                            val availableWidth = widthDp - 32.dp
+                            val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
+                                .coerceIn(1, MAX_COLUMNS)
+                            viewModel.updateColumnCount(maxColumns)
+                        }
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)

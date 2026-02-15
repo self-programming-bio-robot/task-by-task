@@ -47,6 +47,10 @@ class StatisticsViewModel(
     private val _chartData = MutableStateFlow<List<ChartEntry>>(emptyList())
     val chartData: StateFlow<List<ChartEntry>> = _chartData.asStateFlow()
 
+    // Store raw data for re-aggregation when column count changes
+    private var rawFocusTimes: List<FocusTime> = emptyList()
+    private var rawStartDate: LocalDate? = null
+
     init {
         loadData()
     }
@@ -56,10 +60,26 @@ class StatisticsViewModel(
         loadData()
     }
 
+    /**
+     * Update chart data aggregation based on available columns.
+     * Call this when window size changes.
+     *
+     * @param maxColumns Maximum number of columns that can be displayed
+     */
+    fun updateColumnCount(maxColumns: Int) {
+        rawStartDate?.let { startDate ->
+            _chartData.value = buildChartData(rawFocusTimes, startDate, maxColumns)
+        }
+    }
+
     private fun loadData() {
         viewModelScope.launch {
             val (from, to, startDate) = getDateRange()
             val focusTimes = database.getAllFocusTimesBetween(from, to)
+
+            // Store raw data for re-aggregation
+            rawFocusTimes = focusTimes
+            rawStartDate = startDate
 
             // Focus time in seconds
             _focusTimeData.value = focusTimes.sumOf { it.duration.toLong() }
@@ -72,35 +92,60 @@ class StatisticsViewModel(
             _tasksCreatedData.value = allTasks.size
             _tasksDoneData.value = allTasks.count { it.isCompleted }
 
-            // Chart data
-            _chartData.value = buildChartData(focusTimes, startDate)
+            // Chart data with default column count
+            _chartData.value = buildChartData(focusTimes, startDate, getMaxColumnsForPeriod())
         }
     }
 
-    private fun buildChartData(focusTimes: List<FocusTime>, startDate: LocalDate): List<ChartEntry> {
+    private fun getMaxColumnsForPeriod(): Int {
+        return when (_selectedPeriod.value) {
+            StatisticsPeriod.DAY -> 24  // 24 hours
+            StatisticsPeriod.WEEK -> 7  // 7 days
+            StatisticsPeriod.MONTH -> 28 // 28 days
+        }
+    }
+
+    private fun buildChartData(
+        focusTimes: List<FocusTime>,
+        startDate: LocalDate,
+        maxColumns: Int
+    ): List<ChartEntry> {
         val timeZone = TimeZone.currentSystemDefault()
 
         return when (_selectedPeriod.value) {
             StatisticsPeriod.DAY -> {
-                // Group by hour (24 hours)
-                val hourData = MutableList(24) { 0 }
+                // Group hours into buckets based on maxColumns
+                val hoursPerBucket = (24 + maxColumns - 1) / maxColumns.coerceAtLeast(1)
+                val bucketCount = 24 / hoursPerBucket
+                val hourData = MutableList(bucketCount) { 0 }
+
                 focusTimes.forEach { ft ->
                     val instant = Instant.fromEpochMilliseconds(ft.finishedAt)
                     val dateTime = instant.toLocalDateTime(timeZone)
-                    hourData[dateTime.hour] += ft.duration / 60
+                    val bucketIndex = dateTime.hour / hoursPerBucket
+                    if (bucketIndex < bucketCount) {
+                        hourData[bucketIndex] += ft.duration / 60
+                    }
                 }
-                hourData.mapIndexed { hour, minutes ->
-                    ChartEntry("${hour}:00", minutes)
+
+                hourData.mapIndexed { index, minutes ->
+                    val startHour = index * hoursPerBucket
+                    val endHour = (index + 1) * hoursPerBucket - 1
+                    val label = if (hoursPerBucket == 1) {
+                        "${startHour}:00"
+                    } else {
+                        "${startHour}-${endHour}h"
+                    }
+                    ChartEntry(label, minutes)
                 }
             }
             StatisticsPeriod.WEEK -> {
-                // Group by day of week (7 days)
+                // Week has exactly 7 days, no aggregation needed
                 val dayData = MutableList(7) { 0 }
                 val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                 focusTimes.forEach { ft ->
                     val instant = Instant.fromEpochMilliseconds(ft.finishedAt)
                     val dateTime = instant.toLocalDateTime(timeZone)
-                    // dayOfWeek.ordinal returns 0 for Monday, 6 for Sunday
                     val dayIndex = dateTime.dayOfWeek.ordinal
                     dayData[dayIndex] += ft.duration / 60
                 }
@@ -109,18 +154,33 @@ class StatisticsViewModel(
                 }
             }
             StatisticsPeriod.MONTH -> {
-                // Group by day of month (show first 4 weeks = 28 days for simplicity)
-                val dayData = MutableList(28) { 0 }
+                // Group days into buckets based on maxColumns
+                val daysInMonth = 28 // Show first 28 days
+                val daysPerBucket = (daysInMonth + maxColumns - 1) / maxColumns.coerceAtLeast(1)
+                val bucketCount = daysInMonth / daysPerBucket
+                val dayData = MutableList(bucketCount) { 0 }
+
                 focusTimes.forEach { ft ->
                     val instant = Instant.fromEpochMilliseconds(ft.finishedAt)
                     val dateTime = instant.toLocalDateTime(timeZone)
                     val dayOfMonth = dateTime.dayOfMonth - 1
-                    if (dayOfMonth in 0 until 28) {
-                        dayData[dayOfMonth] += ft.duration / 60
+                    if (dayOfMonth in 0 until daysInMonth) {
+                        val bucketIndex = dayOfMonth / daysPerBucket
+                        if (bucketIndex < bucketCount) {
+                            dayData[bucketIndex] += ft.duration / 60
+                        }
                     }
                 }
+
                 dayData.mapIndexed { index, minutes ->
-                    ChartEntry("${index + 1}", minutes)
+                    val startDay = index * daysPerBucket + 1
+                    val endDay = ((index + 1) * daysPerBucket).coerceAtMost(daysInMonth)
+                    val label = if (daysPerBucket == 1) {
+                        "$startDay"
+                    } else {
+                        "$startDay-$endDay"
+                    }
+                    ChartEntry(label, minutes)
                 }
             }
         }

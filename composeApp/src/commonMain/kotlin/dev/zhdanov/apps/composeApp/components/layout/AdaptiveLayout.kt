@@ -18,9 +18,10 @@ import dev.zhdanov.apps.composeApp.navigation.Screen
 
 val menuItems: List<Screen> = listOf(
     Screen.Home,
-    Screen.Settings,
+    Screen.Statistics,
     Screen.History,
-    Screen.TaskList()
+    Screen.TaskList(),
+    Screen.Settings
 )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

@@ -35,6 +35,9 @@ private val MIN_COLUMN_WIDTH = 40.dp
 // Maximum columns to show regardless of width
 private val MAX_COLUMNS = 24
 
+// Minimum height to show chart in dp
+private val MIN_CHART_HEIGHT = 400.dp
+
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun StatisticsScreen() {
@@ -47,6 +50,7 @@ fun StatisticsScreen() {
     val chartData by viewModel.chartData.collectAsState()
 
     val density = LocalDensity.current
+    var showChart by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = { TopBar("Statistics") }
@@ -98,19 +102,26 @@ fun StatisticsScreen() {
             }
 
             // Focus Time Chart
-            if (chartData.isNotEmpty()) {
+            if (chartData.isNotEmpty() && showChart) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .onSizeChanged { size ->
-                            // Calculate max columns based on available width
                             val widthDp = with(density) { size.width.toDp() }
-                            // Account for padding (16dp * 2 = 32dp)
-                            val availableWidth = widthDp - 32.dp
-                            val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
-                                .coerceIn(1, MAX_COLUMNS)
-                            viewModel.updateColumnCount(maxColumns)
+                            val heightDp = with(density) { size.height.toDp() }
+
+                            // Check if height is sufficient for chart
+                            showChart = heightDp >= MIN_CHART_HEIGHT
+
+                            if (showChart) {
+                                // Calculate max columns based on available width
+                                // Account for padding (16dp * 2 = 32dp)
+                                val availableWidth = widthDp - 32.dp
+                                val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
+                                    .coerceIn(1, MAX_COLUMNS)
+                                viewModel.updateColumnCount(maxColumns)
+                            }
                         }
                 ) {
                     Column(
@@ -126,6 +137,26 @@ fun StatisticsScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Show message when height is too small
+            if (!showChart) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Increase window height to view chart",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

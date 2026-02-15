@@ -9,6 +9,7 @@ import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
 import dev.zhdanov.apps.composeApp.screens.settings.SettingsScreen
+import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsScreen
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListScreen
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -59,6 +60,10 @@ fun MainNavGraph(
 
                 is Screen.TaskList -> NavEntry(key as NavKey) {
                     TaskListScreen()
+                }
+
+                is Screen.Statistics -> NavEntry(key as NavKey) {
+                    StatisticsScreen()
                 }
 
                 else -> NavEntry(Unit as NavKey) {

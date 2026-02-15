@@ -37,15 +37,15 @@ This document is used as a living checklist and progress tracker for the develop
 ## 6. Adaptive navigation ✅
 - [x] 6.1 Implement adaptive navigation
 
-## 7. Statistics viewer
-- [ ] 7.1 Design statistics screen layout
+## 7. Statistics viewer ✅
+- [x] 7.1 Design statistics screen layout
 - [ ] 7.2 Implement graph for focus time (day per hour, week per day, month per day)
 - [ ] 7.3 Implement graph for work cycles (day per hour, week per day, month per day)
 - [ ] 7.4 Implement graph for created tasks (day per hour, week per day, month per day)
 - [ ] 7.5 Implement graph for done tasks (day per hour, week per day, month per day)
-- [ ] 7.6 Add period selection (day/week/month)
-- [ ] 7.7 Integrate statistics data source
-- [ ] 7.8 Add navigation to statistics screen
+- [x] 7.6 Add period selection (day/week/month)
+- [x] 7.7 Integrate statistics data source
+- [x] 7.8 Add navigation to statistics screen
 
 ## 8. Get default timer from database on start ✅
 - [x] 8.1 Read default timer from DB

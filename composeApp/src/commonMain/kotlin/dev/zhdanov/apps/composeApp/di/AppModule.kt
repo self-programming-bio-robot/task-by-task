@@ -8,6 +8,7 @@ import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayViewModel
 import dev.zhdanov.apps.composeApp.screens.history.HistoryViewModel
 import dev.zhdanov.apps.composeApp.screens.home.HomeViewModel
+import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsViewModel
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
 import dev.zhdanov.apps.composeApp.services.ChatService
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
@@ -30,6 +31,7 @@ val appModule = module {
     single { TimerViewModel(get(), get(), get(), get()) }
     single { GeneralSettingsViewModel(get()) }
     single { FinishedDayViewModel(get()) }
+    single { StatisticsViewModel(get()) }
 
     viewModel { HomeViewModel(get(), get()) }
     viewModel { HistoryViewModel(get(), get()) }

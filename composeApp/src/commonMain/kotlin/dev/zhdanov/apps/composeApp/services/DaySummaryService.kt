@@ -98,7 +98,11 @@ class DaySummaryService(
         )
 
         logger.d { review }
-        return review
+        return AssistantReviewResponse(
+            date = dayDate,
+            summary = review.summary,
+            response = review.response
+        )
     }
 
     private fun buildLinkedTasks(focusTimes: List<FocusTime>): List<TaskSummary> {

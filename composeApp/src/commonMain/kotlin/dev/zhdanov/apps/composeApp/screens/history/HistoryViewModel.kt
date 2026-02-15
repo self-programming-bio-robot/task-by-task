@@ -49,6 +49,7 @@ class HistoryViewModel(
 
 @Serializable
 data class AssistantReviewResponse(
+    val date: kotlinx.datetime.LocalDate,
     val summary: String,
     val response: String,
 )

@@ -24,7 +24,11 @@ fun MainNavGraph(
                 is Screen.Home -> NavEntry(key as NavKey) {
                     HomeScreen(
                         onFinishDay = { review ->
-                            viewModel.navigateTo(Screen.FinishedDay(review.summary, review.response))
+                            viewModel.navigateTo(Screen.FinishedDay(
+                                date = review.date,
+                                summary = review.summary,
+                                response = review.response
+                            ))
                         }
                     )
                 }
@@ -34,10 +38,15 @@ fun MainNavGraph(
                 }
 
                 is Screen.FinishedDay -> NavEntry(key as NavKey) {
-                    FinishedDayScreen(key.summary, key.response) {
-                        viewModel.popUpTo(key, inclusive = true)
-                        viewModel.navigateTo(Screen.History)
-                    }
+                    FinishedDayScreen(
+                        date = key.date,
+                        summary = key.summary,
+                        response = key.response,
+                        onNext = {
+                            viewModel.popUpTo(key, inclusive = true)
+                            viewModel.navigateTo(Screen.History)
+                        }
+                    )
                 }
 
                 is Screen.Settings -> NavEntry(key as NavKey) {

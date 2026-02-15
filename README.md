@@ -12,11 +12,11 @@ This document is used as a living checklist and progress tracker for the develop
 
 # Features
 
-## 1. Chat with buddy on day review screen
-- [ ] 1.1 UI for chat
-- [ ] 1.2 Message sending logic
-- [ ] 1.3 Integration with review data
-- [ ] 1.4 Notification on new message
+## 1. Chat with buddy on day review screen ✅
+- [x] 1.1 UI for chat
+- [x] 1.2 Message sending logic
+- [x] 1.3 Integration with review data
+- [x] 1.4 Notification on new message
 
 ## 2. Detail day review screen with list of notes
 - [ ] 2.1 UI for notes list in a extra pane

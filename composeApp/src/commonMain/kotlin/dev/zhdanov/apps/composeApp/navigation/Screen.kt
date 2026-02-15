@@ -9,6 +9,7 @@ import androidx.compose.material.icons.sharp.Home
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -27,9 +28,11 @@ sealed class Screen(
     data object Settings : Screen("Settings", Icons.Sharp.Settings)
 
     @Serializable
-    data class FinishedDay(val summary: String, val response: String) : Screen("Finish day",
-        Icons.AutoMirrored.Sharp.FactCheck
-    )
+    data class FinishedDay(
+        val date: LocalDate,
+        val summary: String,
+        val response: String
+    ) : Screen("Finish day", Icons.AutoMirrored.Sharp.FactCheck)
 
     @Serializable
     data object TaskList : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)

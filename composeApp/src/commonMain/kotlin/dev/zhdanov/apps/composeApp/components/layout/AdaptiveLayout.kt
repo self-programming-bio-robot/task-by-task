@@ -16,11 +16,11 @@ import dev.zhdanov.apps.composeApp.navigation.MainNavGraph
 import dev.zhdanov.apps.composeApp.navigation.NavigationViewModel
 import dev.zhdanov.apps.composeApp.navigation.Screen
 
-val menuItems = listOf(
+val menuItems: List<Screen> = listOf(
     Screen.Home,
     Screen.Settings,
     Screen.History,
-    Screen.TaskList
+    Screen.TaskList()
 )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -142,6 +142,11 @@ fun NavigationBarLayout(
 @Composable
 private fun rememberSelectedIndex(menuItems: List<Screen>, currentKey: NavKey?): Int {
     return remember(menuItems, currentKey) {
-        menuItems.indexOfFirst { it == currentKey }.takeIf { it >= 0 } ?: 0
+        menuItems.indexOfFirst { item ->
+            when {
+                item is Screen.TaskList && currentKey is Screen.TaskList -> true
+                else -> item == currentKey
+            }
+        }.takeIf { it >= 0 } ?: 0
     }
 }

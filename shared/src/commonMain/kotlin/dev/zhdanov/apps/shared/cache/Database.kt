@@ -7,6 +7,8 @@ import dev.zhdanov.apps.shared.cache.repository.TimerSettingRepository
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
+import dev.zhdanov.apps.shared.model.Task
+import dev.zhdanov.apps.shared.utils.toLocalDate
 import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.datetime.LocalDate
 import com.diamondedge.logging.logging
@@ -61,6 +63,24 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         } catch (e: Exception) {
             // Column already exists, ignore
         }
+        try {
+            // Create junction table for many-to-many relationship
+            driver.execute(
+                5,
+                """
+                CREATE TABLE IF NOT EXISTS FocusTimeTaskCrossRef(
+                    focusTimeId INTEGER NOT NULL,
+                    taskId INTEGER NOT NULL,
+                    PRIMARY KEY(focusTimeId, taskId),
+                    FOREIGN KEY(focusTimeId) REFERENCES FocusTime(id),
+                    FOREIGN KEY(taskId) REFERENCES Task(id)
+                )
+                """.trimIndent(),
+                0
+            )
+        } catch (e: Exception) {
+            // Table already exists, ignore
+        }
     }
 
     fun addFocusTime(focusTime: CreateFocusTime) {
@@ -87,6 +107,54 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         }
     }
 
+    /**
+     * Add a FocusTime and return its generated ID.
+     */
+    fun addFocusTimeAndGetId(duration: Long, finishedAt: Long, feedback: String?, startedAt: Long? = null, pauseTime: Long? = null, taskId: Long? = null): Long {
+        return dbQuery.transactionWithResult {
+            dbQuery.insertFocusTime(
+                duration = duration,
+                feedback = feedback,
+                finishedAt = finishedAt,
+                startedAt = startedAt,
+                pauseTime = pauseTime,
+                taskId = taskId
+            )
+            dbQuery.lastInsertRowId().executeAsOne()
+        }
+    }
+
+    /**
+     * Add a FocusTime and link multiple tasks to it.
+     */
+    fun addFocusTimeWithTasks(
+        duration: Long,
+        finishedAt: Long,
+        feedback: String?,
+        startedAt: Long? = null,
+        pauseTime: Long? = null,
+        taskIds: List<Long> = emptyList()
+    ): Long {
+        return dbQuery.transactionWithResult {
+            dbQuery.insertFocusTime(
+                duration = duration,
+                feedback = feedback,
+                finishedAt = finishedAt,
+                startedAt = startedAt,
+                pauseTime = pauseTime,
+                taskId = taskIds.firstOrNull() // Keep backward compatibility with single taskId column
+            )
+            val focusTimeId = dbQuery.lastInsertRowId().executeAsOne()
+
+            // Link all tasks via junction table
+            taskIds.forEach { taskId ->
+                dbQuery.insertFocusTimeTaskCrossRef(focusTimeId, taskId)
+            }
+
+            focusTimeId
+        }
+    }
+
     fun getAllFocusTimes(): List<FocusTime> {
         return dbQuery
             .selectAllFocusTimes(focusTimeMapper)
@@ -96,6 +164,27 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     fun getAllFocusTimesBetween(from: Long, to: Long): List<FocusTime> {
         return dbQuery
             .selectFocusTimesInPeriod(from, to, focusTimeMapper)
+            .executeAsList()
+    }
+
+    // Many-to-many: FocusTime <-> Task
+    fun linkTaskToFocusTime(focusTimeId: Long, taskId: Long) {
+        dbQuery.insertFocusTimeTaskCrossRef(focusTimeId, taskId)
+    }
+
+    fun unlinkTaskFromFocusTime(focusTimeId: Long, taskId: Long) {
+        dbQuery.deleteFocusTimeTaskCrossRef(focusTimeId, taskId)
+    }
+
+    fun getTasksForFocusTime(focusTimeId: Long): List<Task> {
+        return dbQuery
+            .selectTasksForFocusTime(focusTimeId, taskMapper)
+            .executeAsList()
+    }
+
+    fun getFocusTimesForTask(taskId: Long): List<FocusTime> {
+        return dbQuery
+            .selectFocusTimesForTask(taskId, focusTimeMapper)
             .executeAsList()
     }
 

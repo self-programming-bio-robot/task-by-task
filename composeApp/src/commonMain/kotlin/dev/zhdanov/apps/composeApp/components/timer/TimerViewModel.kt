@@ -141,18 +141,19 @@ class TimerViewModel(
     fun saveFeedback(feedback: CreateFocusTime) {
         viewModelScope.launch {
             val pauseTime = calculatePauseTime()
-            val focusedTaskId = focusTaskService.getFocusedTaskId()
+            val selectedTaskIds = focusTaskService.getSelectedTaskIds()
 
-            val focusTimeWithPause = CreateFocusTime(
-                duration = feedback.duration,
+            database.addFocusTimeWithTasks(
+                duration = feedback.duration.toLong(),
                 feedback = feedback.feedback,
                 finishedAt = feedback.finishedAt,
                 startedAt = _focusSessionStart.value,
-                pauseTime = pauseTime,
-                taskId = focusedTaskId
+                pauseTime = pauseTime?.toLong(),
+                taskIds = selectedTaskIds
             )
 
-            database.addFocusTime(focusTimeWithPause)
+            // Clear selected tasks after saving
+            focusTaskService.clearSelectedTasks()
             resetFocusTracking()
         }
     }

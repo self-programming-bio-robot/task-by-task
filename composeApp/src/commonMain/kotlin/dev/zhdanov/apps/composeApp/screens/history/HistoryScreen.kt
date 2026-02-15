@@ -1,6 +1,7 @@
 package dev.zhdanov.apps.composeApp.screens.history
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,7 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.history.HistoryList
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.DaySummary
+import dev.zhdanov.apps.shared.model.Task
 import dev.zhdanov.apps.shared.model.FocusTimeWithTask
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -34,7 +36,9 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
-fun HistoryScreen() {
+fun HistoryScreen(
+    onNavigateToTask: (Long) -> Unit = {}
+) {
     val viewModel: HistoryViewModel = koinViewModel<HistoryViewModel>()
 
     val history = viewModel.history.collectAsState(listOf())
@@ -104,7 +108,8 @@ fun HistoryScreen() {
                                 selectedDay?.let { day ->
                                     DayNotesList(
                                         daySummary = day,
-                                        focusTimes = focusTimesForDay
+                                        focusTimes = focusTimesForDay,
+                                        onNavigateToTask = onNavigateToTask
                                     )
                                 } ?: run {
                                     Box(
@@ -130,7 +135,8 @@ fun HistoryScreen() {
 @Composable
 private fun DayNotesList(
     daySummary: DaySummary,
-    focusTimes: List<FocusTimeWithTask>
+    focusTimes: List<FocusTimeWithTask>,
+    onNavigateToTask: (Long) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -160,7 +166,8 @@ private fun DayNotesList(
                 items(focusTimes) { item ->
                     NoteCard(
                         focusTime = item.focusTime,
-                        taskTitle = item.task?.title
+                        task = item.task,
+                        onTaskClick = onNavigateToTask
                     )
                 }
             }
@@ -171,7 +178,8 @@ private fun DayNotesList(
 @Composable
 private fun NoteCard(
     focusTime: dev.zhdanov.apps.shared.model.FocusTime,
-    taskTitle: String?
+    task: Task?,
+    onTaskClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -201,13 +209,14 @@ private fun NoteCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                taskTitle?.let { title ->
+                task?.let { taskItem ->
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(4.dp)
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.clickable { onTaskClick(taskItem.id) }
                     ) {
                         Text(
-                            text = title,
+                            text = taskItem.title,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

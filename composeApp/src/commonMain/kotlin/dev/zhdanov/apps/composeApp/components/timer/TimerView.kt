@@ -90,6 +90,101 @@ private fun FocusedTaskIndicator(
 }
 
 /**
+ * UI Component: SelectedTasksIndicator
+ * Shows multiple selected tasks with truncation
+ */
+@Composable
+private fun SelectedTasksIndicator(
+    tasks: List<Task>,
+    onClearTask: (Task) -> Unit,
+    onClearAll: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CenterFocusStrong,
+                    contentDescription = "Selected tasks",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${tasks.size} task${if (tasks.size > 1) "s" else ""} selected",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = onClearAll,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear all tasks",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            // Show task titles
+            tasks.take(3).forEach { task ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                ) {
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { onClearTask(task) },
+                        modifier = Modifier.size(20.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Remove task",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+            if (tasks.size > 3) {
+                Text(
+                    text = "... and ${tasks.size - 3} more",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = 4.dp, start = 12.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
  * Основной компонент таймера, включающий в себя круговой таймер и кнопки управления
  */
 @OptIn(KoinExperimentalAPI::class, ExperimentalTime::class)
@@ -105,7 +200,7 @@ fun TimerView() {
     val state = viewModel.state.collectAsState()
     val settingList = viewModel.settingList.collectAsState(listOf<TimerSettings>())
     val lastPartDuration = viewModel.lastPartDuration.collectAsState()
-    val focusedTask by focusTaskService.focusedTask.collectAsState()
+    val selectedTasks by focusTaskService.selectedTasks.collectAsState()
 
     // Определение цветов в зависимости от состояния таймера
     val accentColor = getAccentColorForState(state.value)
@@ -126,11 +221,12 @@ fun TimerView() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Show focused task indicator if present
-        focusedTask?.let { task ->
-            FocusedTaskIndicator(
-                task = task,
-                onClear = { focusTaskService.clearFocusedTask() }
+        // Show selected tasks indicator if any tasks are selected
+        if (selectedTasks.isNotEmpty()) {
+            SelectedTasksIndicator(
+                tasks = selectedTasks,
+                onClearTask = { task -> focusTaskService.toggleTaskSelection(task) },
+                onClearAll = { focusTaskService.clearSelectedTasks() }
             )
             Spacer(modifier = Modifier.height(8.dp))
         }

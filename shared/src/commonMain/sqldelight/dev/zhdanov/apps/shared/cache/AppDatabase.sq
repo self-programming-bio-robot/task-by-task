@@ -157,6 +157,36 @@ WHERE id = ?;
 deleteTask:
 DELETE FROM Task WHERE id = ?;
 
+-- FocusTime <-> Task Junction Table (Many-to-Many)
+
+CREATE TABLE IF NOT EXISTS FocusTimeTaskCrossRef(
+    focusTimeId INTEGER NOT NULL,
+    taskId INTEGER NOT NULL,
+    PRIMARY KEY(focusTimeId, taskId),
+    FOREIGN KEY(focusTimeId) REFERENCES FocusTime(id),
+    FOREIGN KEY(taskId) REFERENCES Task(id)
+);
+
+insertFocusTimeTaskCrossRef:
+INSERT INTO FocusTimeTaskCrossRef (focusTimeId, taskId)
+VALUES (?, ?);
+
+selectTasksForFocusTime:
+SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.isToday
+FROM Task
+INNER JOIN FocusTimeTaskCrossRef ON Task.id = FocusTimeTaskCrossRef.taskId
+WHERE FocusTimeTaskCrossRef.focusTimeId = ?;
+
+selectFocusTimesForTask:
+SELECT FocusTime.id, FocusTime.duration, FocusTime.feedback, FocusTime.finishedAt, FocusTime.startedAt, FocusTime.pauseTime, FocusTime.taskId
+FROM FocusTime
+INNER JOIN FocusTimeTaskCrossRef ON FocusTime.id = FocusTimeTaskCrossRef.focusTimeId
+WHERE FocusTimeTaskCrossRef.taskId = ?;
+
+deleteFocusTimeTaskCrossRef:
+DELETE FROM FocusTimeTaskCrossRef
+WHERE focusTimeId = ? AND taskId = ?;
+
 -- COMMON
 lastInsertRowId:
 SELECT last_insert_rowid();

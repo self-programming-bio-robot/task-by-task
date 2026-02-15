@@ -2,12 +2,14 @@ package dev.zhdanov.apps.composeApp.screens.tasks
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -26,14 +28,17 @@ import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+import dev.zhdanov.apps.composeApp.services.FocusTaskService
 
 @OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TaskListScreen() {
+fun TaskListScreen(initialTaskId: Long? = null) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val tasks by viewModel.tasks.collectAsState()
+    val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
 
     val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
@@ -41,6 +46,19 @@ fun TaskListScreen() {
     val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
     val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
         RectangleShape else MaterialTheme.shapes.medium
+
+    // Auto-navigate to initial task if provided
+    LaunchedEffect(initialTaskId, tasks) {
+        initialTaskId?.let { taskId ->
+            val task = tasks.find { it.id == taskId }
+            task?.let {
+                navigator.navigateTo(
+                    ThreePaneScaffoldRole.Secondary,
+                    TaskScreens.TaskDetails(task)
+                )
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -126,6 +144,8 @@ fun TaskList(
     onTaskClick: (Task) -> Unit
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
+    val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
+    val selectedTasks by focusTaskService.selectedTasks.collectAsState()
 
     Column {
         LazyColumn(
@@ -140,8 +160,12 @@ fun TaskList(
             items(tasks) { task ->
                 TaskItem(
                     task = task,
+                    isSelected = selectedTasks.any { it.id == task.id },
                     onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
                     onAddToday = { viewModel.updateTask(task.copy(isToday = it)) },
+                    onSelectionToggle = {
+                        focusTaskService.toggleTaskSelection(task)
+                    },
                     onClick = { onTaskClick(task) },
                 )
             }
@@ -152,28 +176,46 @@ fun TaskList(
 @Composable
 fun TaskItem(
     task: Task,
+    isSelected: Boolean,
     onToggleCompletion: () -> Unit,
     onAddToday: (Boolean) -> Unit,
+    onSelectionToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { onClick() },
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else MaterialTheme.colorScheme.surface
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             checked = task.isCompleted,
             onCheckedChange = { onToggleCompletion() }
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = task.title,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        IconToggleButton(
+            checked = isSelected,
+            onCheckedChange = { onSelectionToggle() },
+        ) {
+            Icon(
+                imageVector = Icons.Default.CenterFocusStrong,
+                contentDescription = if (isSelected) "Unfocus task" else "Focus task",
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.width(4.dp))
         IconToggleButton(
             checked = task.isToday,
             onCheckedChange = { onAddToday(it) },

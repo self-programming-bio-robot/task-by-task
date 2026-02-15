@@ -36,7 +36,9 @@ sealed class Screen(
     ) : Screen("Finish day", Icons.AutoMirrored.Sharp.FactCheck)
 
     @Serializable
-    data object TaskList : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)
+    data class TaskList(
+        val initialTaskId: Long? = null
+    ) : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)
 
     @Serializable
     data class Feedback(

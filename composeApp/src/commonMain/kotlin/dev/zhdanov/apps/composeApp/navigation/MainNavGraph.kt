@@ -35,7 +35,11 @@ fun MainNavGraph(
                 }
 
                 is Screen.History -> NavEntry(key as NavKey) {
-                    HistoryScreen()
+                    HistoryScreen(
+                        onNavigateToTask = { taskId ->
+                            viewModel.navigateTo(Screen.TaskList(initialTaskId = taskId))
+                        }
+                    )
                 }
 
                 is Screen.FinishedDay -> NavEntry(key as NavKey) {
@@ -59,7 +63,7 @@ fun MainNavGraph(
                 }
 
                 is Screen.TaskList -> NavEntry(key as NavKey) {
-                    TaskListScreen()
+                    TaskListScreen(initialTaskId = key.initialTaskId)
                 }
 
                 is Screen.Statistics -> NavEntry(key as NavKey) {

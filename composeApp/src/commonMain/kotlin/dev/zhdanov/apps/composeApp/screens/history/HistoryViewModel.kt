@@ -7,6 +7,7 @@ import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTimeWithTask
+import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.DateTimeUnit
@@ -44,11 +45,14 @@ class HistoryViewModel(
         val focusTimes = database.getAllFocusTimes()
         val tasksMap = _tasks.value
         return focusTimes.map { focusTime ->
+            // Get tasks from junction table (many-to-many)
+            val tasksFromJunction = database.getTasksForFocusTime(focusTime.id)
+            val primaryTask = tasksFromJunction.firstOrNull()
+                ?: focusTime.taskId?.let { tasksMap[it] }
+
             FocusTimeWithTask(
                 focusTime = focusTime,
-                task = focusTime.taskId?.let { taskId ->
-                    tasksMap[taskId]
-                }
+                task = primaryTask
             )
         }
     }
@@ -63,11 +67,14 @@ class HistoryViewModel(
         val focusTimes = database.getAllFocusTimesBetween(startOfDay, endOfDay)
         val tasksMap = _tasks.value
         return focusTimes.map { focusTime ->
+            // Get tasks from junction table (many-to-many)
+            val tasksFromJunction = database.getTasksForFocusTime(focusTime.id)
+            val primaryTask = tasksFromJunction.firstOrNull()
+                ?: focusTime.taskId?.let { tasksMap[it] }
+
             FocusTimeWithTask(
                 focusTime = focusTime,
-                task = focusTime.taskId?.let { taskId ->
-                    tasksMap[taskId]
-                }
+                task = primaryTask
             )
         }
     }

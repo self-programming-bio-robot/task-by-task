@@ -29,8 +29,10 @@ import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
+import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -149,7 +151,6 @@ fun HomeScreen(
 
                                 TaskList(
                                     onTaskClick = {},
-                                    onFocusOn = { },
                                 )
                             }
                         }
@@ -164,10 +165,11 @@ fun HomeScreen(
 @Composable
 fun TaskList(
     onTaskClick: (Task) -> Unit,
-    onFocusOn: (Task) -> Unit,
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
+    val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
     val todayTasks by viewModel.todayTask.collectAsState(listOf())
+    val selectedTasks by focusTaskService.selectedTasks.collectAsState()
 
 
     LazyColumn(
@@ -192,8 +194,9 @@ fun TaskList(
             items(todayTasks) { task ->
                 TaskItem(
                     task = task,
+                    isSelected = selectedTasks.any { it.id == task.id },
                     onToggleCompletion = { viewModel.toggleTaskCompletion(task) },
-                    onFocus = { onFocusOn(task) },
+                    onSelectionToggle = { focusTaskService.toggleTaskSelection(task) },
                     onClick = { onTaskClick(task) },
                 )
             }
@@ -204,15 +207,21 @@ fun TaskList(
 @Composable
 fun TaskItem(
     task: Task,
+    isSelected: Boolean,
     onToggleCompletion: () -> Unit,
-    onFocus: () -> Unit,
+    onSelectionToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { onClick() },
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else Color.Transparent
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
@@ -226,12 +235,14 @@ fun TaskItem(
             modifier = Modifier.weight(1f)
         )
         Spacer(modifier = Modifier.width(16.dp))
-        IconButton(
-            onClick = { onFocus() }
+        IconToggleButton(
+            checked = isSelected,
+            onCheckedChange = { onSelectionToggle() }
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,
-                contentDescription = "Focus on",
+                contentDescription = if (isSelected) "Unfocus task" else "Focus task",
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

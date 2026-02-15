@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -36,6 +37,7 @@ fun FinishedDayScreen(
 
     var messageText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     // Initialize chat session
     LaunchedEffect(date) {
@@ -47,30 +49,90 @@ fun FinishedDayScreen(
         viewModel.startSession(date, daySummary)
     }
 
+    // Scroll to bottom when new message arrives
+    LaunchedEffect(session?.messages?.size) {
+        session?.messages?.let { messages ->
+            if (messages.isNotEmpty()) {
+                listState.animateScrollToItem(messages.size + 3) // +3 for header items
+            }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        // Review Section
-        Text("Review:", style = MaterialTheme.typography.headlineMedium)
-        Markdown(summary, modifier = Modifier.wrapContentHeight())
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Buddy:", style = MaterialTheme.typography.headlineMedium)
-        Markdown(response, modifier = Modifier.wrapContentHeight())
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-        // Chat Section
-        Text("Chat with Buddy:", style = MaterialTheme.typography.titleMedium)
-
-        // Messages List
+        // Single scrollable content
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
+            // Review Section Header
+            item {
+                Text(
+                    "Day Review",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            // Summary Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Summary",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Markdown(content = summary)
+                    }
+                }
+            }
+
+            // Buddy Response Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            "Buddy",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Markdown(content = response)
+                    }
+                }
+            }
+
+            // Chat Section Header
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text(
+                    "Chat with Buddy",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            // Chat Messages
             items(session?.messages ?: emptyList()) { message ->
                 MessageBubble(message)
             }
@@ -102,7 +164,7 @@ fun FinishedDayScreen(
             }
         }
 
-        // Input Field
+        // Input Field (always visible at bottom)
         Row(
             modifier = Modifier
                 .fillMaxWidth()

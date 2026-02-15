@@ -30,12 +30,22 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
+
+/**
+ * Response from OpenAI for day review
+ */
+@Serializable
+private data class OpenAIReviewResponse(
+    val summary: String,
+    val response: String
+)
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 class DaySummaryService(
@@ -151,7 +161,7 @@ class DaySummaryService(
             }
     }
 
-    private suspend fun reviewDay(focusTimes: List<FocusTime>): AssistantReviewResponse {
+    private suspend fun reviewDay(focusTimes: List<FocusTime>): OpenAIReviewResponse {
         val token = database.settingRepository.getSetting<String>(SettingKey.OPENAI_TOKEN)
             ?: run { throw IllegalStateException("OpenAI token not found") }
 
@@ -187,7 +197,7 @@ class DaySummaryService(
             it.message.content ?: ""
         }
 
-        return Json.decodeFromString<AssistantReviewResponse>(content)
+        return Json.decodeFromString<OpenAIReviewResponse>(content)
     }
 
     companion object {

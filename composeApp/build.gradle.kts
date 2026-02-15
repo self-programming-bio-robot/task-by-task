@@ -97,6 +97,12 @@ kotlin {
 
             implementation(libs.openai.client)
 
+            // Ktor client dependencies for OpenAI client
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
             implementation(libs.kcron.common)
 
             implementation(libs.multiplatform.markdown.renderer.m3)

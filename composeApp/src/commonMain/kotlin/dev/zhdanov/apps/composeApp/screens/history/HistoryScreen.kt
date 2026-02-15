@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -21,13 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.history.HistoryList
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.Task
-import dev.zhdanov.apps.shared.model.FocusTimeWithTask
+import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
@@ -37,7 +37,8 @@ import kotlin.time.ExperimentalTime
 @OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun HistoryScreen(
-    onNavigateToTask: (Long) -> Unit = {}
+    onNavigateToTask: (Long) -> Unit = {},
+    onNavigateToDayDetail: (LocalDate) -> Unit = {}
 ) {
     val viewModel: HistoryViewModel = koinViewModel<HistoryViewModel>()
 
@@ -52,7 +53,7 @@ fun HistoryScreen(
 
     // Selected day for detail view
     var selectedDay by remember { mutableStateOf<DaySummary?>(null) }
-    var focusTimesForDay by remember { mutableStateOf<List<FocusTimeWithTask>>(emptyList()) }
+    var focusTimesForDay by remember { mutableStateOf<List<FocusTimeWithTasks>>(emptyList()) }
 
     Scaffold(
         topBar = {
@@ -109,7 +110,8 @@ fun HistoryScreen(
                                     DayNotesList(
                                         daySummary = day,
                                         focusTimes = focusTimesForDay,
-                                        onNavigateToTask = onNavigateToTask
+                                        onNavigateToTask = onNavigateToTask,
+                                        onOpenDetail = { onNavigateToDayDetail(day.date) }
                                     )
                                 } ?: run {
                                     Box(
@@ -135,21 +137,35 @@ fun HistoryScreen(
 @Composable
 private fun DayNotesList(
     daySummary: DaySummary,
-    focusTimes: List<FocusTimeWithTask>,
-    onNavigateToTask: (Long) -> Unit
+    focusTimes: List<FocusTimeWithTasks>,
+    onNavigateToTask: (Long) -> Unit,
+    onOpenDetail: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Header
-        Text(
-            text = "Notes for ${daySummary.date}",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
+        // Header with open detail button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Notes for ${daySummary.date}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            IconButton(onClick = onOpenDetail) {
+                Icon(
+                    imageVector = Icons.Default.OpenInNew,
+                    contentDescription = "Open in detail screen",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         // Focus sessions with notes
@@ -165,8 +181,7 @@ private fun DayNotesList(
             ) {
                 items(focusTimes) { item ->
                     NoteCard(
-                        focusTime = item.focusTime,
-                        task = item.task,
+                        focusTimeWithTasks = item,
                         onTaskClick = onNavigateToTask
                     )
                 }
@@ -177,10 +192,12 @@ private fun DayNotesList(
 
 @Composable
 private fun NoteCard(
-    focusTime: dev.zhdanov.apps.shared.model.FocusTime,
-    task: Task?,
+    focusTimeWithTasks: FocusTimeWithTasks,
     onTaskClick: (Long) -> Unit
 ) {
+    val focusTime = focusTimeWithTasks.focusTime
+    val tasks = focusTimeWithTasks.tasks
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -193,7 +210,8 @@ private fun NoteCard(
             // Time and duration
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -209,18 +227,19 @@ private fun NoteCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                task?.let { taskItem ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.clickable { onTaskClick(taskItem.id) }
-                    ) {
-                        Text(
-                            text = taskItem.title,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            maxLines = 1
+            }
+
+            // Linked Tasks (can be multiple)
+            if (tasks.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    tasks.forEach { task ->
+                        TaskChip(
+                            task = task,
+                            onClick = { onTaskClick(task.id) }
                         )
                     }
                 }
@@ -236,5 +255,25 @@ private fun NoteCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TaskChip(
+    task: Task,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(4.dp),
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        Text(
+            text = task.title,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            maxLines = 1
+        )
     }
 }

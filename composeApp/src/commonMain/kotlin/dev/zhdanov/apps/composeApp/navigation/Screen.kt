@@ -48,4 +48,9 @@ sealed class Screen(
 
     @Serializable
     data object Statistics : Screen("Statistics", Icons.Sharp.BarChart)
+
+    @Serializable
+    data class DayDetail(
+        val date: LocalDate
+    ) : Screen("Day Detail", Icons.Sharp.HistoryEdu)
 }

@@ -20,8 +20,8 @@ This document is used as a living checklist and progress tracker for the develop
 
 ## 2. Detail day review screen with list of notes ✅
 - [x] 2.1 UI for notes list in a extra pane
-- [ ] 2.2 Add support detail review screen in separate screen. Open it on new screen with back navigation.
-- [ ] 2.3 Add support several tasks in one focus time.
+- [x] 2.2 Add support detail review screen in separate screen. Open it on new screen with back navigation.
+- [x] 2.3 Add support several tasks in one focus time.
 
 ## 3. Add a start of focus time, to calculate pause time ✅
 - [x] 3.1 Track focus start

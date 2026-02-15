@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
+import dev.zhdanov.apps.composeApp.screens.history.DayDetailScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
 import dev.zhdanov.apps.composeApp.screens.settings.SettingsScreen
@@ -36,6 +37,19 @@ fun MainNavGraph(
 
                 is Screen.History -> NavEntry(key as NavKey) {
                     HistoryScreen(
+                        onNavigateToTask = { taskId ->
+                            viewModel.navigateTo(Screen.TaskList(initialTaskId = taskId))
+                        },
+                        onNavigateToDayDetail = { date ->
+                            viewModel.navigateTo(Screen.DayDetail(date = date))
+                        }
+                    )
+                }
+
+                is Screen.DayDetail -> NavEntry(key as NavKey) {
+                    DayDetailScreen(
+                        date = key.date,
+                        onBack = { viewModel.goBack() },
                         onNavigateToTask = { taskId ->
                             viewModel.navigateTo(Screen.TaskList(initialTaskId = taskId))
                         }

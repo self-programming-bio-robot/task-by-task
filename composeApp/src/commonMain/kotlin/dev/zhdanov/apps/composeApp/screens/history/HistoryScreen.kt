@@ -31,7 +31,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.time.ExperimentalTime
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@OptIn(
+    KoinExperimentalAPI::class,
+    ExperimentalMaterial3AdaptiveApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalTime::class
+)
 @Composable
 fun HistoryScreen(
     onNavigateToTask: (Long) -> Unit = {},
@@ -44,7 +49,7 @@ fun HistoryScreen(
     val windowInfo = currentWindowAdaptiveInfo()
     val navigator = rememberSupportingPaneScaffoldNavigator<LocalDate>()
 
-    val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.MEDIUM
+    val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
     val padding = if (isCompact) 0.dp else 16.dp
     val shape = if (isCompact) RectangleShape else MaterialTheme.shapes.medium
 
@@ -72,25 +77,27 @@ fun HistoryScreen(
             Box(modifier = Modifier.padding(paddings)) {
                 if (isCompact) {
                     // Compact mode: just show the list
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = shape
-                            ),
-                        contentAlignment = Alignment.Center
+                    Box(modifier = Modifier
+                        .padding(start = padding, end = padding, bottom = padding)
                     ) {
-                        if (isLoading.value) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(50.dp)
-                            )
-                        } else {
-                            HistoryList(
-                                items = history.value,
-                                onDayClick = handleDayClick
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = shape
+                                )
+                        ) {
+                            if (isLoading.value) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(50.dp)
+                                )
+                            } else {
+                                HistoryList(
+                                    items = history.value,
+                                    onDayClick = handleDayClick
+                                )
+                            }
                         }
                     }
                 } else {

@@ -148,35 +148,39 @@ fun StatisticsScreen() {
 
                         // Focus Time Chart - only show when height is sufficient
                         if (chartData.isNotEmpty() && hasSpaceForChart) {
-                            Card(
+                            BoxWithConstraints(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f)
-                                    .onSizeChanged { size ->
-                                        val widthDp = with(density) { size.width.toDp() }
-
-                                        // Calculate max columns based on available width
-                                        // Account for padding (16dp * 2 = 32dp)
-                                        val availableWidth = widthDp - 32.dp
-                                        val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
-                                            .coerceIn(1, MAX_COLUMNS)
-                                        viewModel.updateColumnCount(maxColumns)
-                                    }
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp)
+                                // Calculate max columns based on available width at composition time
+                                val availableWidth = maxWidth - 32.dp // Account for Card padding
+                                val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
+                                    .coerceIn(1, MAX_COLUMNS)
+
+                                // Update column count on initial composition and when constraints change
+                                LaunchedEffect(maxColumns) {
+                                    viewModel.updateColumnCount(maxColumns)
+                                }
+
+                                Card(
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
-                                    Text(
-                                        text = "Focus Time (minutes)",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    SimpleBarChart(
-                                        data = chartData,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                    )
+                                    Column(
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Text(
+                                            text = "Focus Time (minutes)",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        SimpleBarChart(
+                                            data = chartData,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .weight(1f)
+                                        )
+                                    }
                                 }
                             }
                         }

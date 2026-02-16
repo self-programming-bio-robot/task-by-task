@@ -63,17 +63,22 @@ fun StatisticsScreen() {
     Scaffold(
         topBar = { TopBar("Statistics") }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(padding)
-                .padding(16.dp)
-                .onSizeChanged { size ->
-                    val heightDp = with(density) { size.height.toDp() }
-                    availableHeightDp = heightDp
-                },
-            verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .onSizeChanged { size ->
+                        val heightDp = with(density) { size.height.toDp() }
+                        availableHeightDp = heightDp
+                    },
+                verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
+            ) {
             // Period Selection
             PeriodSelector(
                 selectedPeriod = selectedPeriod,
@@ -161,6 +166,7 @@ fun StatisticsScreen() {
                 }
             }
         }
+        }
     }
 }
 
@@ -182,7 +188,7 @@ private fun SimpleBarChart(
     val maxFocusTime = max(1, data.maxOf { it.focusTimeMinutes })
 
     Row(
-        modifier = modifier,
+        modifier = modifier.fillMaxHeight(),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -195,11 +201,11 @@ private fun SimpleBarChart(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(
+                        .weight(
                             if (entry.focusTimeMinutes > 0) {
-                                (entry.focusTimeMinutes.toFloat() / maxFocusTime * 150).dp
+                                entry.focusTimeMinutes.toFloat() / maxFocusTime
                             } else {
-                                4.dp
+                                0.01f
                             }
                         )
                         .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))

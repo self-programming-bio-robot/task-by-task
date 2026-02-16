@@ -8,22 +8,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FactCheck
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
@@ -37,44 +28,24 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 fun HomeScreen(
     onFinishDay: (review: AssistantReviewResponse) -> Unit
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
 
-    val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     val isActive by viewModel.isActive.collectAsState()
-
-    val navigator = rememberSupportingPaneScaffoldNavigator<String>()
-    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
-    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
-        RectangleShape else MaterialTheme.shapes.medium
 
     Scaffold(
         topBar = {
             TopBar(
                 title = "Home",
-                hasBack = navigator.canNavigateBack(),
-                onBack = { navigator.navigateBack() },
+                hasBack = false,
+                onBack = {},
                 actions = {
-                    IconButton(
-                        enabled = isActive,
-                        onClick = {
-                            coroutineScope.launch {
-                                navigator.navigateTo(ThreePaneScaffoldRole.Secondary)
-                            }
-                        },
-                        modifier = Modifier
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarToday,
-                            contentDescription = "Today tasks"
-                        )
-                    }
                     IconButton(
                         enabled = isActive,
                         onClick = {
@@ -83,8 +54,7 @@ fun HomeScreen(
                                 onFinishDay(viewModel.finishDay())
                                 isLoading = false
                             }
-                        },
-                        modifier = Modifier
+                        }
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.FactCheck,
@@ -95,74 +65,69 @@ fun HomeScreen(
             )
         },
         content = { paddings ->
-            Box(modifier = Modifier.padding(paddings)) {
-                SupportingPaneScaffold(
+            Column(
+                modifier = Modifier
+                    .padding(paddings)
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Timer
+                Box(
                     modifier = Modifier
-                        .padding(start = padding, end = padding, bottom = padding),
-                    directive = navigator.scaffoldDirective,
-                    value = navigator.scaffoldValue,
-                    mainPane = {
-                        AnimatedPane {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = shape
-                                    ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                TimerView()
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TimerView()
 
-                                if (isLoading) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clickable(
-                                                indication = null,
-                                                interactionSource = remember { MutableInteractionSource() },
-                                                onClick = { }
-                                            )
-                                            .background(Color.White.copy(alpha = 0.3f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(50.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    supportingPane = {
-                        AnimatedPane {
-                            Column(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        shape = shape
-                                    ),
-                            ) {
-                                Text(
-                                    text = "For today",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    onClick = { }
                                 )
-
-                                TodayTaskList(
-                                    onTaskClick = {},
-                                    onTaskFocused = {
-                                        // Navigate back to timer (main pane) after selecting a task
-                                        coroutineScope.launch {
-                                            navigator.navigateTo(ThreePaneScaffoldRole.Primary)
-                                        }
-                                    }
-                                )
-                            }
+                                .background(Color.White.copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(50.dp)
+                            )
                         }
                     }
-                )
+                }
+
+                // Task list
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "For today",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
+
+                    TodayTaskList(
+                        onTaskClick = {},
+                        onTaskFocused = {}
+                    )
+                }
             }
         }
     )
@@ -183,7 +148,7 @@ fun TodayTaskList(
 
 
     LazyColumn(
-        modifier = Modifier,
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         item {

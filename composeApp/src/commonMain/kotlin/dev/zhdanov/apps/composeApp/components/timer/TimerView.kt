@@ -238,16 +238,6 @@ fun TimerView() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Show session tasks indicator if there are any tasks in the session
-            if (completedTasks.isNotEmpty() || focusedTask != null) {
-                SessionTasksIndicator(
-                    completedTasks = completedTasks,
-                    activeTask = focusedTask,
-                    onClearActive = { focusTaskService.clearFocusedTask() }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
             // Компонент кругового таймера
             TimerCircle(
                 progress = progress.value,
@@ -271,6 +261,16 @@ fun TimerView() {
                 onStop = { viewModel.stopTimer() },
                 onSkip = { viewModel.skipTimer() }
             )
+
+            // Show session tasks indicator if there are any tasks in the session
+            if (completedTasks.isNotEmpty() || focusedTask != null) {
+                Spacer(modifier = Modifier.height(VERTICAL_SPACING))
+                SessionTasksIndicator(
+                    completedTasks = completedTasks,
+                    activeTask = focusedTask,
+                    onClearActive = { focusTaskService.clearFocusedTask() }
+                )
+            }
         }
     }
 }

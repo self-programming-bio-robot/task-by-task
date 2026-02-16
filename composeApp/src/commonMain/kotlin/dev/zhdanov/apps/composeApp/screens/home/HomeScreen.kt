@@ -243,6 +243,9 @@ fun TodayTaskItem(
     onFocusToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
+    // Completed tasks cannot be focused
+    val canFocus = !task.isCompleted
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -263,13 +266,17 @@ fun TodayTaskItem(
         )
         Spacer(modifier = Modifier.width(16.dp))
         IconButton(
-            onClick = { onFocusToggle() }
+            onClick = { if (canFocus) onFocusToggle() },
+            enabled = canFocus || isFocused // Allow unfocus if already focused, but not focus completed tasks
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,
                 contentDescription = if (isFocused) "Unfocus task" else "Focus task",
-                tint = if (isFocused) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurfaceVariant
+                tint = when {
+                    isFocused -> MaterialTheme.colorScheme.primary
+                    canFocus -> MaterialTheme.colorScheme.onSurfaceVariant
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                }
             )
         }
     }

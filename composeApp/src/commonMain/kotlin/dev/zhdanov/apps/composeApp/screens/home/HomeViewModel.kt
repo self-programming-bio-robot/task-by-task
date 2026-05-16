@@ -4,18 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
-import dev.zhdanov.apps.shared.cache.Database
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class HomeViewModel(
-    private val database: Database,
     private val daySummaryService: DaySummaryService,
 ): ViewModel() {
     private val _isActive = MutableStateFlow<Boolean>(false)
@@ -30,18 +24,13 @@ class HomeViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun checkActiveDay() {
-        val today = Clock.System.now()
-            .minus(5.hours)
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
-        database.getDaySummary(today) ?: run {
-            _isActive.value = true
-        }
+    private suspend fun checkActiveDay() {
+        _isActive.value = daySummaryService.isCurrentDayActive()
     }
 
     suspend fun finishDay(): AssistantReviewResponse {
+        val review = daySummaryService.finishDay()
         _isActive.value = false
-        return daySummaryService.finishDay()
+        return review
     }
 }

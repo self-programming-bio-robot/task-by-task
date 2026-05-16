@@ -2,7 +2,7 @@ package dev.zhdanov.apps.composeApp.screens.statistics
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.zhdanov.apps.shared.cache.Database
+import dev.zhdanov.apps.composeApp.services.StatisticsDataService
 import dev.zhdanov.apps.shared.model.FocusTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +27,7 @@ data class ChartEntry(
 )
 
 class StatisticsViewModel(
-    private val database: Database
+    private val statisticsDataService: StatisticsDataService
 ) : ViewModel() {
 
     private val _selectedPeriod = MutableStateFlow(StatisticsPeriod.DAY)
@@ -57,6 +57,7 @@ class StatisticsViewModel(
     // Store raw data for re-aggregation when column count changes
     private var rawFocusTimes: List<FocusTime> = emptyList()
     private var rawStartDate: LocalDate? = null
+    private var rawEndDate: LocalDate? = null
 
     init {
         loadData()
@@ -90,20 +91,23 @@ class StatisticsViewModel(
      * @param maxColumns Maximum number of columns that can be displayed
      */
     fun updateColumnCount(maxColumns: Int) {
-        rawStartDate?.let { startDate ->
-            _chartData.value = buildChartData(rawFocusTimes, startDate, maxColumns)
+        val startDate = rawStartDate
+        val endDate = rawEndDate
+        if (startDate != null && endDate != null) {
+            _chartData.value = buildChartData(rawFocusTimes, startDate, endDate, maxColumns)
         }
     }
 
     @OptIn(ExperimentalTime::class)
     private fun loadData() {
         viewModelScope.launch {
-            val (from, to, startDate) = getDateRange()
-            val focusTimes = database.getAllFocusTimesBetween(from, to)
+            val (from, to, startDate, endDate) = getDateRange()
+            val focusTimes = statisticsDataService.getFocusTimesBetween(from, to)
 
             // Store raw data for re-aggregation
             rawFocusTimes = focusTimes
             rawStartDate = startDate
+            rawEndDate = endDate
 
             // Focus time in seconds
             _focusTimeData.value = focusTimes.sumOf { it.duration.toLong() }
@@ -112,7 +116,7 @@ class StatisticsViewModel(
             _workCyclesData.value = focusTimes.size
 
             // Tasks data - filter by selected period
-            val allTasks = database.taskRepository.getAllTasks()
+            val allTasks = statisticsDataService.getAllTasks()
             val timeZone = TimeZone.currentSystemDefault()
 
             // Tasks created in period
@@ -130,7 +134,7 @@ class StatisticsViewModel(
             }
 
             // Chart data with default column count
-            _chartData.value = buildChartData(focusTimes, startDate, getMaxColumnsForPeriod())
+            _chartData.value = buildChartData(focusTimes, startDate, endDate, getMaxColumnsForPeriod())
         }
     }
 
@@ -145,6 +149,7 @@ class StatisticsViewModel(
     private fun buildChartData(
         focusTimes: List<FocusTime>,
         startDate: LocalDate,
+        endDate: LocalDate,
         maxColumns: Int
     ): List<ChartEntry> {
         val timeZone = TimeZone.currentSystemDefault()
@@ -192,9 +197,9 @@ class StatisticsViewModel(
             }
             StatisticsPeriod.MONTH -> {
                 // Group days into buckets based on maxColumns
-                val daysInMonth = 28 // Show first 28 days
+                val daysInMonth = endDate.dayOfMonth
                 val daysPerBucket = (daysInMonth + maxColumns - 1) / maxColumns.coerceAtLeast(1)
-                val bucketCount = daysInMonth / daysPerBucket
+                val bucketCount = (daysInMonth + daysPerBucket - 1) / daysPerBucket
                 val dayData = MutableList(bucketCount) { 0 }
 
                 focusTimes.forEach { ft ->
@@ -224,7 +229,7 @@ class StatisticsViewModel(
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun getDateRange(): Triple<Long, Long, LocalDate> {
+    private fun getDateRange(): DateRange {
         val now = Clock.System.now()
         val timeZone = TimeZone.currentSystemDefault()
         val currentDateTime = now.toLocalDateTime(timeZone)
@@ -263,9 +268,9 @@ class StatisticsViewModel(
         // Update period label
         _periodLabel.value = when (_selectedPeriod.value) {
             StatisticsPeriod.DAY -> {
-                val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+                val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                 val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-                "${dayNames[baseFromDate.dayOfWeek.ordinal % 7]}, ${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth}"
+                "${dayNames[baseFromDate.dayOfWeek.ordinal]}, ${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth}"
             }
             StatisticsPeriod.WEEK -> {
                 val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -293,6 +298,18 @@ class StatisticsViewModel(
             now.toEpochMilliseconds()
         }
 
-        return Triple(fromInstant.toEpochMilliseconds(), toEpochMs, baseFromDate)
+        return DateRange(
+            from = fromInstant.toEpochMilliseconds(),
+            to = toEpochMs,
+            startDate = baseFromDate,
+            endDate = periodEnd
+        )
     }
 }
+
+private data class DateRange(
+    val from: Long,
+    val to: Long,
+    val startDate: LocalDate,
+    val endDate: LocalDate
+)

@@ -5,7 +5,8 @@ import kotlinx.coroutines.*
 class InfiniteTimer(
     private val coroutineScope: CoroutineScope,
     initialStage: TimerStage,
-    override val timerListener: Timer.TimerListener
+    override val timerListener: Timer.TimerListener,
+    private val ticker: TimerTicker = RealTimerTicker
 ) : Timer {
     private var stage: TimerStage = initialStage
     private var state: TimerState = TimerState.IDLE
@@ -22,7 +23,7 @@ class InfiniteTimer(
 
         timerJob = coroutineScope.launch {
             while (this.isActive && state == TimerState.IN_PROGRESS) {
-                delay(1000)
+                ticker.waitForNextTick()
                 time += 1
                 timerListener.onTick(time, (time % 60) / 60f)
             }
@@ -39,7 +40,10 @@ class InfiniteTimer(
     }
 
     override fun reset() {
-        stop()
+        timerJob?.cancel()
+        state = TimerState.IDLE
+        time = setInitialTime()
+        timerListener.onChangeState(state)
     }
 
     override fun pause() {

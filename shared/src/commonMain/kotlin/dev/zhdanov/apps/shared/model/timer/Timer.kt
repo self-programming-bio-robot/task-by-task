@@ -1,5 +1,7 @@
 package dev.zhdanov.apps.shared.model.timer
 
+import kotlinx.coroutines.delay
+
 interface Timer {
 
     interface TimerListener {
@@ -39,4 +41,14 @@ enum class TimerState {
 enum class TimerStage {
     WORK,
     REST
+}
+
+fun interface TimerTicker {
+    suspend fun waitForNextTick()
+}
+
+object RealTimerTicker : TimerTicker {
+    override suspend fun waitForNextTick() {
+        delay(1000)
+    }
 }

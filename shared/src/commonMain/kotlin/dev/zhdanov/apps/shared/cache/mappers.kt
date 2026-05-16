@@ -3,18 +3,26 @@ package dev.zhdanov.apps.shared.cache
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.model.Task
+import dev.zhdanov.apps.shared.model.TaskSummary
 import dev.zhdanov.apps.shared.model.TimerSettings
 import dev.zhdanov.apps.shared.utils.toLocalDate
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import kotlin.time.ExperimentalTime
 
-val daySummaryMapper = { date: Long, focusTime: Long, review: String ->
+private val summaryJson = Json { ignoreUnknownKeys = true }
+
+val daySummaryMapper = { date: Long, focusTime: Long, review: String, linkedTasks: String ->
     DaySummary(
         date = date.toLocalDate(),
         focusTime = focusTime,
-        review = review
+        review = review,
+        linkedTasks = runCatching {
+            summaryJson.decodeFromString<List<TaskSummary>>(linkedTasks)
+        }.getOrDefault(emptyList())
     )
 }
 

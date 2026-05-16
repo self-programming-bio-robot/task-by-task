@@ -32,6 +32,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
+import dev.zhdanov.apps.composeApp.services.TimerSessionService
 
 @OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -147,12 +148,13 @@ fun TaskListScreen(
 fun TaskList(
     tasks: List<Task>,
     onTaskClick: (Task) -> Unit,
-    onTaskFocused: () -> Unit = {},
-    isTimerRunning: Boolean = false
+    onTaskFocused: () -> Unit = {}
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
+    val timerSessionService: TimerSessionService = koinInject<TimerSessionService>()
     val focusedTask by focusTaskService.focusedTask.collectAsState()
+    val isTimerRunning by timerSessionService.isRunning.collectAsState()
 
     Column {
         LazyColumn(
@@ -224,7 +226,8 @@ fun TaskItem(
         )
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(
-            onClick = { onFocusToggle() }
+            onClick = { if (!task.isCompleted || isFocused) onFocusToggle() },
+            enabled = !task.isCompleted || isFocused
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,

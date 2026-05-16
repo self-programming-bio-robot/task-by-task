@@ -29,6 +29,7 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.shared.model.Task
@@ -206,7 +207,7 @@ private fun SessionTasksIndicator(
 @Composable
 @Preview
 fun TimerView() {
-    val viewModel = koinInject<TimerViewModel>()
+    val viewModel = koinViewModel<TimerViewModel>()
     val focusTaskService = koinInject<FocusTaskService>()
     val isPaused = viewModel.isPause.collectAsState()
     val isRunning = viewModel.isRunning.collectAsState()

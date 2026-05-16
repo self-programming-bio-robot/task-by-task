@@ -59,10 +59,15 @@ kotlin {
 
     sourceSets {
         val desktopMain by getting
+        val desktopTest by getting
 
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -117,6 +122,9 @@ kotlin {
             implementation(libs.ktor.client.jvm)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.jsystemthemedetector)
+        }
+        desktopTest.dependencies {
+            implementation(libs.jvm.driver)
         }
     }
 }

@@ -1,5 +1,9 @@
 # Task-by-Task Feature Progress
 
+## Current Runtime Support
+
+The actively supported runtime is Desktop. Android and iOS source sets are kept in the project for future work, but their platform DI/database wiring is intentionally not part of the current supported path.
+
 This document is used as a living checklist and progress tracker for the development of the project.
 
 - Each feature is listed as a separate section with its own subtasks.

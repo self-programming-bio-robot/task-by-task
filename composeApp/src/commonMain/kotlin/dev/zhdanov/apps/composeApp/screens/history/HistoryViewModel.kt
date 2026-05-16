@@ -2,83 +2,42 @@ package dev.zhdanov.apps.composeApp.screens.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.zhdanov.apps.shared.cache.Database
-import dev.zhdanov.apps.shared.cache.repository.TaskRepository
+import dev.zhdanov.apps.composeApp.services.HistoryService
 import dev.zhdanov.apps.shared.model.DaySummary
-import dev.zhdanov.apps.shared.model.FocusTimeWithTask
 import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
-import dev.zhdanov.apps.shared.model.Task
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlinx.serialization.Serializable
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
 class HistoryViewModel(
-    private val database: Database,
-    private val taskRepository: TaskRepository
-): ViewModel() {
-
-    private val _isLoading = MutableStateFlow<Boolean>(false)
+    private val historyService: HistoryService
+) : ViewModel() {
+    private val _isLoading = MutableStateFlow(false)
     private val _history = MutableStateFlow<List<DaySummary>>(emptyList())
-    private val _tasks = MutableStateFlow<Map<Long, Task>>(emptyMap())
 
-    val isLoading = _isLoading
-        .onStart {
+    val isLoading = _isLoading.asStateFlow()
+    val history = _history.asStateFlow()
+
+    init {
+        refresh()
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
             _isLoading.value = true
-            _history.value = database.getAllDaySummaries()
-            _tasks.value = taskRepository.getAllTasks().associateBy { it.id }
+            _history.value = historyService.getHistory()
             _isLoading.value = false
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), false)
-
-    val history: Flow<List<DaySummary>> = _history.asStateFlow()
-    val tasks: Flow<Map<Long, Task>> = _tasks.asStateFlow()
-
-    fun getFocusTimesWithTasks(): List<FocusTimeWithTasks> {
-        val focusTimes = database.getAllFocusTimes()
-        val tasksMap = _tasks.value
-        return focusTimes.map { focusTime ->
-            // Get tasks from junction table (many-to-many)
-            val tasksFromJunction = database.getTasksForFocusTime(focusTime.id)
-            val fallbackTask = focusTime.taskId?.let { tasksMap[it] }?.let { listOf(it) } ?: emptyList()
-            val allTasks = if (tasksFromJunction.isNotEmpty()) tasksFromJunction else fallbackTask
-
-            FocusTimeWithTasks(
-                focusTime = focusTime,
-                tasks = allTasks
-            )
-        }
     }
 
-    @ExperimentalTime
-    fun getFocusTimesWithTasksForDate(date: LocalDate): List<FocusTimeWithTasks> {
-        val timeZone = TimeZone.currentSystemDefault()
-        val startOfDay = LocalDateTime(date, LocalTime(0, 0))
-            .toInstant(timeZone).toEpochMilliseconds()
-        val endOfDay = startOfDay + (24 * 60 * 60 * 1000) // +1 day in milliseconds
-
-        val focusTimes = database.getAllFocusTimesBetween(startOfDay, endOfDay)
-        val tasksMap = _tasks.value
-        return focusTimes.map { focusTime ->
-            // Get tasks from junction table (many-to-many)
-            val tasksFromJunction = database.getTasksForFocusTime(focusTime.id)
-            val fallbackTask = focusTime.taskId?.let { tasksMap[it] }?.let { listOf(it) } ?: emptyList()
-            val allTasks = if (tasksFromJunction.isNotEmpty()) tasksFromJunction else fallbackTask
-
-            FocusTimeWithTasks(
-                focusTime = focusTime,
-                tasks = allTasks
-            )
-        }
+    suspend fun getFocusTimesWithTasksForDate(date: LocalDate): List<FocusTimeWithTasks> {
+        return historyService.getFocusTimesWithTasksForDate(date)
     }
 
-    fun getDaySummary(date: LocalDate): DaySummary? {
-        return database.getDaySummary(date)
+    suspend fun getDaySummary(date: LocalDate): DaySummary? {
+        return historyService.getDaySummary(date)
     }
 }
 

@@ -3,14 +3,13 @@ package dev.zhdanov.apps.composeApp.screens.tasks
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
-import dev.zhdanov.apps.shared.cache.Database
-import dev.zhdanov.apps.shared.model.CreateTask
+import dev.zhdanov.apps.composeApp.services.TaskDataService
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class TaskListViewModel(
-    private val database: Database,
+    private val taskDataService: TaskDataService,
     private val daySummaryService: DaySummaryService
 ) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
@@ -27,7 +26,7 @@ class TaskListViewModel(
 
     private fun loadTasks() {
         viewModelScope.launch {
-            _tasks.value = database.taskRepository.getAllTasks().sortedWith(
+            _tasks.value = taskDataService.getAllTasks().sortedWith(
                 compareBy(
                     { it.isCompleted },
                     { it.createdAt }
@@ -40,7 +39,7 @@ class TaskListViewModel(
         val trimmedTitle = title.trim()
         if (trimmedTitle.isNotEmpty()) {
             viewModelScope.launch {
-                database.taskRepository.addTask(CreateTask(trimmedTitle))
+                taskDataService.addTask(trimmedTitle)
                 loadTasks()
             }
         }
@@ -50,7 +49,7 @@ class TaskListViewModel(
         val trimmedTitle = title.trim()
         if (trimmedTitle.isNotEmpty()) {
             viewModelScope.launch {
-                database.taskRepository.addTask(CreateTask(trimmedTitle, isToday = true))
+                taskDataService.addTask(trimmedTitle, isToday = true)
                 loadTasks()
             }
         }
@@ -61,7 +60,7 @@ class TaskListViewModel(
             if (task.isCompleted) {
                 // If you want to allow uncompleting tasks, you'll need to add this functionality to your repository
             } else {
-                database.taskRepository.completeTask(task.id)
+                taskDataService.completeTask(task.id)
             }
             loadTasks()
         }
@@ -69,7 +68,7 @@ class TaskListViewModel(
 
     fun updateTask(updatedTask: Task) {
         viewModelScope.launch {
-            database.taskRepository.updateTask(updatedTask)
+            taskDataService.updateTask(updatedTask)
             loadTasks()
         }
     }

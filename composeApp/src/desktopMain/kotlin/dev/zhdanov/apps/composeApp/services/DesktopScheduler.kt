@@ -24,6 +24,7 @@ class DesktopScheduler(
 ) : SchedulerService {
 
     private val schedulers = PriorityQueue<Scheduler> { s1, s2 -> s1.nextRun.compareTo(s2.nextRun) }
+    private val lock = Any()
 
     init {
         loop()
@@ -35,7 +36,10 @@ class DesktopScheduler(
             it.firstDayOfWeek = WeekDays.Monday
         }
 
-        addRun(cronBuilder, tag, timeZone, action)
+        synchronized(lock) {
+            schedulers.removeAll { it.tag == tag }
+            addRun(cronBuilder, tag, timeZone, action)
+        }
     }
 
     override fun addScheduler(tag: String, cron: String, action: SchedulerAction) {
@@ -45,15 +49,22 @@ class DesktopScheduler(
     private fun loop() {
         executor.scheduleAtFixedRate(
             {
-                if (schedulers.isNotEmpty()) {
-                    val scheduler = schedulers.peek()
+                val scheduler = synchronized(lock) {
+                    schedulers.peek()
+                }
+
+                if (scheduler != null) {
                     val duration = scheduler.nextRun.minus(Clock.System.now())
 
                     if (duration.isNegative()) {
-                        schedulers.poll()
+                        synchronized(lock) {
+                            schedulers.poll()
+                        }
                         logger.i { "Run scheduler: '${scheduler.tag}'" }
 
-                        addRun(scheduler.cron, scheduler.tag, scheduler.timeZone, scheduler.action)
+                        synchronized(lock) {
+                            addRun(scheduler.cron, scheduler.tag, scheduler.timeZone, scheduler.action)
+                        }
                         scheduler.action.invoke(scheduler.nextRun, Clock.System.now(), scheduler.timeZone)
                     }
                 }

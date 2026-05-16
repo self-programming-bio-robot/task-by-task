@@ -26,6 +26,7 @@ import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.Task
 import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -48,6 +49,7 @@ fun HistoryScreen(
     val isLoading = viewModel.isLoading.collectAsState(initial = false)
     val windowInfo = currentWindowAdaptiveInfo()
     val navigator = rememberSupportingPaneScaffoldNavigator<LocalDate>()
+    val coroutineScope = rememberCoroutineScope()
 
     val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
     val padding = if (isCompact) 0.dp else 16.dp
@@ -65,7 +67,9 @@ fun HistoryScreen(
         } else {
             // On wide screens, show in supporting pane
             selectedDay = daySummary
-            focusTimesForDay = viewModel.getFocusTimesWithTasksForDate(daySummary.date)
+            coroutineScope.launch {
+                focusTimesForDay = viewModel.getFocusTimesWithTasksForDate(daySummary.date)
+            }
         }
     }
 

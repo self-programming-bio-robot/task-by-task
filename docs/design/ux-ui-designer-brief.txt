@@ -1,0 +1,942 @@
+TASK BY TASK — UX/UI BRIEF FOR DESIGNER
+
+Document purpose
+This file describes the implemented product structure, screens, navigation, user scenarios, entities, states, and interaction rules of the current project. The goal is to give a UX/UI designer enough context to create a complete design system and screen set that covers the real functionality already present in code.
+
+Project summary
+Task by Task is a cross-platform productivity app built with Compose Multiplatform.
+Main product idea:
+- manage tasks
+- mark tasks for today
+- run focus sessions with a timer
+- optionally link focus sessions to one or more tasks
+- write quick feedback after a session
+- finish the day and receive an AI-generated day review
+- continue reflection in a short chat with an AI buddy
+- inspect history and statistics
+- customize timer presets and general settings
+
+Supported product surfaces in code
+- Android app shell
+- Desktop app shell
+- iOS wrapper exists in project structure
+- Shared common UI/logic is the main product source
+
+Important UX note about responsiveness
+The app is adaptive. Navigation and layout change depending on available width.
+- Compact width: bottom navigation bar is used
+- Wide width: navigation rail is used
+- Many screens use 2-pane or 3-pane adaptive layouts
+
+==================================================
+1. GLOBAL INFORMATION ARCHITECTURE
+==================================================
+
+Top-level destinations
+1. Home
+2. Statistics
+3. History
+4. Tasks
+5. Settings
+
+Main navigation behavior
+- Compact layouts use a bottom navigation bar with the 5 destinations above
+- Wide layouts use a left navigation rail with the same 5 destinations
+- Selecting a top-level destination clears the current stack and opens that root screen
+- Internal drill-down screens can still be opened from root screens
+
+Current navigation map
+- Home
+  - internal secondary pane: Today tasks
+  - action: Finish day -> Finished Day screen
+- Statistics
+- History
+  - compact: Day Detail opens as a separate screen
+  - wide: day notes open in supporting pane on the same screen
+  - from history notes / day detail -> Task details screen (via Tasks route with initial task id)
+- Tasks
+  - task details open in supporting pane
+  - focusing a task may return user to Home timer
+- Settings
+  - General settings
+  - Timers settings
+    - Timer editor (create/edit timer preset)
+- Finished Day
+  - Continue -> returns to History
+
+Navigation flow examples
+- Home -> Finish Day -> Finished Day -> Continue -> History
+- History -> Day Detail -> linked task chip -> Tasks (task details pre-opened)
+- Tasks -> focus task -> Home
+- Settings -> Timers -> Create/Edit Timer
+
+==================================================
+2. GLOBAL UX PATTERNS TO DESIGN
+==================================================
+
+2.1 App shell
+Design should include:
+- bottom navigation version
+- navigation rail version
+- screen container behavior with top app bar
+- adaptive pane transitions for compact and wide screens
+
+2.2 Top bar pattern
+Most screens use a top app bar with:
+- screen title
+- optional back button
+- optional actions on the right
+Examples:
+- Home: actions for Today tasks and Finish day
+- Settings: dynamic title changes based on sub-section
+- Day Detail: explicit back button
+
+2.3 Visual container pattern
+Most screens render content inside large surfaces/cards using Material 3 style containers.
+Common visual layers:
+- primary container for main content area
+- secondary container for supporting pane
+- tertiary container for third-level pane in Settings
+
+2.4 Adaptive panes
+Designer should prepare layouts for:
+- single-column compact mode
+- list + detail mode
+- primary + supporting mode
+- list + detail + extra pane mode
+
+2.5 Main reusable UI patterns
+- cards
+- task rows with checkbox + actions
+- chips for linked tasks
+- filter chips for statistics period selection
+- sliders in timer editor
+- text fields for adding/editing content
+- empty states
+- loading overlays/spinners
+- disabled actions
+
+2.6 Theme support
+The app supports 3 theme modes:
+- Auto
+- Light
+- Dark
+Designer should provide color behavior for all three.
+
+2.7 Language/content note
+Current UI strings in code are mostly English. Design can stay English-first unless localization is planned separately.
+
+==================================================
+3. CORE ENTITIES THE DESIGN MUST REFLECT
+==================================================
+
+3.1 Task
+Fields visible in UX:
+- title
+- optional description
+- is completed
+- is marked for today
+- created at
+- optional completed at
+
+Task-related user concepts
+- regular task
+- today task
+- focused task for current session
+- task linked to a focus session
+
+3.2 Focus session
+Represents one work session saved after timer work stage.
+Visible/important fields:
+- duration
+- free-text feedback/note
+- finished time/date
+- started time (internal but may support future UX)
+- pause time (internal analytics field)
+- one or more linked tasks
+
+3.3 Day summary
+Represents a completed day review.
+Visible fields:
+- date
+- total focus time
+- AI-generated summary/review
+
+3.4 Timer preset
+Visible fields:
+- work duration
+- short break duration
+- long break duration
+- number of work cycles
+- default preset flag
+Special supported preset:
+- infinite timer option is available in timer selection
+
+3.5 Chat session with Buddy
+Visible elements:
+- date context
+- summary context
+- list of messages
+- user and assistant roles
+- input field
+- loading state
+- error state
+
+==================================================
+4. SCREEN-BY-SCREEN SPECIFICATION
+==================================================
+
+--------------------------------------------------
+4.1 HOME SCREEN
+--------------------------------------------------
+
+Purpose
+Main daily work screen. User starts/stops focus sessions here and can access today's tasks.
+
+Primary content
+- large circular timer in the center
+- timer state label under or inside timer area
+- timer controls below
+- optional session tasks indicator below controls
+
+Top bar
+Title: Home
+Actions:
+- Today tasks action (calendar icon)
+- Finish day action (fact-check icon)
+
+Important behavior
+- Both top-bar actions are enabled only when the day is considered active
+- Finish day shows a loading overlay while the summary is being generated
+- Today tasks opens the supporting pane
+
+Home screen adaptive structure
+Compact behavior:
+- main focus is timer
+- today tasks are opened as secondary pane through the top bar action
+- a back action appears when the secondary pane is open
+Wide behavior:
+- timer and today tasks can coexist in a multi-pane layout
+
+Sub-area: Timer
+The timer supports these states:
+- Work
+- Break
+- Feedback
+
+Timer functions implemented
+- start timer
+- pause timer
+- resume timer (same button toggles from pause)
+- stop work session
+- skip break
+- switch timer preset before timer starts
+- choose from saved timer presets plus infinite timer
+
+Timer state-specific UX
+Work state:
+- primary accent color
+- Start button when idle
+- Pause + Stop buttons when running
+Break state:
+- tertiary accent color
+- Start button when idle
+- Pause + Skip buttons when running
+Feedback state:
+- timer circle is replaced by session feedback UI
+
+Timer preset selection
+- time display is clickable when timer is not running
+- opens dropdown with available presets
+- preset label format currently reflects cycles and durations
+- one special preset supports infinite durations
+
+Session task indicator under timer
+Shown only if session already contains tasks.
+It can show:
+- completed tasks in this session
+- currently active focused task
+- clear action for the active task
+
+Notifications tied to timer
+When a timer stage finishes, a notification event is produced.
+Desktop shell currently shows tray notifications.
+Designer may want notification styling/system behavior documentation separately, but no in-app notification center screen exists.
+
+Sub-area: Today tasks pane
+Title inside pane: For today
+Contains:
+- quick add new today task input
+- today task list
+- empty state text: No tasks for today
+
+Each today task row contains
+- completion checkbox
+- task title
+- focus/unfocus icon action
+
+Today task behaviors
+- user can add a new task directly into Today
+- user can complete a task
+- user can focus a task for the current timer session
+- completed tasks cannot be newly focused
+- if focus selection succeeds, UI returns user to timer pane
+- if task was not in Today and user focuses it from another screen, it is automatically added to Today
+
+Task focus rules implemented in logic
+- only one active focused task at a time
+- when timer is running, switching to another task is blocked unless current focused task is already completed
+- multiple tasks can become associated with the same session if completed during that session and user moves to next task
+
+What designer must cover for Home
+- idle timer state
+- running work state
+- paused work state
+- running break state
+- paused break state
+- feedback state after work session
+- today pane open/closed states
+- no-tasks-today state
+- focused task visible
+- multiple session tasks visible
+- loading state while finishing day
+- disabled finish day / today actions
+
+--------------------------------------------------
+4.2 FEEDBACK STATE AFTER A WORK SESSION
+--------------------------------------------------
+
+This is currently rendered as a full content state inside the Home timer area after a work stage completes.
+
+Purpose
+Capture optional reflection for the completed focus session before returning to timer flow.
+
+Content
+- title: Session complete!
+- duration in minutes
+- optional card showing tasks in this session
+  - completed tasks marked visually
+  - active task highlighted separately
+- multiline text field: How did it go? (optional)
+- two actions:
+  - Skip
+  - Save
+
+Behaviors
+- Skip closes feedback without storing note text
+- Save stores session data
+- saved session data includes:
+  - duration
+  - free-text feedback
+  - finish timestamp
+  - session task links
+  - focus start time / pause time internally
+
+Design notes
+- this state should feel like a lightweight completion step, not a separate heavy settings-like screen
+- it should work both with and without linked tasks
+
+--------------------------------------------------
+4.3 TASKS SCREEN
+--------------------------------------------------
+
+Purpose
+Full task management screen for the complete task list.
+
+Layout
+Adaptive 2-pane structure:
+- primary pane: task list
+- supporting pane: task details/editor
+
+Top bar
+Title: Tasks
+
+Main task list content
+- quick add input at top
+- full task list below
+- tasks are sorted with unfinished tasks first, then by creation time
+
+Each task row contains
+- completion checkbox
+- title
+- focus/unfocus icon
+- today toggle icon
+
+Task list functions implemented
+- create new task via input field
+- mark task complete
+- mark/unmark task as Today
+- focus/unfocus task
+- open task details editor by tapping row
+
+Important current behavior
+- completion is effectively one-way in current implementation
+- marking complete is supported
+- un-completing is not implemented in repository logic
+Design should still consider whether completed state visually looks final/locked.
+
+Task detail/editor pane
+Purpose
+Edit an existing task.
+
+Fields
+- title
+- description (multiline)
+- Add to Today switch
+
+Actions
+- Cancel
+- Save
+
+Task detail opening patterns
+- from tapping a task in Tasks
+- from History linked task navigation, where a specific task detail is opened automatically
+
+Focus behavior from Tasks screen
+- if user focuses a task here, app can navigate back to Home timer
+- if task is not already a today task, it becomes a today task automatically before focus selection
+
+What designer must cover for Tasks
+- empty/add state if there are no tasks yet
+- long titles
+- completed rows
+- focused row
+- today-marked row
+- detail editor
+- save/cancel states
+- task opened from History context
+
+--------------------------------------------------
+4.4 HISTORY SCREEN
+--------------------------------------------------
+
+Purpose
+Review previously completed days and inspect saved focus notes/sessions.
+
+Top bar
+Title: History
+
+Main content
+List of day summaries.
+A day summary represents one completed day.
+
+Compact behavior
+- only the list is shown
+- tapping a day opens Day Detail as a separate screen
+
+Wide behavior
+- list remains on the left/main pane
+- selected day notes appear in supporting pane
+- default empty prompt in supporting pane: Select a day to view notes
+
+States
+- loading spinner while history loads
+- empty list state should be designed even if code currently only shows an empty list
+
+What a day item conceptually represents
+- date
+- possibly total focus value / summary preview (designer should derive a suitable card/list row layout because the code supplies day summary data)
+
+Supporting pane / notes content
+Header: Notes for <date>
+Below: list of focus sessions for that day
+
+Each note card/session card contains
+- focus session duration (in minutes)
+- optional linked task chips (multiple chips possible)
+- optional free-text feedback/note
+
+Interactions
+- clicking a task chip navigates to that task details view in Tasks
+- if there are no sessions for the selected day, show empty text
+
+Important relationship
+History is where the designer must visualize the link between completed focus work and the tasks worked on.
+
+--------------------------------------------------
+4.5 DAY DETAIL SCREEN
+--------------------------------------------------
+
+Purpose
+Dedicated compact-mode screen for a single historical day.
+
+Top bar
+Title pattern: Day Review - <date>
+Back button present
+
+Content structure
+1. Day Summary section
+- title: Day Summary
+- markdown-rendered AI review text
+- total focus time in minutes
+
+2. Focus Sessions section
+- title: Focus Sessions
+- list of session cards
+
+Each session card contains
+- session duration
+- optional task chips
+- optional session note/feedback
+
+Empty states
+- no focus sessions recorded for this day
+
+Interactions
+- tapping a task chip navigates to the related task in Tasks
+
+Designer note
+This screen is the compact equivalent of the History wide split view, but richer because it includes the markdown day summary at the top.
+
+--------------------------------------------------
+4.6 FINISHED DAY SCREEN (AI REVIEW + CHAT)
+--------------------------------------------------
+
+Purpose
+This screen appears after user finishes the day from Home. It presents the generated review and allows a short chat with the AI buddy.
+
+Content sections in order
+1. Day Review heading
+2. Summary card
+3. Buddy response card
+4. Chat section divider/header
+5. Chat messages list
+6. Message input row fixed at bottom area
+7. Continue button
+
+Summary card
+- section title: Summary
+- markdown-rendered review text
+
+Buddy response card
+- section title: Buddy
+- markdown-rendered assistant response text
+
+Chat area
+Message roles:
+- user message bubble aligned right
+- buddy message bubble aligned left
+
+Each bubble shows
+- role label (You / Buddy)
+- message text
+
+Chat input area
+- single-line text input
+- send button
+- disabled while loading
+
+Chat states
+- conversation messages list
+- loading spinner while waiting for reply
+- inline error text when sending fails
+
+Continue action
+- clears current chat session
+- navigates user to History
+
+Important dependency
+This feature requires an OpenAI token stored in General Settings.
+Designer should include missing-token / request-failed UX coverage, because the current implementation depends on external API availability.
+
+--------------------------------------------------
+4.7 STATISTICS SCREEN
+--------------------------------------------------
+
+Purpose
+Provide analytical overview of productivity data.
+
+Top bar
+Title: Statistics
+
+Main components in order
+1. Period selector chips
+2. Period navigator
+3. Row of metric cards
+4. Second row of metric cards
+5. Bar chart (only when there is enough vertical space and data)
+
+Period selector
+3 options:
+- Day
+- Week
+- Month
+Uses filter-chip style.
+
+Period navigator
+Contains:
+- previous period button
+- current period label in center
+- next period button
+Behavior:
+- if selected period is not current, center label becomes clickable and returns to current period
+
+Metric cards currently implemented
+1. Focus Time
+2. Work Cycles
+3. Tasks Created
+4. Tasks Done
+
+Chart
+Type: simple vertical bar chart
+Metric displayed: focus time in minutes
+
+Chart labels depend on period
+- Day: by hour or grouped hour buckets depending on width
+- Week: Mon-Sun
+- Month: grouped day buckets based on available width
+
+Responsive behavior
+- chart is hidden if there is not enough vertical space
+- if there is no data, a No data available state should exist
+- column count adapts to width
+
+What designer must cover
+- day/week/month selected states
+- current vs past period label styling
+- 4 metric cards
+- chart present
+- chart absent due to low height
+- chart absent due to no data
+
+--------------------------------------------------
+4.8 SETTINGS SCREEN
+--------------------------------------------------
+
+Purpose
+Manage general app preferences and timer presets.
+
+Adaptive structure
+Settings uses a list-detail-extra layout.
+Designer should prepare:
+- compact flow
+- wide 2-pane flow
+- extra-wide 3-pane flow
+
+Left/list pane
+Contains setting categories:
+- General
+- Timers
+
+Top bar behavior
+- title changes dynamically
+Examples:
+- Settings
+- Settings / General
+- Settings / Timers
+Back action relates to pane navigation within Settings flow.
+
+--------------------------------------------------
+4.8.1 GENERAL SETTINGS
+--------------------------------------------------
+
+Fields currently implemented
+1. OpenAI Token
+- password-style obscured input
+- show/hide icon toggle
+- single-line input
+
+2. Theme
+Radio options:
+- Auto
+- Light
+- Dark
+
+3. Start of Day
+- hour input
+- minute input
+- explanatory helper text
+Meaning:
+The time when a new day begins. This affects day summaries and statistics and updates the automatic day-finish scheduler.
+
+General Settings design notes
+- token entry is a sensitive credential field
+- theme selector should be globally understandable
+- start-of-day editor should communicate time clearly and safely
+
+--------------------------------------------------
+4.8.2 TIMERS SETTINGS LIST
+--------------------------------------------------
+
+Purpose
+Manage saved timer presets.
+
+Top app bar inside Timers subsection
+- back button
+- title: Timers
+- action: create new timer preset
+
+Timer preset list item contents
+- work duration
+- short break duration
+- long break duration
+- cycles count
+- set as default action
+- delete action
+
+Special rules
+- default preset cannot be deleted
+- default preset cannot be set as default again
+- favorite/default state needs strong visual distinction
+
+Designer should cover
+- loading state
+- list of presets
+- default item appearance
+- non-default item appearance
+- destructive action affordance for delete
+- create action
+
+--------------------------------------------------
+4.8.3 TIMER PRESET EDITOR
+--------------------------------------------------
+
+Purpose
+Create or edit a timer preset.
+
+Fields
+All inputs are slider-based:
+- Work Duration: 5 to 120 min
+- Short Break Duration: 1 to 30 min
+- Long Break Duration: 5 to 60 min
+- Work Cycles: 0 to 10
+
+Actions
+- Cancel
+- Save
+
+Special rule
+If editing the built-in default timer entity, controls are disabled.
+Designer should represent disabled editing clearly.
+
+==================================================
+5. CROSS-SCREEN USER SCENARIOS
+==================================================
+
+Scenario A: Plan the day and start focus
+1. User opens Home
+2. Opens Today tasks pane
+3. Adds one or more tasks for today
+4. Focuses one task
+5. Returns to timer
+6. Starts timer
+
+Scenario B: Work on a task during a timer session
+1. Focused task is shown as current session context
+2. User pauses/resumes as needed
+3. User may complete current task during session
+4. User may move focus to another task only if current focused task is completed while timer is running
+5. Session task indicator accumulates completed + active tasks
+
+Scenario C: Save focus session feedback
+1. Work stage ends
+2. Feedback state appears
+3. User optionally writes note
+4. User saves or skips
+5. Focus session is stored and linked to task(s)
+6. Timer returns to next logical state
+
+Scenario D: Finish the day manually
+1. User taps Finish day in Home top bar
+2. Loading overlay is shown
+3. App generates AI day summary
+4. Finished Day screen opens
+5. User reads summary and buddy response
+6. User optionally chats with buddy
+7. User taps Continue
+8. App opens History
+
+Scenario E: Review past productivity
+1. User opens History
+2. Picks a day
+3. Reads day notes/focus sessions
+4. Opens linked task from a session chip if needed
+
+Scenario F: Analyze trends
+1. User opens Statistics
+2. Switches Day/Week/Month
+3. Moves between periods
+4. Reviews metric cards and chart
+
+Scenario G: Customize timer behavior
+1. User opens Settings
+2. Goes to Timers
+3. Creates or edits preset
+4. Optionally marks one preset as default
+5. Back on Home, preset appears in timer selection dropdown
+
+Scenario H: Configure AI and app basics
+1. User opens Settings -> General
+2. Enters OpenAI token
+3. Chooses theme mode
+4. Sets start-of-day time
+
+==================================================
+6. IMPORTANT IMPLEMENTED RULES AND CONSTRAINTS
+==================================================
+
+Task focus rules
+- only one active focused task at a time
+- completed tasks can be part of a session summary
+- current active task can be cleared from timer area
+
+Task completion rules
+- marking complete is implemented
+- reverting completed -> incomplete is not implemented in current task repository flow
+
+Today list behavior
+- tasks can be added directly into Today from Home
+- tasks can be added to Today from Tasks screen
+- automatic cleanup of Today list happens when scheduled finish-day flow runs
+
+Day finish behavior
+- day summary is created once per day
+- if summary for the day already exists, finishing the day again is blocked by logic
+- day finish depends on OpenAI token for review generation
+- automatic scheduler exists and uses Start of Day time
+
+Chat behavior
+- chat session exists only inside Finished Day flow
+- requires OpenAI token
+- sending state and error state are already present in code
+
+Timer preset behavior
+- preset can be changed only while timer is not running
+- presets come from settings storage plus an infinite option
+
+Statistics behavior
+- chart aggregation changes depending on width
+- chart may be hidden when vertical space is insufficient
+
+Desktop-specific behavior currently in code
+- desktop shell has a tray icon
+- timer finish notifications and buddy reply notifications are pushed through desktop tray notifications
+
+==================================================
+7. STATES THE DESIGNER SHOULD EXPLICITLY COVER
+==================================================
+
+Global states
+- loading
+- empty
+- disabled
+- error
+- success/completion
+- compact layout
+- wide layout
+
+Recommended state coverage by area
+Home
+- no focused task
+- one focused task
+- several tasks already in current session
+- timer idle/running/paused/feedback
+- no today tasks
+- loading during finish day
+
+Tasks
+- no tasks
+- long title row
+- completed row
+- focused row
+- today row
+- editing existing task
+
+History
+- no day selected in wide mode
+- no focus sessions for selected day
+- day with several notes and several linked tasks
+
+Finished Day
+- summary only
+- summary + existing chat
+- chat loading
+- chat error
+- missing-token or unavailable AI service fallback state should be considered
+
+Statistics
+- day/week/month selection
+- current period
+- historical period
+- no data
+- chart present
+- chart hidden because of height
+
+Settings
+- empty token
+- hidden token / visible token
+- active theme selection
+- invalid or partial time entry state handling
+- timer preset list with default item
+- disabled editor for protected/default preset
+
+==================================================
+8. CONTENT AND COMPONENT INVENTORY FOR DESIGN HANDOFF
+==================================================
+
+A designer should produce at minimum:
+- app shell in compact mode with bottom nav
+- app shell in wide mode with navigation rail
+- Home screen
+- Today tasks pane
+- Feedback state after session
+- Tasks list screen
+- Task details editor
+- History list screen
+- History list + notes split view
+- Day Detail screen
+- Finished Day review + chat screen
+- Statistics screen
+- Settings root list
+- General settings
+- Timers settings list
+- Timer preset editor
+
+Component inventory
+- top app bar with optional back and actions
+- navigation bar item
+- navigation rail item
+- timer circle component
+- timer preset dropdown
+- timer control buttons
+- task row (default / focused / completed / today)
+- session tasks card/indicator
+- task chip
+- stat card
+- bar chart bar/axis labels
+- category list item for settings
+- timer preset card
+- chat bubble (user / buddy)
+- loading overlay
+- empty state blocks
+- inline error text
+
+==================================================
+9. RECOMMENDED UX QUESTIONS FOR DESIGN EXPLORATION
+==================================================
+
+These are not extra features; they are design decisions that should be resolved while staying compatible with current code.
+- How strongly should the app distinguish Work vs Break visually?
+- How should focused tasks be highlighted across Home and Tasks consistently?
+- What is the best compact presentation for History list items?
+- How should multi-task session linkage be visualized when there are many chips?
+- How should AI failure / missing token be explained without breaking the core flow?
+- How should disabled states look for non-repeatable actions like Finish day or protected default timer preset?
+- How should statistics behave visually when chart is hidden due to limited height?
+
+==================================================
+10. PRACTICAL CONCLUSION FOR THE DESIGNER
+==================================================
+
+If you design the following, you will cover the implemented product surface:
+- 5 root destinations
+- 5 major functional domains: timer, tasks, history, statistics, settings
+- 3 important drill-down flows: day detail, task detail, timer preset editor
+- 2 AI-related flows: finish day review and buddy chat
+- adaptive versions for compact and wide layouts
+- all important states: empty, loading, disabled, error, completion
+
+Short product definition
+Task by Task is a productivity app that combines task planning, daily focus execution, session reflection, end-of-day review, and historical/statistical self-analysis.
+
+End of document.

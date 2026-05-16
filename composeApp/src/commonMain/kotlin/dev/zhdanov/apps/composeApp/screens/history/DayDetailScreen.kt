@@ -34,8 +34,12 @@ fun DayDetailScreen(
     onNavigateToTask: (Long) -> Unit = {}
 ) {
     val viewModel: HistoryViewModel = koinViewModel()
-    val daySummary = remember { viewModel.getDaySummary(date) }
-    val focusTimes = remember { viewModel.getFocusTimesWithTasksForDate(date) }
+    val daySummary by produceState<DaySummary?>(initialValue = null, date) {
+        value = viewModel.getDaySummary(date)
+    }
+    val focusTimes by produceState<List<FocusTimeWithTasks>>(initialValue = emptyList(), date) {
+        value = viewModel.getFocusTimesWithTasksForDate(date)
+    }
 
     Scaffold(
         topBar = {

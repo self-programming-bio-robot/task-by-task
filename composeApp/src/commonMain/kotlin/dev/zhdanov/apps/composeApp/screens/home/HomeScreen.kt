@@ -25,12 +25,12 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
-import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
+import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -47,6 +47,8 @@ fun HomeScreen(
     val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+    var finishDayError by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val isActive by viewModel.isActive.collectAsState()
 
     val navigator = rememberSupportingPaneScaffoldNavigator<String>()
@@ -54,7 +56,15 @@ fun HomeScreen(
     val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
         RectangleShape else MaterialTheme.shapes.medium
 
+    LaunchedEffect(finishDayError) {
+        finishDayError?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            finishDayError = null
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopBar(
                 title = "Home",
@@ -80,8 +90,13 @@ fun HomeScreen(
                         onClick = {
                             coroutineScope.launch {
                                 isLoading = true
-                                onFinishDay(viewModel.finishDay())
-                                isLoading = false
+                                try {
+                                    onFinishDay(viewModel.finishDay())
+                                } catch (e: Exception) {
+                                    finishDayError = e.message ?: "Failed to finish day"
+                                } finally {
+                                    isLoading = false
+                                }
                             }
                         },
                         modifier = Modifier
@@ -177,10 +192,10 @@ fun TodayTaskList(
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
-    val timerViewModel: TimerViewModel = koinInject<TimerViewModel>()
+    val timerSessionService: TimerSessionService = koinInject<TimerSessionService>()
     val todayTasks by viewModel.todayTask.collectAsState(listOf())
     val focusedTask by focusTaskService.focusedTask.collectAsState()
-    val isTimerRunning by timerViewModel.isRunning.collectAsState()
+    val isTimerRunning by timerSessionService.isRunning.collectAsState()
 
 
     LazyColumn(

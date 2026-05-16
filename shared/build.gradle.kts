@@ -43,9 +43,13 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.runtime)
             implementation(libs.kotlin.datetime)
-            implementation(libs.kotlin.test)
 
             api(libs.logging)
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
 
         jvmMain.dependencies {
@@ -74,7 +78,7 @@ sqldelight {
     databases {
         create("AppDatabase") {
             packageName.set("dev.zhdanov.apps.shared.cache")
-            version = 2
+            version = 6
         }
     }
 }

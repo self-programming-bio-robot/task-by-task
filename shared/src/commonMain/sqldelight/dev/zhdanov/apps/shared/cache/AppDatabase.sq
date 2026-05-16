@@ -25,12 +25,13 @@ WHERE finishedAt BETWEEN ? AND ?;
 CREATE TABLE IF NOT EXISTS DaySummary (
     date INTEGER NOT NULL,
     focusTime INTEGER NOT NULL,
-    review TEXT NOT NULL
+    review TEXT NOT NULL,
+    linkedTasks TEXT NOT NULL DEFAULT '[]'
 );
 
 insertDaySummary:
-INSERT INTO DaySummary (date, focusTime, review)
-VALUES (?, ?, ?);
+INSERT INTO DaySummary (date, focusTime, review, linkedTasks)
+VALUES (?, ?, ?, ?);
 
 selectAllDaySummaries:
 SELECT * FROM DaySummary

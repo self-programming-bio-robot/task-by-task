@@ -1,0 +1,3 @@
+-- Keep migration version history aligned with the current schema.
+-- Legacy compatibility columns/tables are added idempotently in Database.
+PRAGMA user_version = 6;

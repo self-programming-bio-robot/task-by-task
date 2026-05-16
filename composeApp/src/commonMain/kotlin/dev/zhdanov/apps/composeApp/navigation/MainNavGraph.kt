@@ -89,7 +89,7 @@ fun MainNavGraph(
                     StatisticsScreen()
                 }
 
-                else -> NavEntry(Unit as NavKey) {
+                else -> NavEntry(key) {
                     // Unknown route
                 }
             }

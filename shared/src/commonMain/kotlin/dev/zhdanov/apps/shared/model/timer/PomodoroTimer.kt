@@ -7,7 +7,8 @@ class PomodoroTimer(
     private val settings: TimerSettings,
     private val coroutineScope: CoroutineScope,
     initialStage: TimerStage,
-    override val timerListener: Timer.TimerListener
+    override val timerListener: Timer.TimerListener,
+    private val ticker: TimerTicker = RealTimerTicker
 ) : Timer {
 
     private var stage: PomodoroTimerStage = when (initialStage) {
@@ -30,11 +31,11 @@ class PomodoroTimer(
 
         timerJob = coroutineScope.launch {
             while (this.isActive && time > 0 && state == TimerState.IN_PROGRESS) {
-                delay(1000)
+                ticker.waitForNextTick()
                 time -= 1
                 timerListener.onTick(time, 1f - (time.toFloat() / totalTime.toFloat()))
             }
-            if (time == 0 && this.isActive || state == TimerState.FINISHED) {
+            if ((time == 0 && this.isActive) || state == TimerState.FINISHED) {
                 state = TimerState.FINISHED
                 if (stage == PomodoroTimerStage.WORK) {
                     cycles++

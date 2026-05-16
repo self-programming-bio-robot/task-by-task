@@ -2,18 +2,16 @@ package dev.zhdanov.apps.composeApp.components.settings.general
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.zhdanov.apps.composeApp.services.AppSettingsService
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.shared.DEFAULT_START_OF_DAY
-import dev.zhdanov.apps.shared.StartOfDaySetting
-import dev.zhdanov.apps.shared.cache.Database
-import dev.zhdanov.apps.shared.model.SettingKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalTime
 
 class GeneralSettingsViewModel(
-    private val database: Database,
+    private val settingsService: AppSettingsService,
     private val daySummaryService: DaySummaryService,
 ) : ViewModel() {
     private val _openAiToken = MutableStateFlow("")
@@ -32,47 +30,42 @@ class GeneralSettingsViewModel(
 
     fun loadToken() {
         viewModelScope.launch {
-            val token = database.settingRepository.getSetting<String>(SettingKey.OPENAI_TOKEN)
+            val token = settingsService.getOpenAiToken()
             _openAiToken.value = token ?: ""
         }
     }
 
     fun loadTheme() {
         viewModelScope.launch {
-            val themeValue = database.settingRepository.getSetting<String>(SettingKey.THEME)
+            val themeValue = settingsService.getTheme()
             _theme.value = themeValue ?: "auto"
         }
     }
 
     fun loadStartOfDay() {
         viewModelScope.launch {
-            val setting = database.settingRepository.getSetting<StartOfDaySetting>(SettingKey.START_OF_DAY)
-            _startOfDay.value = setting?.toLocalTime() ?: DEFAULT_START_OF_DAY
+            _startOfDay.value = settingsService.getStartOfDay()
         }
     }
 
     fun updateToken(newToken: String) {
         _openAiToken.value = newToken
         viewModelScope.launch {
-            database.settingRepository.saveSetting(SettingKey.OPENAI_TOKEN, newToken)
+            settingsService.saveOpenAiToken(newToken)
         }
     }
 
     fun updateTheme(newTheme: String) {
         _theme.value = newTheme
         viewModelScope.launch {
-            database.settingRepository.saveSetting(SettingKey.THEME, newTheme)
+            settingsService.saveTheme(newTheme)
         }
     }
 
     fun updateStartOfDay(newTime: LocalTime) {
         _startOfDay.value = newTime
         viewModelScope.launch {
-            database.settingRepository.saveSetting(
-                SettingKey.START_OF_DAY,
-                StartOfDaySetting.fromLocalTime(newTime)
-            )
-            // Update the scheduler with the new start of day
+            settingsService.saveStartOfDay(newTime)
             daySummaryService.updateScheduler()
         }
     }

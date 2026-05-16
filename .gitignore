@@ -45,3 +45,4 @@ bin/
 /.idea/
 /local.properties
 .claude/settings.local.json
+/.codex/config.toml

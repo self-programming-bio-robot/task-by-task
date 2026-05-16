@@ -11,6 +11,10 @@ data class FocusTime(
     val startedAt: Long? = null,
     val pauseTime: Int? = null,
     val taskId: Long? = null,
+    val workspaceId: Long = DEFAULT_WORKSPACE_ID,
+    val syncId: String = "",
+    val updatedAt: Long = 0L,
+    val deletedAt: Long? = null,
 )
 
 @Serializable

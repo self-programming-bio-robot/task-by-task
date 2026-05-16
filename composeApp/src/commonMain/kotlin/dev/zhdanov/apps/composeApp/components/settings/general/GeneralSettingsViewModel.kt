@@ -4,41 +4,48 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.services.AppSettingsService
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
+import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
 import dev.zhdanov.apps.shared.DEFAULT_START_OF_DAY
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ICON
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalTime
 
 class GeneralSettingsViewModel(
     private val settingsService: AppSettingsService,
     private val daySummaryService: DaySummaryService,
+    private val workspaceSessionService: WorkspaceSessionService,
 ) : ViewModel() {
-    private val _openAiToken = MutableStateFlow("")
-    private val _theme = MutableStateFlow("auto") // auto, light, dark
     private val _startOfDay = MutableStateFlow(DEFAULT_START_OF_DAY)
+    private val _workspaceName = MutableStateFlow("")
+    private val _workspaceIcon = MutableStateFlow(DEFAULT_WORKSPACE_ICON)
 
-    val openAiToken = _openAiToken.asStateFlow()
-    val theme = _theme.asStateFlow()
+    val theme = settingsService.theme
     val startOfDay = _startOfDay.asStateFlow()
+    val workspaceName = _workspaceName.asStateFlow()
+    val workspaceIcon = _workspaceIcon.asStateFlow()
 
     init {
-        loadToken()
+        workspaceSessionService.reload()
+        observeWorkspace()
         loadTheme()
         loadStartOfDay()
     }
 
-    fun loadToken() {
+    private fun observeWorkspace() {
         viewModelScope.launch {
-            val token = settingsService.getOpenAiToken()
-            _openAiToken.value = token ?: ""
+            workspaceSessionService.currentWorkspace.collectLatest { workspace ->
+                _workspaceName.value = workspace?.name.orEmpty()
+                _workspaceIcon.value = workspace?.icon ?: DEFAULT_WORKSPACE_ICON
+            }
         }
     }
 
     fun loadTheme() {
         viewModelScope.launch {
-            val themeValue = settingsService.getTheme()
-            _theme.value = themeValue ?: "auto"
+            settingsService.loadTheme()
         }
     }
 
@@ -48,15 +55,7 @@ class GeneralSettingsViewModel(
         }
     }
 
-    fun updateToken(newToken: String) {
-        _openAiToken.value = newToken
-        viewModelScope.launch {
-            settingsService.saveOpenAiToken(newToken)
-        }
-    }
-
     fun updateTheme(newTheme: String) {
-        _theme.value = newTheme
         viewModelScope.launch {
             settingsService.saveTheme(newTheme)
         }
@@ -69,4 +68,22 @@ class GeneralSettingsViewModel(
             daySummaryService.updateScheduler()
         }
     }
+
+    fun updateWorkspaceName(newName: String) {
+        _workspaceName.value = newName
+        if (newName.isBlank()) {
+            return
+        }
+        viewModelScope.launch {
+            workspaceSessionService.renameCurrentWorkspace(newName.trim())
+        }
+    }
+
+    fun updateWorkspaceIcon(newIcon: String) {
+        _workspaceIcon.value = newIcon
+        viewModelScope.launch {
+            workspaceSessionService.updateCurrentWorkspaceIcon(newIcon)
+        }
+    }
+
 }

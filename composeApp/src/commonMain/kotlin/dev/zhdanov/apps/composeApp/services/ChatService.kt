@@ -15,7 +15,7 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatService(
-    private val settingsService: AppSettingsService,
+    private val workspaceSessionService: WorkspaceSessionService,
     private val notificationService: NotificationService,
     private val chatClient: ChatClient
 ) {
@@ -46,8 +46,8 @@ class ChatService(
         val session = _currentSession.value
             ?: return Result.failure(IllegalStateException("No active chat session"))
 
-        val token = settingsService.getOpenAiToken()?.takeIf { it.isNotBlank() }
-        if (token == null) {
+        val assistantConfig = workspaceSessionService.getAssistantConfig()
+        if (assistantConfig == null) {
             _error.value = "OpenAI token not found"
             return Result.failure(IllegalStateException("OpenAI token not found"))
         }
@@ -66,7 +66,7 @@ class ChatService(
             val updatedMessages = session.messages + userMsg
             _currentSession.value = session.copy(messages = updatedMessages)
 
-            val assistantContent = chatClient.sendMessage(token, session.daySummary, updatedMessages)
+            val assistantContent = chatClient.sendMessage(assistantConfig, session.daySummary, updatedMessages)
             val assistantMsg = ChatMessage(
                 id = Uuid.random().toString(),
                 role = ChatRole.ASSISTANT,

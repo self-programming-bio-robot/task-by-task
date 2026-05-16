@@ -40,7 +40,7 @@ private val MIN_COLUMN_WIDTH = 40.dp
 private val MAX_COLUMNS = 24
 
 // Minimum height to show chart in dp
-private val MIN_CHART_HEIGHT = 350.dp
+private val MIN_CHART_HEIGHT = 200.dp
 
 // Approximate height of header elements (period selector + 2 stat card rows + spacing)
 private val HEADER_HEIGHT = 200.dp
@@ -114,7 +114,7 @@ fun StatisticsScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             StatCard(
                                 title = "Focus Time",
@@ -126,14 +126,6 @@ fun StatisticsScreen() {
                                 value = workCyclesData.toString(),
                                 modifier = Modifier.weight(1f)
                             )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
                             StatCard(
                                 title = "Tasks Created",
                                 value = tasksCreatedData.toString(),
@@ -360,19 +352,19 @@ private fun StatCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary
             )
         }

@@ -7,7 +7,8 @@ import kotlinx.coroutines.withContext
 
 class FocusSessionDataService(
     private val database: Database,
-    private val dispatchers: AppDispatchers
+    private val dispatchers: AppDispatchers,
+    private val workspaceSessionService: WorkspaceSessionService
 ) {
     suspend fun addFocusTimeWithTasks(
         duration: Long,
@@ -17,25 +18,47 @@ class FocusSessionDataService(
         pauseTime: Long?,
         taskIds: List<Long>
     ): Long = withContext(dispatchers.io) {
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.addFocusTimeWithTasks(
             duration = duration,
             finishedAt = finishedAt,
-            feedback = feedback,
+            feedback = feedback?.let(workspaceSessionService::encryptTextForCurrentWorkspace),
             startedAt = startedAt,
             pauseTime = pauseTime,
-            taskIds = taskIds
+            taskIds = taskIds,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
         )
     }
 
     suspend fun getAllFocusTimes(): List<FocusTime> = withContext(dispatchers.io) {
-        database.getAllFocusTimes()
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.getAllFocusTimes(workspaceSessionService.requireCurrentWorkspaceId())
+            .map(::decryptFocusTime)
     }
 
     suspend fun getFocusTimesBetween(from: Long, to: Long): List<FocusTime> = withContext(dispatchers.io) {
-        database.getAllFocusTimesBetween(from, to)
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.getAllFocusTimesBetween(
+            from = from,
+            to = to,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
+        ).map(::decryptFocusTime)
     }
 
     suspend fun getTasksForFocusTime(focusTimeId: Long): List<Task> = withContext(dispatchers.io) {
-        database.getTasksForFocusTime(focusTimeId)
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.getTasksForFocusTime(focusTimeId, workspaceSessionService.requireCurrentWorkspaceId())
+            .map { task ->
+                task.copy(
+                    title = workspaceSessionService.decryptTextForCurrentWorkspace(task.title),
+                    description = workspaceSessionService.decryptNullableTextForCurrentWorkspace(task.description)
+                )
+            }
+    }
+
+    private fun decryptFocusTime(focusTime: FocusTime): FocusTime {
+        return focusTime.copy(
+            feedback = workspaceSessionService.decryptTextForCurrentWorkspace(focusTime.feedback)
+        )
     }
 }

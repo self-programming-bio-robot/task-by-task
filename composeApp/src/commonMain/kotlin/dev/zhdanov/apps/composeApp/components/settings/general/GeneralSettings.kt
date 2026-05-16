@@ -1,66 +1,129 @@
 package dev.zhdanov.apps.composeApp.components.settings.general
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import dev.zhdanov.apps.composeApp.components.workspace.WorkspaceIconOptions
 import kotlinx.datetime.LocalTime
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalComposeUiApi::class)
 @Composable
 fun GeneralSettings() {
     val viewModel: GeneralSettingsViewModel = koinViewModel()
-    val openAiToken by viewModel.openAiToken.collectAsState()
     val theme by viewModel.theme.collectAsState()
     val startOfDay by viewModel.startOfDay.collectAsState()
-    val (passwordVisible, setPasswordVisible) = remember { mutableStateOf(false) }
+    val workspaceName by viewModel.workspaceName.collectAsState()
+    val workspaceIcon by viewModel.workspaceIcon.collectAsState()
 
     var hourInput by remember { mutableStateOf(startOfDay.hour.toString().padStart(2, '0')) }
     var minuteInput by remember { mutableStateOf(startOfDay.minute.toString().padStart(2, '0')) }
+    val iconScrollState = rememberScrollState()
 
-    // Update inputs when startOfDay changes from DB
     LaunchedEffect(startOfDay) {
         hourInput = startOfDay.hour.toString().padStart(2, '0')
         minuteInput = startOfDay.minute.toString().padStart(2, '0')
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        Text("Workspace", style = MaterialTheme.typography.titleMedium)
         OutlinedTextField(
-            value = openAiToken,
-            onValueChange = { viewModel.updateToken(it) },
-            label = { Text("OpenAI Token") },
+            value = workspaceName,
+            onValueChange = { viewModel.updateWorkspaceName(it) },
+            label = { Text("Workspace name") },
             singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
-                val description = if (passwordVisible) "Hide" else "Show"
-                IconButton(onClick = { setPasswordVisible(!passwordVisible) }) {
-                    Icon(imageVector = image, contentDescription = description)
-                }
-            },
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth()
         )
+        Text(
+            "Icon",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(top = 16.dp)
+        )
+        Row(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth()
+                .horizontalScroll(iconScrollState),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            WorkspaceIconOptions.forEach { option ->
+                val selected = workspaceIcon == option.id
+                Surface(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable { viewModel.updateWorkspaceIcon(option.id) },
+                    shape = CircleShape,
+                    color = Color.Transparent,
+                    border = if (selected) {
+                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                    } else {
+                        null
+                    },
+                    contentColor = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = option.imageVector,
+                            contentDescription = option.title
+                        )
+                    }
+                }
+            }
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Theme")
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Theme", style = MaterialTheme.typography.titleMedium)
         Row(
             modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -90,7 +153,7 @@ fun GeneralSettings() {
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Start of Day", style = MaterialTheme.typography.bodyLarge)
+        Text("Start of Day", style = MaterialTheme.typography.titleMedium)
         Text(
             "The time when a new day begins (affects day summaries and statistics)",
             style = MaterialTheme.typography.bodySmall,

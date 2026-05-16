@@ -5,6 +5,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
+import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.ChatMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -34,9 +35,10 @@ class ChatServiceTest {
             io = UnconfinedTestDispatcher(),
             default = UnconfinedTestDispatcher()
         )
-        val settings = AppSettingsService(database, dispatchers)
-        settings.saveOpenAiToken("token")
-        val service = ChatService(settings, NotificationService(), FakeChatClient())
+        val workspace = createWorkspaceSessionService(database)
+        val settings = AppSettingsService(database, dispatchers, workspace)
+        settings.saveAssistantConfig("token", "https://api.openai.com/v1/", "gpt-4.1")
+        val service = ChatService(workspace, NotificationService(), FakeChatClient())
         service.startSession(LocalDate(2026, 5, 15), "summary")
 
         val result = service.sendMessage("hello")
@@ -53,7 +55,7 @@ class ChatServiceTest {
             default = UnconfinedTestDispatcher()
         )
         return ChatService(
-            settingsService = AppSettingsService(database, dispatchers),
+            workspaceSessionService = createWorkspaceSessionService(database),
             notificationService = NotificationService(),
             chatClient = FakeChatClient()
         )
@@ -61,7 +63,7 @@ class ChatServiceTest {
 }
 
 private class FakeChatClient : ChatClient {
-    override suspend fun sendMessage(token: String, daySummary: String, messages: List<ChatMessage>): String {
+    override suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String {
         return "fake reply"
     }
 }

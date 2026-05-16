@@ -1,20 +1,22 @@
 package dev.zhdanov.apps.composeApp.components.layout
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.window.core.layout.WindowWidthSizeClass
+import dev.zhdanov.apps.composeApp.components.workspace.WorkspaceSelector
 import dev.zhdanov.apps.composeApp.navigation.MainNavGraph
 import dev.zhdanov.apps.composeApp.navigation.NavigationViewModel
 import dev.zhdanov.apps.composeApp.navigation.Screen
+import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
+import org.koin.compose.koinInject
 
 val menuItems: List<Screen> = listOf(
     Screen.Home,
@@ -29,6 +31,8 @@ val menuItems: List<Screen> = listOf(
 fun AdaptiveLayout() {
     val windowInfo = currentWindowAdaptiveInfo()
     val viewModel: NavigationViewModel = viewModel { NavigationViewModel() }
+    val workspaceSessionService: WorkspaceSessionService = koinInject()
+    val currentWorkspace by workspaceSessionService.currentWorkspace.collectAsState()
 
     when (windowInfo.windowSizeClass.windowWidthSizeClass) {
         WindowWidthSizeClass.COMPACT -> {
@@ -36,7 +40,17 @@ fun AdaptiveLayout() {
                 menuItems = menuItems,
                 viewModel = viewModel,
             ) {
-                MainNavGraph(viewModel = viewModel)
+                Column {
+                    WorkspaceSelector(
+                        expandedContent = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        key(currentWorkspace?.id) {
+                            MainNavGraph(viewModel = viewModel)
+                        }
+                    }
+                }
             }
         }
 
@@ -45,7 +59,9 @@ fun AdaptiveLayout() {
                 menuItems = menuItems,
                 viewModel = viewModel,
             ) {
-                MainNavGraph(viewModel = viewModel)
+                key(currentWorkspace?.id) {
+                    MainNavGraph(viewModel = viewModel)
+                }
             }
         }
     }
@@ -62,14 +78,17 @@ fun NavigationRailLayout(
     val currentKey = viewModel.backStack.lastOrNull()
     val selectedIndex = rememberSelectedIndex(menuItems, currentKey)
 
-    Row {
+    Row(modifier = modifier.fillMaxSize()) {
         NavigationRail(
             header = {
-                Icon(
-                    modifier = Modifier.padding(16.dp),
-                    imageVector = Icons.Outlined.Timer,
-                    contentDescription = "Task by Task"
-                )
+                Box(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .height(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    WorkspaceSelector(expandedContent = false)
+                }
             }
         ) {
             Column(
@@ -94,7 +113,13 @@ fun NavigationRailLayout(
             }
         }
 
-        content()
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+        ) {
+            content()
+        }
     }
 }
 

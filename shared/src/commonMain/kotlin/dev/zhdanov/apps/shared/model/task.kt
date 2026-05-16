@@ -13,6 +13,10 @@ data class Task(
     val completedAt: LocalDateTime? = null,
     val isCompleted: Boolean = false,
     val isToday: Boolean = false,
+    val workspaceId: Long = DEFAULT_WORKSPACE_ID,
+    val syncId: String = "",
+    val updatedAt: Long = 0L,
+    val deletedAt: Long? = null,
 )
 
 @Serializable

@@ -181,7 +181,7 @@ class DaySummaryService(
     }
 
     private suspend fun reviewDay(focusTimes: List<FocusTime>): DayReviewResult {
-        val token = settingsService.getOpenAiToken()?.takeIf { it.isNotBlank() }
+        val assistantConfig = settingsService.getAssistantConfig()
             ?: throw MissingOpenAiTokenException()
 
         val historyOfDay = focusTimes.joinToString(separator = "\n") {
@@ -191,7 +191,7 @@ class DaySummaryService(
             """.trimMargin()
         }
 
-        return reviewClient.reviewDay(token, historyOfDay)
+        return reviewClient.reviewDay(assistantConfig, historyOfDay)
     }
 
     companion object {

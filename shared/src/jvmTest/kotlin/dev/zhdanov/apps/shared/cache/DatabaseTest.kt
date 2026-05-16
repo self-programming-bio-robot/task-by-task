@@ -4,6 +4,8 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.zhdanov.apps.shared.StartOfDaySetting
 import dev.zhdanov.apps.shared.model.CreateTask
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ICON
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.SettingKey
 import dev.zhdanov.apps.shared.model.TaskSummary
@@ -61,6 +63,51 @@ class DatabaseTest {
         assertEquals(
             StartOfDaySetting(hour = 6, minute = 30),
             database.settingRepository.getSetting<StartOfDaySetting>(SettingKey.START_OF_DAY)
+        )
+    }
+
+    @Test
+    fun `workspace scoped tasks stay isolated`() {
+        val database = Database(InMemoryDriverFactory())
+        val secondWorkspace = database.workspaceRepository.createWorkspace("Client work")
+
+        database.taskRepository.addTask(CreateTask("Default task"), workspaceId = DEFAULT_WORKSPACE_ID)
+        database.taskRepository.addTask(CreateTask("Client task"), workspaceId = secondWorkspace.id)
+
+        assertEquals(
+            listOf("Default task"),
+            database.taskRepository.getAllTasks(DEFAULT_WORKSPACE_ID).map { it.title }
+        )
+        assertEquals(
+            listOf("Client task"),
+            database.taskRepository.getAllTasks(secondWorkspace.id).map { it.title }
+        )
+    }
+
+    @Test
+    fun `workspace icon defaults and updates`() {
+        val database = Database(InMemoryDriverFactory())
+        val workspace = database.workspaceRepository.createWorkspace("Design")
+
+        assertEquals(DEFAULT_WORKSPACE_ICON, workspace.icon)
+
+        database.workspaceRepository.updateWorkspaceIcon(workspace.id, "folder")
+
+        assertEquals("folder", database.workspaceRepository.getWorkspace(workspace.id)?.icon)
+    }
+
+    @Test
+    fun `legacy OpenAI token migrates into default workspace security settings`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        AppDatabase.Schema.create(driver)
+        val queries = AppDatabase(driver).appDatabaseQueries
+        queries.insertOrReplaceSetting(SettingKey.OPENAI_TOKEN.id, "\"legacy-token\"")
+
+        val database = Database(SingleDriverFactory(driver))
+
+        assertEquals(
+            "legacy-token",
+            database.workspaceRepository.getSecuritySettings(DEFAULT_WORKSPACE_ID)?.openAiToken
         )
     }
 

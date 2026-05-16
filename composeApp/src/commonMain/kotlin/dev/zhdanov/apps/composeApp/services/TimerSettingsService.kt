@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class TimerSettingsService(
     private val database: Database,
+    private val workspaceSessionService: WorkspaceSessionService
 ) {
     val isLoading = MutableStateFlow<Boolean>(false)
 
@@ -14,21 +15,30 @@ class TimerSettingsService(
 
     fun loadSettings() {
         isLoading.value = true
-        timerSettings.value = database.timerSettingRepository.getAllTimerSettings()
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        timerSettings.value = database.timerSettingRepository.getAllTimerSettings(
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
         isLoading.value = false
     }
 
     fun deleteTimerSetting(id: Long) {
-        database.timerSettingRepository.deleteTimerSettingById(id)
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.timerSettingRepository.deleteTimerSettingById(
+            id,
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
         loadSettings()
     }
 
     fun createTimerSetting(workDuration: Int, shortBreakDuration: Int, longBreakDuration: Int, workCycles: Int) {
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.timerSettingRepository.insertTimerSetting(
             workDuration = workDuration,
             shortBreakDuration = shortBreakDuration,
             longBreakDuration = longBreakDuration,
-            workCycles = workCycles
+            workCycles = workCycles,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
         )
         loadSettings()
     }
@@ -40,28 +50,40 @@ class TimerSettingsService(
         longBreakDuration: Int,
         workCycles: Int
     ) {
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.timerSettingRepository.updateTimerSetting(
             id = id,
             workDuration = workDuration,
             shortBreakDuration = shortBreakDuration,
             longBreakDuration = longBreakDuration,
-            workCycles = workCycles
+            workCycles = workCycles,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
         )
         loadSettings()
     }
 
     fun migration() {
-        database.timerSettingRepository.addDefaultTimerSettingIfNotExists(DEFAULT_TIMER_SETTINGS)
+        database.timerSettingRepository.addDefaultTimerSettingIfNotExists(
+            DEFAULT_TIMER_SETTINGS,
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
         loadSettings()
     }
 
     fun setDefaultSetting(id: Long) {
-        database.timerSettingRepository.setDefaultTimerSetting(id)
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.timerSettingRepository.setDefaultTimerSetting(
+            id,
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
         loadSettings()
     }
 
     // Load the default timer setting from database
     fun loadDefaultTimerSetting(): TimerSettings? {
-        return database.timerSettingRepository.getDefaultTimerSetting()
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        return database.timerSettingRepository.getDefaultTimerSetting(
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
     }
 }

@@ -1,0 +1,74 @@
+CREATE TABLE IF NOT EXISTS Workspace (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    syncId TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    isSelected INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    deletedAt INTEGER
+);
+
+INSERT OR IGNORE INTO Workspace(id, syncId, name, isSelected, createdAt, updatedAt)
+VALUES (1, 'local-workspace', 'Local workspace', 1, strftime('%s', 'now') * 1000, strftime('%s', 'now') * 1000);
+
+CREATE TABLE IF NOT EXISTS WorkspaceSecuritySettings (
+    workspaceId INTEGER NOT NULL PRIMARY KEY,
+    openAiToken TEXT NOT NULL DEFAULT '',
+    llmBaseUrl TEXT NOT NULL DEFAULT 'https://api.openai.com/v1/',
+    llmModelId TEXT NOT NULL DEFAULT 'gpt-4.1',
+    encryptionEnabled INTEGER NOT NULL DEFAULT 0,
+    encryptionSalt TEXT,
+    wrappedDataKey TEXT,
+    encryptionIterations INTEGER NOT NULL DEFAULT 600000,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
+);
+
+INSERT OR IGNORE INTO WorkspaceSecuritySettings(
+    workspaceId,
+    openAiToken,
+    llmBaseUrl,
+    llmModelId,
+    encryptionEnabled,
+    encryptionSalt,
+    wrappedDataKey,
+    encryptionIterations
+)
+VALUES (1, '', 'https://api.openai.com/v1/', 'gpt-4.1', 0, NULL, NULL, 600000);
+
+ALTER TABLE FocusTime ADD COLUMN workspaceId INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE FocusTime ADD COLUMN syncId TEXT NOT NULL DEFAULT '';
+ALTER TABLE FocusTime ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE FocusTime ADD COLUMN deletedAt INTEGER;
+UPDATE FocusTime
+SET syncId = 'legacy-focus-' || id,
+    updatedAt = finishedAt
+WHERE syncId = '';
+
+ALTER TABLE DaySummary ADD COLUMN workspaceId INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE DaySummary ADD COLUMN syncId TEXT NOT NULL DEFAULT '';
+ALTER TABLE DaySummary ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE DaySummary ADD COLUMN deletedAt INTEGER;
+UPDATE DaySummary
+SET syncId = 'legacy-summary-' || date,
+    updatedAt = date
+WHERE syncId = '';
+
+ALTER TABLE TimerSetting ADD COLUMN workspaceId INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE TimerSetting ADD COLUMN syncId TEXT NOT NULL DEFAULT '';
+ALTER TABLE TimerSetting ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE TimerSetting ADD COLUMN deletedAt INTEGER;
+UPDATE TimerSetting
+SET syncId = 'legacy-timer-' || id,
+    updatedAt = strftime('%s', 'now') * 1000
+WHERE syncId = '';
+
+ALTER TABLE Task ADD COLUMN workspaceId INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE Task ADD COLUMN syncId TEXT NOT NULL DEFAULT '';
+ALTER TABLE Task ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE Task ADD COLUMN deletedAt INTEGER;
+UPDATE Task
+SET syncId = 'legacy-task-' || id,
+    updatedAt = createdAt
+WHERE syncId = '';
+
+PRAGMA user_version = 7;

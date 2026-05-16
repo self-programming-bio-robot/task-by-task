@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.sharp.Timer
 import androidx.compose.material3.*
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.settings.general.GeneralSettings
+import dev.zhdanov.apps.composeApp.components.settings.security.SecuritySettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettings
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
@@ -81,6 +83,7 @@ fun SettingsScreen(
                                         when (item) {
                                             is TimersSettingsProps -> setTitle("Settings / Timers")
                                             is GeneralSettingsProps -> setTitle("Settings / General")
+                                            is SecuritySettingsProps -> setTitle("Settings / Security")
                                             else -> setTitle("Settings")
                                         }
                                         navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item)
@@ -121,6 +124,7 @@ fun SettingsScreen(
                                         }
                                     )
                                     is GeneralSettingsProps -> GeneralSettings()
+                                    is SecuritySettingsProps -> SecuritySettings()
                                 }
                             }
                         }
@@ -163,6 +167,13 @@ fun SettingList(onItemClick: (item: Any) -> Unit) {
                 icon = Icons.Outlined.Settings,
                 title = "General",
                 onItemClick = { onItemClick(GeneralSettingsProps()) }
+            )
+        }
+        item {
+            SettingItem(
+                icon = Icons.Outlined.Security,
+                title = "Security",
+                onItemClick = { onItemClick(SecuritySettingsProps()) }
             )
         }
         item {
@@ -213,3 +224,5 @@ data class TimersSettingsProps(
 )
 
 class GeneralSettingsProps()
+
+class SecuritySettingsProps()

@@ -2,8 +2,14 @@ package dev.zhdanov.apps.shared.cache.repository
 
 import dev.zhdanov.apps.shared.cache.AppDatabaseQueries
 import dev.zhdanov.apps.shared.cache.timerSettings
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.TimerSettings
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
 class TimerSettingRepository(
     private val database: AppDatabaseQueries
 ) {
@@ -21,25 +27,30 @@ class TimerSettingRepository(
         workDuration: Int,
         shortBreakDuration: Int,
         longBreakDuration: Int,
-        workCycles: Int
+        workCycles: Int,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
     ) {
+        val now = now()
         database.insertTimerSetting(
             workDuration = workDuration.toLong(),
             shortBreakDuration = shortBreakDuration.toLong(),
             longBreakDuration = longBreakDuration.toLong(),
             workCycles = workCycles.toLong(),
+            workspaceId = workspaceId,
+            syncId = Uuid.random().toString(),
+            updatedAt = now
         )
     }
 
     // Get all TimerSettings (convert Long to Int)
-    fun getAllTimerSettings(): List<TimerSettings> {
-        return database.selectAllTimerSettings(timerSettings)
+    fun getAllTimerSettings(workspaceId: Long = DEFAULT_WORKSPACE_ID): List<TimerSettings> {
+        return database.selectAllTimerSettings(workspaceId, timerSettings)
             .executeAsList()
     }
 
     // Get a TimerSetting by id (convert Long to Int)
-    fun getTimerSettingById(id: Int): TimerSettings? {
-        return database.selectTimerSettingById(id.toLong(), timerSettings)
+    fun getTimerSettingById(id: Int, workspaceId: Long = DEFAULT_WORKSPACE_ID): TimerSettings? {
+        return database.selectTimerSettingById(workspaceId, id.toLong(), timerSettings)
             .executeAsOneOrNull()
     }
 
@@ -50,7 +61,8 @@ class TimerSettingRepository(
             shortBreakDuration = settings.shortBreakDuration,
             longBreakDuration = settings.longBreakDuration,
             workCycles = settings.workCycles,
-            id = settings.id
+            id = settings.id,
+            workspaceId = settings.workspaceId
         )
     }
 
@@ -60,43 +72,56 @@ class TimerSettingRepository(
         workDuration: Int,
         shortBreakDuration: Int,
         longBreakDuration: Int,
-        workCycles: Int
+        workCycles: Int,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
     ) {
         database.updateTimerSetting(
             workDuration = workDuration.toLong(),
             shortBreakDuration = shortBreakDuration.toLong(),
             longBreakDuration = longBreakDuration.toLong(),
             workCycles = workCycles.toLong(),
+            updatedAt = now(),
+            workspaceId = workspaceId,
             id = id
         )
     }
 
     // Delete a TimerSetting by id
-    fun deleteTimerSettingById(id: Long) {
-        database.deleteTimerSettingById(id)
+    fun deleteTimerSettingById(id: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
+        val now = now()
+        database.deleteTimerSettingById(deletedAt = now, updatedAt = now, workspaceId = workspaceId, id = id)
     }
 
     // Set default timer setting
-    fun setDefaultTimerSetting(settingId: Long) {
+    fun setDefaultTimerSetting(settingId: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
+        val now = now()
         database.transaction {
-            database.unsetDefaultTimerSetting()
-            database.setDefaultTimerSettingById(settingId)
+            database.unsetDefaultTimerSetting(updatedAt = now, workspaceId = workspaceId)
+            database.setDefaultTimerSettingById(updatedAt = now, workspaceId = workspaceId, id = settingId)
         }
     }
 
-    fun addDefaultTimerSettingIfNotExists(settings: TimerSettings) {
+    fun addDefaultTimerSettingIfNotExists(settings: TimerSettings, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
         database.transaction {
-            database.findDefaultTimerSettings().executeAsOneOrNull() ?: run {
-                insertTimerSetting(settings)
+            database.findDefaultTimerSettings(workspaceId).executeAsOneOrNull() ?: run {
+                insertTimerSetting(
+                    workDuration = settings.workDuration,
+                    shortBreakDuration = settings.shortBreakDuration,
+                    longBreakDuration = settings.longBreakDuration,
+                    workCycles = settings.workCycles,
+                    workspaceId = workspaceId
+                )
                 val id = database.lastInsertRowId().executeAsOne()
-                setDefaultTimerSetting(id)
+                setDefaultTimerSetting(id, workspaceId)
             }
         }
     }
 
     // Get the default timer setting
-    fun getDefaultTimerSetting(): TimerSettings? {
-        return database.findDefaultTimerSettings(timerSettings)
+    fun getDefaultTimerSetting(workspaceId: Long = DEFAULT_WORKSPACE_ID): TimerSettings? {
+        return database.findDefaultTimerSettings(workspaceId, timerSettings)
             .executeAsOneOrNull()
     }
+
+    private fun now(): Long = Clock.System.now().toEpochMilliseconds()
 }

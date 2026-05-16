@@ -1,9 +1,11 @@
 package dev.zhdanov.apps.composeApp.di
 
 import dev.zhdanov.apps.composeApp.services.DesktopScheduler
+import dev.zhdanov.apps.composeApp.services.JvmWorkspaceCryptoService
 import dev.zhdanov.apps.composeApp.services.SchedulerService
 import dev.zhdanov.apps.composeApp.services.ThemeChangeService
 import dev.zhdanov.apps.composeApp.services.ThemeChangeServiceDesktop
+import dev.zhdanov.apps.composeApp.services.WorkspaceCryptoService
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
 import dev.zhdanov.apps.shared.cache.JvmDatabaseDriverFactory
@@ -23,5 +25,8 @@ actual val platformModule = module {
     }
     single<ThemeChangeService> {
         ThemeChangeServiceDesktop()
+    }
+    single<WorkspaceCryptoService> {
+        JvmWorkspaceCryptoService()
     }
 }

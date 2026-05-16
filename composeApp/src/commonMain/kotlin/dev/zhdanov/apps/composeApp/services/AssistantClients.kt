@@ -6,8 +6,12 @@ import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.chat.ChatRole as OpenAIChatRole
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.OpenAIHost
 import dev.zhdanov.apps.shared.model.ChatMessage
 import dev.zhdanov.apps.shared.model.ChatRole
+import dev.zhdanov.apps.shared.model.AssistantConfig
+import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_MODEL
 import dev.zhdanov.apps.shared.prompts.REVIEW_DAY_PROMPT
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -19,21 +23,20 @@ data class DayReviewResult(
 )
 
 interface ReviewClient {
-    suspend fun reviewDay(token: String, historyOfDay: String): DayReviewResult
+    suspend fun reviewDay(config: AssistantConfig, historyOfDay: String): DayReviewResult
 }
 
 interface ChatClient {
-    suspend fun sendMessage(token: String, daySummary: String, messages: List<ChatMessage>): String
+    suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String
 }
 
 class OpenAIReviewClient(
-    private val model: String = DEFAULT_ASSISTANT_MODEL,
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) : ReviewClient {
-    override suspend fun reviewDay(token: String, historyOfDay: String): DayReviewResult {
-        val result = OpenAI(token).chatCompletion(
+    override suspend fun reviewDay(config: AssistantConfig, historyOfDay: String): DayReviewResult {
+        val result = createOpenAI(config).chatCompletion(
             ChatCompletionRequest(
-                model = ModelId(model),
+                model = ModelId(config.modelId.ifBlank { DEFAULT_ASSISTANT_MODEL }),
                 responseFormat = ChatResponseFormat.JsonObject,
                 messages = listOf(
                     OpenAIChatMessage(
@@ -56,10 +59,8 @@ class OpenAIReviewClient(
     }
 }
 
-class OpenAIChatClient(
-    private val model: String = DEFAULT_ASSISTANT_MODEL
-) : ChatClient {
-    override suspend fun sendMessage(token: String, daySummary: String, messages: List<ChatMessage>): String {
+class OpenAIChatClient : ChatClient {
+    override suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String {
         val openAIMessages = buildList {
             add(
                 OpenAIChatMessage(
@@ -81,9 +82,9 @@ class OpenAIChatClient(
             }
         }
 
-        val response = OpenAI(token).chatCompletion(
+        val response = createOpenAI(config).chatCompletion(
             ChatCompletionRequest(
-                model = ModelId(model),
+                model = ModelId(config.modelId.ifBlank { DEFAULT_ASSISTANT_MODEL }),
                 messages = openAIMessages
             )
         )
@@ -115,4 +116,11 @@ private data class OpenAIReviewResponse(
     val response: String
 )
 
-private const val DEFAULT_ASSISTANT_MODEL = "gpt-4.1"
+private fun createOpenAI(config: AssistantConfig): OpenAI {
+    return OpenAI(
+        OpenAIConfig(
+            token = config.token,
+            host = OpenAIHost(config.baseUrl)
+        )
+    )
+}

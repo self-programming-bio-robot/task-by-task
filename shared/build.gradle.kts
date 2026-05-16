@@ -78,7 +78,7 @@ sqldelight {
     databases {
         create("AppDatabase") {
             packageName.set("dev.zhdanov.apps.shared.cache")
-            version = 6
+            version = 8
         }
     }
 }

@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
+import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.TaskSummary
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -24,7 +25,7 @@ class DaySummaryServiceTest {
     @Test
     fun `finishDay uses configured start of day and summarizes junction linked tasks`() = runTest {
         val fixture = createFixture()
-        fixture.settingsService.saveOpenAiToken("token")
+        fixture.settingsService.saveAssistantConfig("token", "https://api.openai.com/v1/", "gpt-4.1")
         fixture.settingsService.saveStartOfDay(LocalTime(5, 0))
         fixture.taskDataService.addTask("Refactor")
         val task = fixture.taskDataService.getAllTasks().first()
@@ -64,14 +65,15 @@ class DaySummaryServiceTest {
 
     private fun createFixture(): Fixture {
         val database = Database(InMemoryDriverFactory())
+        val workspaceSessionService = createWorkspaceSessionService(database)
         val dispatchers = AppDispatchers(
             io = UnconfinedTestDispatcher(),
             default = UnconfinedTestDispatcher()
         )
-        val settingsService = AppSettingsService(database, dispatchers)
-        val taskDataService = TaskDataService(database, dispatchers)
-        val focusSessionDataService = FocusSessionDataService(database, dispatchers)
-        val daySummaryDataService = DaySummaryDataService(database, dispatchers)
+        val settingsService = AppSettingsService(database, dispatchers, workspaceSessionService)
+        val taskDataService = TaskDataService(database, dispatchers, workspaceSessionService)
+        val focusSessionDataService = FocusSessionDataService(database, dispatchers, workspaceSessionService)
+        val daySummaryDataService = DaySummaryDataService(database, dispatchers, workspaceSessionService)
         val schedulerService = RecordingSchedulerService()
         val daySummaryService = DaySummaryService(
             daySummaryDataService = daySummaryDataService,
@@ -102,7 +104,7 @@ private data class Fixture(
 )
 
 private class FakeReviewClient : ReviewClient {
-    override suspend fun reviewDay(token: String, historyOfDay: String): DayReviewResult {
+    override suspend fun reviewDay(config: AssistantConfig, historyOfDay: String): DayReviewResult {
         return DayReviewResult(summary = "summary", response = "response")
     }
 }

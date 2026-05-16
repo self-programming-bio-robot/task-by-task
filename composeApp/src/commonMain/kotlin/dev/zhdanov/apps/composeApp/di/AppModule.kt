@@ -1,6 +1,7 @@
 package dev.zhdanov.apps.composeApp.di
 
 import dev.zhdanov.apps.composeApp.components.settings.general.GeneralSettingsViewModel
+import dev.zhdanov.apps.composeApp.components.settings.security.SecuritySettingsViewModel
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
@@ -26,6 +27,7 @@ import dev.zhdanov.apps.composeApp.services.StatisticsDataService
 import dev.zhdanov.apps.composeApp.services.TaskDataService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
+import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
 import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -35,22 +37,24 @@ import org.koin.dsl.module
 val appModule = module {
     single { AppDispatchers() }
     single { NotificationService() }
-    single { AppSettingsService(get(), get()) }
-    single { TaskDataService(get(), get()) }
-    single { FocusSessionDataService(get(), get()) }
-    single { DaySummaryDataService(get(), get()) }
+    single { WorkspaceSessionService(get(), get()) }
+    single { AppSettingsService(get(), get(), get()) }
+    single { TaskDataService(get(), get(), get()) }
+    single { FocusSessionDataService(get(), get(), get()) }
+    single { DaySummaryDataService(get(), get(), get()) }
     single { StatisticsDataService(get(), get()) }
     single { HistoryService(get(), get(), get(), get()) }
     single<ReviewClient> { OpenAIReviewClient() }
     single<ChatClient> { OpenAIChatClient() }
     single { DaySummaryService(get(), get(), get(), get(), get(), get(), get()) }
-    single { TimerSettingsService(get()) }
+    single { TimerSettingsService(get(), get()) }
     single { FocusTaskService() }
     single { ChatService(get(), get(), get()) }
     single { TimerSessionService(get(), get(), get(), get(), get()) }
 
     viewModel { TimerViewModel(get()) }
-    viewModel { GeneralSettingsViewModel(get(), get()) }
+    viewModel { GeneralSettingsViewModel(get(), get(), get()) }
+    viewModel { SecuritySettingsViewModel(get(), get()) }
     viewModel { FinishedDayViewModel(get()) }
     viewModel { StatisticsViewModel(get()) }
     viewModel { HomeViewModel(get()) }

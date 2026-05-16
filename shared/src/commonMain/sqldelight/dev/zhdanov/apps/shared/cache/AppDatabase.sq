@@ -1,5 +1,100 @@
 import kotlin.Boolean;
 
+CREATE TABLE IF NOT EXISTS Workspace (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    syncId TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    icon TEXT NOT NULL DEFAULT 'workspaces',
+    isSelected INTEGER AS Boolean NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    deletedAt INTEGER
+);
+
+insertWorkspace:
+INSERT INTO Workspace(syncId, name, icon, isSelected, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectWorkspaces:
+SELECT * FROM Workspace
+WHERE deletedAt IS NULL
+ORDER BY name ASC;
+
+selectWorkspaceById:
+SELECT * FROM Workspace
+WHERE id = ? AND deletedAt IS NULL
+LIMIT 1;
+
+selectSelectedWorkspace:
+SELECT * FROM Workspace
+WHERE isSelected = 1 AND deletedAt IS NULL
+LIMIT 1;
+
+clearSelectedWorkspace:
+UPDATE Workspace
+SET isSelected = 0;
+
+setSelectedWorkspace:
+UPDATE Workspace
+SET isSelected = 1, updatedAt = ?
+WHERE id = ?;
+
+updateWorkspaceName:
+UPDATE Workspace
+SET name = ?, updatedAt = ?
+WHERE id = ?;
+
+updateWorkspaceIcon:
+UPDATE Workspace
+SET icon = ?, updatedAt = ?
+WHERE id = ?;
+
+softDeleteWorkspace:
+UPDATE Workspace
+SET deletedAt = ?, updatedAt = ?, isSelected = 0
+WHERE id = ?;
+
+CREATE TABLE IF NOT EXISTS WorkspaceSecuritySettings (
+    workspaceId INTEGER NOT NULL PRIMARY KEY,
+    openAiToken TEXT NOT NULL DEFAULT '',
+    llmBaseUrl TEXT NOT NULL DEFAULT 'https://api.openai.com/v1/',
+    llmModelId TEXT NOT NULL DEFAULT 'gpt-4.1',
+    encryptionEnabled INTEGER AS Boolean NOT NULL DEFAULT 0,
+    encryptionSalt TEXT,
+    wrappedDataKey TEXT,
+    encryptionIterations INTEGER NOT NULL DEFAULT 600000,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
+);
+
+insertWorkspaceSecuritySettings:
+INSERT OR IGNORE INTO WorkspaceSecuritySettings(
+    workspaceId,
+    openAiToken,
+    llmBaseUrl,
+    llmModelId,
+    encryptionEnabled,
+    encryptionSalt,
+    wrappedDataKey,
+    encryptionIterations
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectWorkspaceSecuritySettings:
+SELECT * FROM WorkspaceSecuritySettings
+WHERE workspaceId = ?;
+
+updateWorkspaceAssistantConfig:
+UPDATE WorkspaceSecuritySettings
+SET openAiToken = ?, llmBaseUrl = ?, llmModelId = ?
+WHERE workspaceId = ?;
+
+updateWorkspaceEncryption:
+UPDATE WorkspaceSecuritySettings
+SET encryptionEnabled = ?, encryptionSalt = ?, wrappedDataKey = ?, encryptionIterations = ?
+WHERE workspaceId = ?;
+
+-- Focus sessions
+
 CREATE TABLE IF NOT EXISTS FocusTime (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     duration INTEGER NOT NULL,
@@ -7,45 +102,83 @@ CREATE TABLE IF NOT EXISTS FocusTime (
     finishedAt INTEGER NOT NULL,
     startedAt INTEGER,
     pauseTime INTEGER,
-    taskId INTEGER
+    taskId INTEGER,
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
 );
 
 insertFocusTime:
-INSERT INTO FocusTime (duration, feedback, finishedAt, startedAt, pauseTime, taskId)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO FocusTime (
+    duration,
+    feedback,
+    finishedAt,
+    startedAt,
+    pauseTime,
+    taskId,
+    workspaceId,
+    syncId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateFocusTimeFeedback:
+UPDATE FocusTime
+SET feedback = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
 selectAllFocusTimes:
-SELECT * FROM FocusTime;
+SELECT * FROM FocusTime
+WHERE workspaceId = ? AND deletedAt IS NULL;
 
 selectFocusTimesInPeriod:
 SELECT * FROM FocusTime
-WHERE finishedAt BETWEEN ? AND ?;
-
+WHERE workspaceId = ? AND deletedAt IS NULL AND finishedAt BETWEEN ? AND ?;
 
 CREATE TABLE IF NOT EXISTS DaySummary (
     date INTEGER NOT NULL,
     focusTime INTEGER NOT NULL,
     review TEXT NOT NULL,
-    linkedTasks TEXT NOT NULL DEFAULT '[]'
+    linkedTasks TEXT NOT NULL DEFAULT '[]',
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
 );
 
 insertDaySummary:
-INSERT INTO DaySummary (date, focusTime, review, linkedTasks)
-VALUES (?, ?, ?, ?);
+INSERT INTO DaySummary (
+    date,
+    focusTime,
+    review,
+    linkedTasks,
+    workspaceId,
+    syncId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateDaySummaryEncryptedFields:
+UPDATE DaySummary
+SET review = ?, linkedTasks = ?, updatedAt = ?
+WHERE workspaceId = ? AND date = ?;
 
 selectAllDaySummaries:
 SELECT * FROM DaySummary
+WHERE workspaceId = ? AND deletedAt IS NULL
 ORDER BY date DESC;
 
 selectDaySummariesInPeriod:
 SELECT * FROM DaySummary
-WHERE date BETWEEN ? AND ?;
+WHERE workspaceId = ? AND deletedAt IS NULL AND date BETWEEN ? AND ?;
 
 selectDaySummaryOnDate:
 SELECT * FROM DaySummary
-WHERE date = ?
+WHERE workspaceId = ? AND deletedAt IS NULL AND date = ?
 LIMIT 1;
-
 
 CREATE TABLE IF NOT EXISTS TimerSetting (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,49 +186,57 @@ CREATE TABLE IF NOT EXISTS TimerSetting (
     shortBreakDuration INTEGER NOT NULL,
     longBreakDuration INTEGER NOT NULL,
     workCycles INTEGER NOT NULL,
-    isDefault INTEGER AS Boolean NOT NULL DEFAULT 0
+    isDefault INTEGER AS Boolean NOT NULL DEFAULT 0,
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
 );
 
--- Insert a new TimerSetting
 insertTimerSetting:
-INSERT INTO TimerSetting (workDuration, shortBreakDuration, longBreakDuration, workCycles)
-VALUES (?, ?, ?, ?);
+INSERT INTO TimerSetting (
+    workDuration,
+    shortBreakDuration,
+    longBreakDuration,
+    workCycles,
+    workspaceId,
+    syncId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
--- Select all TimerSettings
 selectAllTimerSettings:
-SELECT * FROM TimerSetting;
+SELECT * FROM TimerSetting
+WHERE workspaceId = ? AND deletedAt IS NULL;
 
--- Select a TimerSetting by id
 selectTimerSettingById:
-SELECT * FROM TimerSetting WHERE id = ?;
+SELECT * FROM TimerSetting
+WHERE workspaceId = ? AND deletedAt IS NULL AND id = ?;
 
--- Update a TimerSetting
 updateTimerSetting:
 UPDATE TimerSetting
-SET workDuration = ?, shortBreakDuration = ?, longBreakDuration = ?, workCycles = ?
-WHERE id = ?;
+SET workDuration = ?, shortBreakDuration = ?, longBreakDuration = ?, workCycles = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
--- Delete a TimerSetting by id
 deleteTimerSettingById:
-DELETE FROM TimerSetting WHERE id = ?;
+UPDATE TimerSetting
+SET deletedAt = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
--- Unset the current default TimerSetting
 unsetDefaultTimerSetting:
 UPDATE TimerSetting
-SET isDefault = 0
-WHERE isDefault = 1;
+SET isDefault = 0, updatedAt = ?
+WHERE workspaceId = ? AND isDefault = 1;
 
--- Set the default TimerSetting by id
 setDefaultTimerSettingById:
 UPDATE TimerSetting
-SET isDefault = 1
-WHERE id = ?;
+SET isDefault = 1, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
--- Find default settings
 findDefaultTimerSettings:
 SELECT * FROM TimerSetting
-WHERE isDefault = 1;
-
+WHERE workspaceId = ? AND deletedAt IS NULL AND isDefault = 1;
 
 CREATE TABLE IF NOT EXISTS Settings (
     settingKey INTEGER NOT NULL PRIMARY KEY,
@@ -120,43 +261,64 @@ CREATE TABLE IF NOT EXISTS Task (
     createdAt INTEGER NOT NULL,
     completedAt INTEGER,
     isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
-    isToday INTEGER AS Boolean NOT NULL DEFAULT 0
+    isToday INTEGER AS Boolean NOT NULL DEFAULT 0,
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
 );
 
 insertTask:
-INSERT INTO Task (title, description, isToday,createdAt)
-VALUES (?, ?, ?, ?);
+INSERT INTO Task (
+    title,
+    description,
+    isToday,
+    createdAt,
+    workspaceId,
+    syncId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 updateTaskCompletion:
 UPDATE Task
-SET isCompleted = ?, completedAt = ?
-WHERE id = ?;
+SET isCompleted = ?, completedAt = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
 selectAllTasks:
 SELECT * FROM Task
+WHERE workspaceId = ? AND deletedAt IS NULL
 ORDER BY createdAt DESC;
 
 selectTodayTasks:
 SELECT * FROM Task
-WHERE isToday = 1
+WHERE workspaceId = ? AND deletedAt IS NULL AND isToday = 1
 ORDER BY createdAt DESC;
 
 cleanTodayTaskList:
 UPDATE Task
-SET isToday = 0
-WHERE isToday = 1;
+SET isToday = 0, updatedAt = ?
+WHERE workspaceId = ? AND isToday = 1;
 
 updateTask:
 UPDATE Task
-SET title = ?, description = ?, isToday = ?
-WHERE id = ?;
+SET title = ?, description = ?, isToday = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
+
+updateTaskEncryptedFields:
+UPDATE Task
+SET title = ?, description = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
 selectTaskById:
 SELECT * FROM Task
-WHERE id = ?;
+WHERE workspaceId = ? AND deletedAt IS NULL AND id = ?;
 
 deleteTask:
-DELETE FROM Task WHERE id = ?;
+UPDATE Task
+SET deletedAt = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
 
 -- FocusTime <-> Task Junction Table (Many-to-Many)
 
@@ -173,16 +335,16 @@ INSERT INTO FocusTimeTaskCrossRef (focusTimeId, taskId)
 VALUES (?, ?);
 
 selectTasksForFocusTime:
-SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.isToday
+SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.isToday, Task.workspaceId, Task.syncId, Task.updatedAt, Task.deletedAt
 FROM Task
 INNER JOIN FocusTimeTaskCrossRef ON Task.id = FocusTimeTaskCrossRef.taskId
-WHERE FocusTimeTaskCrossRef.focusTimeId = ?;
+WHERE Task.workspaceId = ? AND Task.deletedAt IS NULL AND FocusTimeTaskCrossRef.focusTimeId = ?;
 
 selectFocusTimesForTask:
-SELECT FocusTime.id, FocusTime.duration, FocusTime.feedback, FocusTime.finishedAt, FocusTime.startedAt, FocusTime.pauseTime, FocusTime.taskId
+SELECT FocusTime.id, FocusTime.duration, FocusTime.feedback, FocusTime.finishedAt, FocusTime.startedAt, FocusTime.pauseTime, FocusTime.taskId, FocusTime.workspaceId, FocusTime.syncId, FocusTime.updatedAt, FocusTime.deletedAt
 FROM FocusTime
 INNER JOIN FocusTimeTaskCrossRef ON FocusTime.id = FocusTimeTaskCrossRef.focusTimeId
-WHERE FocusTimeTaskCrossRef.taskId = ?;
+WHERE FocusTime.workspaceId = ? AND FocusTime.deletedAt IS NULL AND FocusTimeTaskCrossRef.taskId = ?;
 
 deleteFocusTimeTaskCrossRef:
 DELETE FROM FocusTimeTaskCrossRef

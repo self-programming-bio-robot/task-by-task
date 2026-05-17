@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.history.HistoryList
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.DaySummary
@@ -51,7 +50,7 @@ fun HistoryScreen(
     val navigator = rememberSupportingPaneScaffoldNavigator<LocalDate>()
     val coroutineScope = rememberCoroutineScope()
 
-    val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
     val padding = if (isCompact) 0.dp else 16.dp
     val shape = if (isCompact) RectangleShape else MaterialTheme.shapes.medium
 
@@ -243,7 +242,7 @@ private fun NoteCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Notes,
+                        imageVector = Icons.AutoMirrored.Filled.Notes,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary

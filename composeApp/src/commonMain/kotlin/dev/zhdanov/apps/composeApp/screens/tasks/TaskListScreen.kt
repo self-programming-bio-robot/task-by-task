@@ -22,8 +22,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
@@ -33,6 +33,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
+import dev.zhdanov.apps.composeApp.testing.UiTestTags
 
 @OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -47,8 +48,9 @@ fun TaskListScreen(
     val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
     val navigator = rememberSupportingPaneScaffoldNavigator<TaskScreens>()
-    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
-    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
+    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
+    val padding = if (isCompact) 0.dp else 16.dp
+    val shape = if (isCompact)
         RectangleShape else MaterialTheme.shapes.medium
 
     // Auto-navigate to initial task if provided
@@ -65,6 +67,7 @@ fun TaskListScreen(
     }
 
     Scaffold(
+        modifier = Modifier.testTag(UiTestTags.TaskListScreen),
         topBar = {
             TopBar("Tasks")
         },
@@ -209,6 +212,7 @@ fun TaskItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(UiTestTags.taskRow(task.id))
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -216,7 +220,8 @@ fun TaskItem(
     ) {
         Checkbox(
             checked = task.isCompleted,
-            onCheckedChange = { onToggleCompletion() }
+            onCheckedChange = { onToggleCompletion() },
+            modifier = Modifier.testTag(UiTestTags.taskCompletion(task.id))
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
@@ -227,7 +232,8 @@ fun TaskItem(
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(
             onClick = { if (!task.isCompleted || isFocused) onFocusToggle() },
-            enabled = !task.isCompleted || isFocused
+            enabled = !task.isCompleted || isFocused,
+            modifier = Modifier.testTag(UiTestTags.taskFocus(task.id))
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,
@@ -239,6 +245,7 @@ fun TaskItem(
         IconToggleButton(
             checked = task.isToday,
             onCheckedChange = { onAddToday(it) },
+            modifier = Modifier.testTag(UiTestTags.taskToday(task.id))
         ) {
             Icon(
                 imageVector = Icons.Default.Today,
@@ -263,15 +270,21 @@ fun NewTaskInput(
         OutlinedTextField(
             value = value,
             onValueChange = { value = it },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).testTag(UiTestTags.NewTaskInput),
             placeholder = { Text("Enter new task") },
             singleLine = true
         )
         Spacer(modifier = Modifier.width(16.dp))
-        IconButton(onClick = {
-            onAddTask(value)
-            value = ""
-        }) {
+        IconButton(
+            onClick = {
+                val title = value.trim()
+                if (title.isNotEmpty()) {
+                    onAddTask(title)
+                }
+                value = ""
+            },
+            modifier = Modifier.testTag(UiTestTags.AddTaskButton)
+        ) {
             Icon(Icons.Default.Add, contentDescription = "Add task")
         }
     }

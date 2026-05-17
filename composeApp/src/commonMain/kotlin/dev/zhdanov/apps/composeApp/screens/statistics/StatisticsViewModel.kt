@@ -8,9 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -19,7 +17,9 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 data class ChartEntry(
     val label: String,
@@ -146,6 +146,7 @@ class StatisticsViewModel(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun buildChartData(
         focusTimes: List<FocusTime>,
         startDate: LocalDate,
@@ -197,7 +198,7 @@ class StatisticsViewModel(
             }
             StatisticsPeriod.MONTH -> {
                 // Group days into buckets based on maxColumns
-                val daysInMonth = endDate.dayOfMonth
+                val daysInMonth = endDate.day
                 val daysPerBucket = (daysInMonth + maxColumns - 1) / maxColumns.coerceAtLeast(1)
                 val bucketCount = (daysInMonth + daysPerBucket - 1) / daysPerBucket
                 val dayData = MutableList(bucketCount) { 0 }
@@ -205,7 +206,7 @@ class StatisticsViewModel(
                 focusTimes.forEach { ft ->
                     val instant = Instant.fromEpochMilliseconds(ft.finishedAt)
                     val dateTime = instant.toLocalDateTime(timeZone)
-                    val dayOfMonth = dateTime.dayOfMonth - 1
+                    val dayOfMonth = dateTime.day - 1
                     if (dayOfMonth in 0 until daysInMonth) {
                         val bucketIndex = dayOfMonth / daysPerBucket
                         if (bucketIndex < bucketCount) {
@@ -250,7 +251,7 @@ class StatisticsViewModel(
             StatisticsPeriod.MONTH -> {
                 // Calculate target month
                 var targetYear = today.year
-                var targetMonth = today.monthNumber + offset
+                var targetMonth = today.month.ordinal + 1 + offset
                 while (targetMonth > 12) {
                     targetMonth -= 12
                     targetYear++
@@ -270,19 +271,19 @@ class StatisticsViewModel(
             StatisticsPeriod.DAY -> {
                 val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                 val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-                "${dayNames[baseFromDate.dayOfWeek.ordinal]}, ${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth}"
+                "${dayNames[baseFromDate.dayOfWeek.ordinal]}, ${months[baseFromDate.month.ordinal]} ${baseFromDate.day}"
             }
             StatisticsPeriod.WEEK -> {
                 val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
                 if (baseFromDate.month == periodEnd.month) {
-                    "${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth} - ${periodEnd.dayOfMonth}"
+                    "${months[baseFromDate.month.ordinal]} ${baseFromDate.day} - ${periodEnd.day}"
                 } else {
-                    "${months[baseFromDate.monthNumber - 1]} ${baseFromDate.dayOfMonth} - ${months[periodEnd.monthNumber - 1]} ${periodEnd.dayOfMonth}"
+                    "${months[baseFromDate.month.ordinal]} ${baseFromDate.day} - ${months[periodEnd.month.ordinal]} ${periodEnd.day}"
                 }
             }
             StatisticsPeriod.MONTH -> {
                 val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-                "${months[baseFromDate.monthNumber - 1]} ${baseFromDate.year}"
+                "${months[baseFromDate.month.ordinal]} ${baseFromDate.year}"
             }
         }
 

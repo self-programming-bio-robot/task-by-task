@@ -22,8 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
@@ -31,6 +31,7 @@ import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
+import dev.zhdanov.apps.composeApp.testing.UiTestTags
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -52,8 +53,9 @@ fun HomeScreen(
     val isActive by viewModel.isActive.collectAsState()
 
     val navigator = rememberSupportingPaneScaffoldNavigator<String>()
-    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
-    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
+    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
+    val padding = if (isCompact) 0.dp else 16.dp
+    val shape = if (isCompact)
         RectangleShape else MaterialTheme.shapes.medium
 
     LaunchedEffect(finishDayError) {
@@ -64,6 +66,7 @@ fun HomeScreen(
     }
 
     Scaffold(
+        modifier = Modifier.testTag(UiTestTags.HomeScreen),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopBar(
@@ -264,6 +267,7 @@ fun TodayTaskItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(UiTestTags.taskRow(task.id))
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -271,7 +275,8 @@ fun TodayTaskItem(
     ) {
         Checkbox(
             checked = task.isCompleted,
-            onCheckedChange = { onToggleCompletion() }
+            onCheckedChange = { onToggleCompletion() },
+            modifier = Modifier.testTag(UiTestTags.taskCompletion(task.id))
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
@@ -282,7 +287,8 @@ fun TodayTaskItem(
         Spacer(modifier = Modifier.width(16.dp))
         IconButton(
             onClick = { if (canFocus) onFocusToggle() },
-            enabled = canFocus || isFocused // Allow unfocus if already focused, but not focus completed tasks
+            enabled = canFocus || isFocused, // Allow unfocus if already focused, but not focus completed tasks
+            modifier = Modifier.testTag(UiTestTags.taskFocus(task.id))
         ) {
             Icon(
                 imageVector = Icons.Default.CenterFocusStrong,

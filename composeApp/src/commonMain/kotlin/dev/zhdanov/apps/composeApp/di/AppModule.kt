@@ -28,11 +28,10 @@ import dev.zhdanov.apps.composeApp.services.TaskDataService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
-import org.koin.compose.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
-
 
 val appModule = module {
     single { AppDispatchers() }

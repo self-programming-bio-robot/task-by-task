@@ -2,6 +2,7 @@ package dev.zhdanov.apps.composeApp
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.layout.AdaptiveLayout
@@ -29,8 +31,9 @@ import dev.zhdanov.apps.composeApp.services.ThemeChangeService
 import dev.zhdanov.apps.composeApp.services.ThemeChangeService.SystemTheme
 import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
+import dev.zhdanov.apps.composeApp.testing.UiTestTags
 import dev.zhdanov.apps.composeApp.theme.AppTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -62,11 +65,13 @@ fun App() {
         }
     }
     AppTheme(useDarkTheme = useDarkTheme) {
-        KoinContext {
-            if (isWorkspaceLocked) {
-                WorkspaceUnlockGate(workspaceSessionService)
-            } else {
-                AdaptiveLayout()
+        Box(Modifier.fillMaxSize().testTag(UiTestTags.AppRoot)) {
+            KoinContext {
+                if (isWorkspaceLocked) {
+                    WorkspaceUnlockGate(workspaceSessionService)
+                } else {
+                    AdaptiveLayout()
+                }
             }
         }
     }

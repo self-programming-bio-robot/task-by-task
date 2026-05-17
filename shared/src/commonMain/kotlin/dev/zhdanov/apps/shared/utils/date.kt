@@ -14,7 +14,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 fun LocalDate.toLong() =
-    (this.year * 10000 + this.monthNumber * 100 + this.dayOfMonth).toLong()
+    (this.year * 10000 + (this.month.ordinal + 1) * 100 + this.day).toLong()
 
 fun Long.toLocalDate(): LocalDate {
     val year = this / 10000

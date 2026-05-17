@@ -8,12 +8,13 @@ import dev.zhdanov.apps.shared.model.ChatSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 class ChatService(
     private val workspaceSessionService: WorkspaceSessionService,
     private val notificationService: NotificationService,

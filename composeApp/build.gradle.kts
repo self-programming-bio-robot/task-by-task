@@ -10,7 +10,11 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.buildKonfig)
-    alias(libs.plugins.compose.hotload)
+    alias(libs.plugins.compose.hotload) apply false
+}
+
+if (providers.gradleProperty("composeHotReload").orNull == "true") {
+    apply(plugin = "org.jetbrains.compose.hot-reload")
 }
 
 repositories {
@@ -68,6 +72,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.compose.ui.test)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -125,6 +130,8 @@ kotlin {
         }
         desktopTest.dependencies {
             implementation(libs.jvm.driver)
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
         }
     }
 }

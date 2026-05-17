@@ -7,15 +7,16 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.workspace.WorkspaceSelector
 import dev.zhdanov.apps.composeApp.navigation.MainNavGraph
 import dev.zhdanov.apps.composeApp.navigation.NavigationViewModel
 import dev.zhdanov.apps.composeApp.navigation.Screen
 import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
+import dev.zhdanov.apps.composeApp.testing.UiTestTags
 import org.koin.compose.koinInject
 
 val menuItems: List<Screen> = listOf(
@@ -33,9 +34,10 @@ fun AdaptiveLayout() {
     val viewModel: NavigationViewModel = viewModel { NavigationViewModel() }
     val workspaceSessionService: WorkspaceSessionService = koinInject()
     val currentWorkspace by workspaceSessionService.currentWorkspace.collectAsState()
+    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
 
-    when (windowInfo.windowSizeClass.windowWidthSizeClass) {
-        WindowWidthSizeClass.COMPACT -> {
+    when {
+        isCompact -> {
             NavigationBarLayout(
                 menuItems = menuItems,
                 viewModel = viewModel,
@@ -97,6 +99,7 @@ fun NavigationRailLayout(
             ) {
                 menuItems.forEachIndexed { index, item ->
                     NavigationRailItem(
+                        modifier = Modifier.testTag(UiTestTags.navigationItem(item.title)),
                         icon = {
                             Icon(
                                 imageVector = item.icon,
@@ -142,6 +145,7 @@ fun NavigationBarLayout(
             ) {
                 menuItems.forEachIndexed { index, item ->
                     NavigationBarItem(
+                        modifier = Modifier.testTag(UiTestTags.navigationItem(item.title)),
                         icon = {
                             Icon(
                                 imageVector = item.icon,

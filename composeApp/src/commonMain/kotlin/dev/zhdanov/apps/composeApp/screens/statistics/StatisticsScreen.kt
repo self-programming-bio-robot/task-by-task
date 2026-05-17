@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.topBar.TopBar
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -62,8 +61,9 @@ fun StatisticsScreen() {
     var availableHeightDp by remember { mutableStateOf(0.dp) }
     val windowInfo = currentWindowAdaptiveInfo()
 
-    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
-    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
+    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
+    val padding = if (isCompact) 0.dp else 16.dp
+    val shape = if (isCompact)
         RectangleShape else MaterialTheme.shapes.medium
 
     // Calculate if we have enough space for the chart

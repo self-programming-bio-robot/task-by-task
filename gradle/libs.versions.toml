@@ -49,6 +49,7 @@ jsystemthemedetector = { module = "com.github.dansoftowner:jSystemThemeDetector"
 kcron-common = { module = "com.ucasoft.kcron:kcron-common", version.ref = "kcronCommon" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose-plugin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlin-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines-android" }
 kotlin-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlin-datetime" }

@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
 import dev.zhdanov.apps.composeApp.components.settings.general.GeneralSettings
 import dev.zhdanov.apps.composeApp.components.settings.security.SecuritySettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettings
@@ -50,8 +49,9 @@ fun SettingsScreen(
 
     val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
-    val padding = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT) 0.dp else 16.dp
-    val shape = if (windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT)
+    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
+    val padding = if (isCompact) 0.dp else 16.dp
+    val shape = if (isCompact)
         RectangleShape else MaterialTheme.shapes.medium
 
     Scaffold(

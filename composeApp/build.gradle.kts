@@ -10,11 +10,6 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.buildKonfig)
-    alias(libs.plugins.compose.hotload) apply false
-}
-
-if (providers.gradleProperty("composeHotReload").orNull == "true") {
-    apply(plugin = "org.jetbrains.compose.hot-reload")
 }
 
 repositories {
@@ -66,7 +61,7 @@ kotlin {
         val desktopTest by getting
 
         androidMain.dependencies {
-            implementation(compose.preview)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
         }
         commonTest.dependencies {
@@ -75,13 +70,13 @@ kotlin {
             implementation(libs.compose.ui.test)
         }
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-            implementation(compose.materialIconsExtended)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.ui.tooling.preview)
+            implementation(libs.compose.material.icons.extended)
             implementation(projects.shared)
 
             implementation(libs.adaptive)
@@ -130,7 +125,7 @@ kotlin {
         }
         desktopTest.dependencies {
             implementation(libs.jvm.driver)
-            implementation(compose.desktop.uiTestJUnit4)
+            implementation(libs.compose.ui.test.junit4.desktop)
             implementation(compose.desktop.currentOs)
         }
     }
@@ -169,7 +164,7 @@ android {
         compose = true
     }
     dependencies {
-        debugImplementation(compose.uiTooling)
+        debugImplementation(libs.compose.ui.tooling)
         implementation(libs.kotlin.coroutines)
     }
 }

@@ -55,6 +55,47 @@ class TimerTest {
         assertEquals(0, timer.getTime())
         assertEquals(0, listener.ticks.last())
     }
+
+    @Test
+    fun `infinite timer stop finishes with elapsed duration`() = runTest {
+        val listener = RecordingTimerListener()
+        val timer = InfiniteTimer(
+            coroutineScope = this,
+            initialStage = TimerStage.WORK,
+            timerListener = listener,
+            ticker = OneTickThenSuspendTicker()
+        )
+
+        timer.start()
+        runCurrent()
+        timer.stop()
+
+        assertEquals(TimerState.FINISHED, timer.getState())
+        assertEquals(TimerStage.REST, timer.getStage())
+        assertEquals(listOf(1), listener.finishedDurations)
+        assertEquals(0, timer.getTime())
+    }
+
+    @Test
+    fun `infinite timer stop while paused finishes with elapsed duration`() = runTest {
+        val listener = RecordingTimerListener()
+        val timer = InfiniteTimer(
+            coroutineScope = this,
+            initialStage = TimerStage.WORK,
+            timerListener = listener,
+            ticker = OneTickThenSuspendTicker()
+        )
+
+        timer.start()
+        runCurrent()
+        timer.pause()
+        timer.stop()
+
+        assertEquals(TimerState.FINISHED, timer.getState())
+        assertEquals(TimerStage.REST, timer.getStage())
+        assertEquals(listOf(1), listener.finishedDurations)
+        assertEquals(0, timer.getTime())
+    }
 }
 
 private class OneTickThenSuspendTicker : TimerTicker {

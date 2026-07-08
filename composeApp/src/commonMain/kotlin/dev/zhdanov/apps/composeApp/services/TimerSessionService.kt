@@ -158,8 +158,12 @@ class TimerSessionService(
     }
 
     fun stopTimer() {
-        _timer.value.reset()
-        resetFocusTracking()
+        if (_settings.value.isInfinite) {
+            _timer.value.stop()
+        } else {
+            _timer.value.reset()
+            resetFocusTracking()
+        }
     }
 
     fun pauseTimer() {

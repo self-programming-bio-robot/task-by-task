@@ -36,7 +36,12 @@ class InfiniteTimer(
     }
 
     override fun stop() {
+        if (state == TimerState.IDLE || state == TimerState.FINISHED) return
+        timerJob?.cancel()
         state = TimerState.FINISHED
+        timerListener.onFinish(stage, changeStage(), time)
+        timerListener.onChangeState(state)
+        setInitialTime()
     }
 
     override fun reset() {

@@ -2,7 +2,6 @@ package dev.zhdanov.apps.shared.cache.repository
 
 import dev.zhdanov.apps.shared.cache.AppDatabaseQueries
 import dev.zhdanov.apps.shared.model.SettingKey
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class SettingsRepository(

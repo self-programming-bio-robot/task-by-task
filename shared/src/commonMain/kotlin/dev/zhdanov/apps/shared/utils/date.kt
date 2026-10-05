@@ -2,8 +2,6 @@
 
 package dev.zhdanov.apps.shared.utils
 
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -12,6 +10,8 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 fun LocalDate.toLong() =
     (this.year * 10000 + (this.month.ordinal + 1) * 100 + this.day).toLong()

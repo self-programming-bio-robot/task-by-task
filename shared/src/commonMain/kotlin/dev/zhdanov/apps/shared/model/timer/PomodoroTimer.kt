@@ -1,7 +1,10 @@
 package dev.zhdanov.apps.shared.model.timer
 
 import dev.zhdanov.apps.shared.model.TimerSettings
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class PomodoroTimer(
     private val settings: TimerSettings,
@@ -40,7 +43,7 @@ class PomodoroTimer(
                 if (stage == PomodoroTimerStage.WORK) {
                     cycles++
                 }
-                val duration =  when (stage) {
+                val duration = when (stage) {
                     PomodoroTimerStage.WORK -> settings.workDuration
                     PomodoroTimerStage.SHORT_BREAK -> settings.shortBreakDuration
                     PomodoroTimerStage.LONG_BREAK -> settings.longBreakDuration
@@ -93,6 +96,7 @@ class PomodoroTimer(
             } else {
                 PomodoroTimerStage.SHORT_BREAK
             }
+
             TimerStage.REST -> PomodoroTimerStage.WORK
         }
         return stage

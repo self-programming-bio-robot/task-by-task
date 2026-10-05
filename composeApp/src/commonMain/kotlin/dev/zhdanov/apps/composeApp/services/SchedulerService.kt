@@ -1,8 +1,8 @@
 package dev.zhdanov.apps.composeApp.services
 
+import kotlinx.datetime.TimeZone
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlinx.datetime.TimeZone
 
 @OptIn(ExperimentalTime::class)
 interface SchedulerService {

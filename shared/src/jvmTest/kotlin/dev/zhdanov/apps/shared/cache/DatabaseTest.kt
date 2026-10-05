@@ -4,8 +4,8 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.zhdanov.apps.shared.StartOfDaySetting
 import dev.zhdanov.apps.shared.model.CreateTask
-import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ICON
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.SettingKey
 import dev.zhdanov.apps.shared.model.TaskSummary
@@ -30,7 +30,10 @@ class DatabaseTest {
             taskIds = taskIds
         )
 
-        assertEquals(taskIds.sorted(), database.getTasksForFocusTime(focusTimeId).map { it.id }.sorted())
+        assertEquals(
+            taskIds.sorted(),
+            database.getTasksForFocusTime(focusTimeId).map { it.id }.sorted()
+        )
     }
 
     @Test
@@ -71,7 +74,10 @@ class DatabaseTest {
         val database = Database(InMemoryDriverFactory())
         val secondWorkspace = database.workspaceRepository.createWorkspace("Client work")
 
-        database.taskRepository.addTask(CreateTask("Default task"), workspaceId = DEFAULT_WORKSPACE_ID)
+        database.taskRepository.addTask(
+            CreateTask("Default task"),
+            workspaceId = DEFAULT_WORKSPACE_ID
+        )
         database.taskRepository.addTask(CreateTask("Client task"), workspaceId = secondWorkspace.id)
 
         assertEquals(
@@ -114,9 +120,21 @@ class DatabaseTest {
     @Test
     fun `legacy database gains missing focus and summary compatibility columns`() {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        driver.execute(null, "CREATE TABLE FocusTime (id INTEGER PRIMARY KEY AUTOINCREMENT, duration INTEGER NOT NULL, feedback TEXT, finishedAt INTEGER NOT NULL)", 0)
-        driver.execute(null, "CREATE TABLE DaySummary (date INTEGER NOT NULL, focusTime INTEGER NOT NULL, review TEXT NOT NULL)", 0)
-        driver.execute(null, "CREATE TABLE Task (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, createdAt INTEGER NOT NULL, completedAt INTEGER, isCompleted INTEGER NOT NULL DEFAULT 0, isToday INTEGER NOT NULL DEFAULT 0)", 0)
+        driver.execute(
+            null,
+            "CREATE TABLE FocusTime (id INTEGER PRIMARY KEY AUTOINCREMENT, duration INTEGER NOT NULL, feedback TEXT, finishedAt INTEGER NOT NULL)",
+            0
+        )
+        driver.execute(
+            null,
+            "CREATE TABLE DaySummary (date INTEGER NOT NULL, focusTime INTEGER NOT NULL, review TEXT NOT NULL)",
+            0
+        )
+        driver.execute(
+            null,
+            "CREATE TABLE Task (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, createdAt INTEGER NOT NULL, completedAt INTEGER, isCompleted INTEGER NOT NULL DEFAULT 0, isToday INTEGER NOT NULL DEFAULT 0)",
+            0
+        )
         driver.execute(null, "PRAGMA user_version = 6", 0)
 
         val database = Database(SingleDriverFactory(driver))

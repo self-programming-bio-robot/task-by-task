@@ -1,21 +1,20 @@
 package dev.zhdanov.apps.composeApp.services
 
 import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage as OpenAIChatMessage
 import com.aallam.openai.api.chat.ChatResponseFormat
-import com.aallam.openai.api.chat.ChatRole as OpenAIChatRole
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.OpenAIHost
+import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.ChatMessage
 import dev.zhdanov.apps.shared.model.ChatRole
-import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_MODEL
 import dev.zhdanov.apps.shared.prompts.REVIEW_DAY_PROMPT
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import com.aallam.openai.api.chat.ChatMessage as OpenAIChatMessage
+import com.aallam.openai.api.chat.ChatRole as OpenAIChatRole
 
 data class DayReviewResult(
     val summary: String,
@@ -27,7 +26,11 @@ interface ReviewClient {
 }
 
 interface ChatClient {
-    suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String
+    suspend fun sendMessage(
+        config: AssistantConfig,
+        daySummary: String,
+        messages: List<ChatMessage>
+    ): String
 }
 
 class OpenAIReviewClient(
@@ -60,7 +63,11 @@ class OpenAIReviewClient(
 }
 
 class OpenAIChatClient : ChatClient {
-    override suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String {
+    override suspend fun sendMessage(
+        config: AssistantConfig,
+        daySummary: String,
+        messages: List<ChatMessage>
+    ): String {
         val openAIMessages = buildList {
             add(
                 OpenAIChatMessage(

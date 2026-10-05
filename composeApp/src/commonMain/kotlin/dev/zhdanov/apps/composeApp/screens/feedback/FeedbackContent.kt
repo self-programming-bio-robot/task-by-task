@@ -12,9 +12,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.Task
-import dev.zhdanov.apps.composeApp.services.FocusTaskService
-import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
+import kotlin.time.Clock
 
 /**
  * Common feedback content that can be shown in main window or dialog
@@ -87,11 +86,13 @@ fun FeedbackContent(
             }
             Button(
                 onClick = {
-                    onSubmit(CreateFocusTime(
-                        duration = duration,
-                        feedback = feedbackText,
-                        finishedAt = System.currentTimeMillis()
-                    ))
+                    onSubmit(
+                        CreateFocusTime(
+                            duration = duration,
+                            feedback = feedbackText,
+                            finishedAt = Clock.System.now().toEpochMilliseconds()
+                        )
+                    )
                 },
                 modifier = Modifier.weight(1f)
             ) {

@@ -17,6 +17,10 @@ repositories {
 }
 
 kotlin {
+    // multiplatform-markdown-renderer >= 0.40 is compiled for Java 21 and some
+    // dependencies ship bytecode inlined from JVM target 25; compile/run on a
+    // matching toolchain to avoid UnsupportedClassVersionError at runtime.
+    jvmToolchain(25)
 //    @OptIn(ExperimentalWasmDsl::class)
 //    wasmJs {
 //        moduleName = "composeApp"
@@ -82,7 +86,7 @@ kotlin {
 
             implementation(libs.adaptive)
             implementation(libs.adaptive.layout)
-            implementation(libs.adaptive.navigation)
+            implementation(libs.adaptive.navigation3)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlin.datetime)

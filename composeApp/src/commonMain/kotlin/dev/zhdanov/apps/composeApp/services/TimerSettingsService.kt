@@ -31,7 +31,12 @@ class TimerSettingsService(
         loadSettings()
     }
 
-    fun createTimerSetting(workDuration: Int, shortBreakDuration: Int, longBreakDuration: Int, workCycles: Int) {
+    fun createTimerSetting(
+        workDuration: Int,
+        shortBreakDuration: Int,
+        longBreakDuration: Int,
+        workCycles: Int
+    ) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.timerSettingRepository.insertTimerSetting(
             workDuration = workDuration,

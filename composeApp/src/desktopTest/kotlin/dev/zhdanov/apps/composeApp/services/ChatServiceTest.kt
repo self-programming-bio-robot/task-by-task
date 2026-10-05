@@ -63,7 +63,11 @@ class ChatServiceTest {
 }
 
 private class FakeChatClient : ChatClient {
-    override suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String {
+    override suspend fun sendMessage(
+        config: AssistantConfig,
+        daySummary: String,
+        messages: List<ChatMessage>
+    ): String {
         return "fake reply"
     }
 }

@@ -1,27 +1,24 @@
 package dev.zhdanov.apps.shared.cache
 
 import app.cash.sqldelight.db.QueryResult
+import com.diamondedge.logging.logging
 import dev.zhdanov.apps.shared.cache.repository.SettingsRepository
 import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import dev.zhdanov.apps.shared.cache.repository.TimerSettingRepository
 import dev.zhdanov.apps.shared.cache.repository.WorkspaceRepository
 import dev.zhdanov.apps.shared.model.CreateFocusTime
-import dev.zhdanov.apps.shared.model.DaySummary
-import dev.zhdanov.apps.shared.model.DaySummaryRecord
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_BASE_URL
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_MODEL
-import dev.zhdanov.apps.shared.model.DEFAULT_ENCRYPTION_ITERATIONS
-import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ICON
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
+import dev.zhdanov.apps.shared.model.DaySummary
+import dev.zhdanov.apps.shared.model.DaySummaryRecord
 import dev.zhdanov.apps.shared.model.FocusTime
 import dev.zhdanov.apps.shared.model.SettingKey
 import dev.zhdanov.apps.shared.model.Task
-import dev.zhdanov.apps.shared.utils.toLocalDate
 import dev.zhdanov.apps.shared.utils.toLong
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.datetime.LocalDate
-import com.diamondedge.logging.logging
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -50,6 +47,7 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
                     ensurePreMigrationCompatibility()
                     AppDatabase.Schema.migrate(driver, currentVersion, AppDatabase.Schema.version)
                 }
+
                 currentVersion > AppDatabase.Schema.version -> {
                     logger.w {
                         "Database version $currentVersion is newer than supported version ${AppDatabase.Schema.version}"
@@ -65,14 +63,15 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
     }
 
     private fun getDatabaseVersion(): Long {
-        val executeQuery: QueryResult<Long> = driver.executeQuery(1, "PRAGMA user_version;", mapper = {
-            val version = if (it.next().value) {
-                it.getLong(0) ?: 0L
-            } else {
-                0L
-            }
-            QueryResult.Value(version)
-        }, 0)
+        val executeQuery: QueryResult<Long> =
+            driver.executeQuery(1, "PRAGMA user_version;", mapper = {
+                val version = if (it.next().value) {
+                    it.getLong(0) ?: 0L
+                } else {
+                    0L
+                }
+                QueryResult.Value(version)
+            }, 0)
         return executeQuery.value
     }
 
@@ -200,19 +199,45 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
 
     private fun backfillWorkspaceMetadata() {
         if (tableExists("FocusTime")) {
-            driver.execute(null, "UPDATE FocusTime SET syncId = 'legacy-focus-' || id WHERE syncId = ''", 0)
-            driver.execute(null, "UPDATE FocusTime SET updatedAt = finishedAt WHERE updatedAt = 0", 0)
+            driver.execute(
+                null,
+                "UPDATE FocusTime SET syncId = 'legacy-focus-' || id WHERE syncId = ''",
+                0
+            )
+            driver.execute(
+                null,
+                "UPDATE FocusTime SET updatedAt = finishedAt WHERE updatedAt = 0",
+                0
+            )
         }
         if (tableExists("DaySummary")) {
-            driver.execute(null, "UPDATE DaySummary SET syncId = 'legacy-summary-' || date WHERE syncId = ''", 0)
+            driver.execute(
+                null,
+                "UPDATE DaySummary SET syncId = 'legacy-summary-' || date WHERE syncId = ''",
+                0
+            )
             driver.execute(null, "UPDATE DaySummary SET updatedAt = date WHERE updatedAt = 0", 0)
         }
         if (tableExists("TimerSetting")) {
-            driver.execute(null, "UPDATE TimerSetting SET syncId = 'legacy-timer-' || id WHERE syncId = ''", 0)
-            driver.execute(null, "UPDATE TimerSetting SET updatedAt = ${Clock.System.now().toEpochMilliseconds()} WHERE updatedAt = 0", 0)
+            driver.execute(
+                null,
+                "UPDATE TimerSetting SET syncId = 'legacy-timer-' || id WHERE syncId = ''",
+                0
+            )
+            driver.execute(
+                null,
+                "UPDATE TimerSetting SET updatedAt = ${
+                    Clock.System.now().toEpochMilliseconds()
+                } WHERE updatedAt = 0",
+                0
+            )
         }
         if (tableExists("Task")) {
-            driver.execute(null, "UPDATE Task SET syncId = 'legacy-task-' || id WHERE syncId = ''", 0)
+            driver.execute(
+                null,
+                "UPDATE Task SET syncId = 'legacy-task-' || id WHERE syncId = ''",
+                0
+            )
             driver.execute(null, "UPDATE Task SET updatedAt = createdAt WHERE updatedAt = 0", 0)
         }
     }
@@ -420,7 +445,11 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
             .executeAsList()
     }
 
-    fun updateFocusTimeFeedback(id: Long, feedback: String, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
+    fun updateFocusTimeFeedback(
+        id: Long,
+        feedback: String,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ) {
         dbQuery.updateFocusTimeFeedback(
             feedback = feedback,
             updatedAt = Clock.System.now().toEpochMilliseconds(),
@@ -429,7 +458,11 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         )
     }
 
-    fun getAllFocusTimesBetween(from: Long, to: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID): List<FocusTime> {
+    fun getAllFocusTimesBetween(
+        from: Long,
+        to: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): List<FocusTime> {
         return dbQuery
             .selectFocusTimesInPeriod(workspaceId, from, to, focusTimeMapper)
             .executeAsList()
@@ -444,13 +477,19 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         dbQuery.deleteFocusTimeTaskCrossRef(focusTimeId, taskId)
     }
 
-    fun getTasksForFocusTime(focusTimeId: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID): List<Task> {
+    fun getTasksForFocusTime(
+        focusTimeId: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): List<Task> {
         return dbQuery
             .selectTasksForFocusTime(workspaceId, focusTimeId, taskMapper)
             .executeAsList()
     }
 
-    fun getFocusTimesForTask(taskId: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID): List<FocusTime> {
+    fun getFocusTimesForTask(
+        taskId: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): List<FocusTime> {
         return dbQuery
             .selectFocusTimesForTask(workspaceId, taskId, focusTimeMapper)
             .executeAsList()
@@ -504,7 +543,10 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
             .executeAsList()
     }
 
-    fun getDaySummaryRecord(date: LocalDate, workspaceId: Long = DEFAULT_WORKSPACE_ID): DaySummaryRecord? {
+    fun getDaySummaryRecord(
+        date: LocalDate,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): DaySummaryRecord? {
         return dbQuery
             .selectDaySummaryOnDate(workspaceId, date.toLong(), daySummaryRecordMapper)
             .executeAsOneOrNull()

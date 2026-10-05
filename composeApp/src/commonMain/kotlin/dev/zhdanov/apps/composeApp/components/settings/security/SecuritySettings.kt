@@ -107,7 +107,8 @@ fun SecuritySettings() {
             enabled = !isWorkspaceLocked,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                val image =
+                    if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                 val description = if (passwordVisible) "Hide" else "Show"
                 IconButton(onClick = { setPasswordVisible(!passwordVisible) }) {
                     Icon(imageVector = image, contentDescription = description)
@@ -161,6 +162,7 @@ fun SecuritySettings() {
                         Text("Encrypt")
                     }
                 }
+
                 isWorkspaceLocked -> {
                     Button(
                         onClick = {
@@ -172,6 +174,7 @@ fun SecuritySettings() {
                         Text("Unlock")
                     }
                 }
+
                 else -> {
                     Button(onClick = { viewModel.lockWorkspace() }) {
                         Text("Lock")

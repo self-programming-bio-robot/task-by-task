@@ -1,14 +1,27 @@
 package dev.zhdanov.apps.composeApp.components.settings.timers
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,65 +33,35 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3Api::class)
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 fun TimersSettings(
     onItemClick: (item: TimerSettings) -> Unit,
-    onCreate: () -> Unit,
-    onBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<TimersSettingsViewModel>()
     val timerSettings by viewModel.timerSettings.collectAsState(emptyList())
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Timers") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    FilledTonalIconButton(onClick = onCreate) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "New Timer"
-                        )
-                    }
-                }
-            )
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
-    ) { paddingValues ->
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(timerSettings) { item ->
-                    TimerSettingsCompactView(
-                        item,
-                        onClick = { onItemClick(item) },
-                        onDelete = { viewModel.removeSetting(it.id) },
-                        onSetDefault = { viewModel.setDefault(it.id) }
-                    )
-                }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(timerSettings) { item ->
+                TimerSettingsCompactView(
+                    item,
+                    onClick = { onItemClick(item) },
+                    onDelete = { viewModel.removeSetting(it.id) },
+                    onSetDefault = { viewModel.setDefault(it.id) }
+                )
             }
         }
     }
@@ -108,7 +91,10 @@ fun TimerSettingsCompactView(
             // Work Duration Display
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "Work", style = MaterialTheme.typography.bodySmall)
-                Text(text = "${settings.workDuration.seconds}", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = "${settings.workDuration.seconds}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
 
             Spacer(Modifier.width(16.dp))
@@ -116,7 +102,10 @@ fun TimerSettingsCompactView(
             // Short Break Duration Display
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "Short Break", style = MaterialTheme.typography.bodySmall)
-                Text(text = "${settings.shortBreakDuration.seconds}", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = "${settings.shortBreakDuration.seconds}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
 
             Spacer(Modifier.width(16.dp))
@@ -124,7 +113,10 @@ fun TimerSettingsCompactView(
             // Long Break Duration Display
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "Long Break", style = MaterialTheme.typography.bodySmall)
-                Text(text = "${settings.longBreakDuration.seconds}", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = "${settings.longBreakDuration.seconds}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
 
             Spacer(Modifier.width(16.dp))

@@ -2,7 +2,18 @@ package dev.zhdanov.apps.composeApp.screens.statistics
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -10,18 +21,26 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CalendarViewWeek
-import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import dev.zhdanov.apps.composeApp.components.topBar.TopBar
+import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.math.max
@@ -59,122 +78,101 @@ fun StatisticsScreen() {
 
     val density = LocalDensity.current
     var availableHeightDp by remember { mutableStateOf(0.dp) }
-    val windowInfo = currentWindowAdaptiveInfo()
-
-    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
-    val padding = if (isCompact) 0.dp else 16.dp
-    val shape = if (isCompact)
-        RectangleShape else MaterialTheme.shapes.medium
 
     // Calculate if we have enough space for the chart
     val hasSpaceForChart = availableHeightDp >= HEADER_HEIGHT + MIN_CHART_HEIGHT
 
-    Scaffold(
-        topBar = { TopBar("Statistics") }
-    ) { paddings ->
-        Box(Modifier.padding(paddings)) {
-            Box(modifier = Modifier
-                .padding(start = padding, end = padding, bottom = padding)
+    AppPane(
+        color = MaterialTheme.colorScheme.primaryContainer,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .onSizeChanged { size ->
+                    val heightDp = with(density) { size.height.toDp() }
+                    availableHeightDp = heightDp
+                },
+            verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
+        ) {
+            // Period Selection
+            PeriodSelector(
+                selectedPeriod = selectedPeriod,
+                onPeriodChange = { viewModel.setPeriod(it) }
+            )
+
+            // Period Navigator
+            PeriodNavigator(
+                label = periodLabel,
+                isCurrentPeriod = periodOffset == 0,
+                onPrevious = { viewModel.goToPreviousPeriod() },
+                onNext = { viewModel.goToNextPeriod() },
+                onTodayClick = { viewModel.goToCurrentPeriod() }
+            )
+
+            // Statistics Cards
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(
+                StatCard(
+                    title = "Focus Time",
+                    value = formatDuration(focusTimeData),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "Work Cycles",
+                    value = workCyclesData.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "Tasks Created",
+                    value = tasksCreatedData.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "Tasks Done",
+                    value = tasksDoneData.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Focus Time Chart - only show when height is sufficient
+            if (chartData.isNotEmpty() && hasSpaceForChart) {
+                BoxWithConstraints(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = shape
-                        )
+                        .fillMaxWidth()
+                        .weight(1f)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                            .onSizeChanged { size ->
-                                val heightDp = with(density) { size.height.toDp() }
-                                availableHeightDp = heightDp
-                            },
-                        verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
+                    // Calculate max columns based on available width at composition time
+                    val availableWidth = maxWidth - 32.dp // Account for Card padding
+                    val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
+                        .coerceIn(1, MAX_COLUMNS)
+
+                    // Update column count on initial composition and when constraints change
+                    LaunchedEffect(maxColumns) {
+                        viewModel.updateColumnCount(maxColumns)
+                    }
+
+                    Card(
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        // Period Selection
-                        PeriodSelector(
-                            selectedPeriod = selectedPeriod,
-                            onPeriodChange = { viewModel.setPeriod(it) }
-                        )
-
-                        // Period Navigator
-                        PeriodNavigator(
-                            label = periodLabel,
-                            isCurrentPeriod = periodOffset == 0,
-                            onPrevious = { viewModel.goToPreviousPeriod() },
-                            onNext = { viewModel.goToNextPeriod() },
-                            onTodayClick = { viewModel.goToCurrentPeriod() }
-                        )
-
-                        // Statistics Cards
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Column(
+                            modifier = Modifier.padding(16.dp)
                         ) {
-                            StatCard(
-                                title = "Focus Time",
-                                value = formatDuration(focusTimeData),
-                                modifier = Modifier.weight(1f)
+                            Text(
+                                text = "Focus Time (minutes)",
+                                style = MaterialTheme.typography.titleMedium
                             )
-                            StatCard(
-                                title = "Work Cycles",
-                                value = workCyclesData.toString(),
-                                modifier = Modifier.weight(1f)
-                            )
-                            StatCard(
-                                title = "Tasks Created",
-                                value = tasksCreatedData.toString(),
-                                modifier = Modifier.weight(1f)
-                            )
-                            StatCard(
-                                title = "Tasks Done",
-                                value = tasksDoneData.toString(),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        // Focus Time Chart - only show when height is sufficient
-                        if (chartData.isNotEmpty() && hasSpaceForChart) {
-                            BoxWithConstraints(
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SimpleBarChart(
+                                data = chartData,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f)
-                            ) {
-                                // Calculate max columns based on available width at composition time
-                                val availableWidth = maxWidth - 32.dp // Account for Card padding
-                                val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
-                                    .coerceIn(1, MAX_COLUMNS)
-
-                                // Update column count on initial composition and when constraints change
-                                LaunchedEffect(maxColumns) {
-                                    viewModel.updateColumnCount(maxColumns)
-                                }
-
-                                Card(
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(16.dp)
-                                    ) {
-                                        Text(
-                                            text = "Focus Time (minutes)",
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        SimpleBarChart(
-                                            data = chartData,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .weight(1f)
-                                        )
-                                    }
-                                }
-                            }
+                            )
                         }
                     }
                 }

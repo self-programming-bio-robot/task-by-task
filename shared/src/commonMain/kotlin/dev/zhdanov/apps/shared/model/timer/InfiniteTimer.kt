@@ -1,6 +1,9 @@
 package dev.zhdanov.apps.shared.model.timer
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class InfiniteTimer(
     private val coroutineScope: CoroutineScope,

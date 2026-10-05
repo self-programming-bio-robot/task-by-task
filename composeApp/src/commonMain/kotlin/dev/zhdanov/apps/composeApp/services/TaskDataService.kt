@@ -23,7 +23,10 @@ class TaskDataService(
 
     suspend fun completeTask(id: Long) = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
-        database.taskRepository.completeTask(id, workspaceSessionService.requireCurrentWorkspaceId())
+        database.taskRepository.completeTask(
+            id,
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
     }
 
     suspend fun getAllTasks(): List<Task> = withContext(dispatchers.io) {

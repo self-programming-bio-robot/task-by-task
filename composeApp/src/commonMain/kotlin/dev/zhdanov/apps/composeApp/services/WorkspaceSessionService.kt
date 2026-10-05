@@ -5,7 +5,6 @@ import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_BASE_URL
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_MODEL
 import dev.zhdanov.apps.shared.model.DEFAULT_ENCRYPTION_ITERATIONS
-import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.Workspace
 import dev.zhdanov.apps.shared.model.WorkspaceSecuritySettings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -164,7 +163,8 @@ class WorkspaceSessionService(
     fun getAssistantConfig(): AssistantConfig? {
         val workspaceId = requireCurrentWorkspaceId()
         val settings = currentSecuritySettings()
-        val token = decryptText(workspaceId, settings.openAiToken).takeIf { it.isNotBlank() } ?: return null
+        val token =
+            decryptText(workspaceId, settings.openAiToken).takeIf { it.isNotBlank() } ?: return null
         return AssistantConfig(
             token = token,
             modelId = settings.llmModelId.ifBlank { DEFAULT_ASSISTANT_MODEL },
@@ -216,7 +216,8 @@ class WorkspaceSessionService(
     private fun refreshLockState() {
         val workspaceId = requireCurrentWorkspaceId()
         val settings = database.workspaceRepository.getSecuritySettings(workspaceId)
-        _isCurrentWorkspaceLocked.value = settings?.encryptionEnabled == true && unlockedKeys[workspaceId] == null
+        _isCurrentWorkspaceLocked.value =
+            settings?.encryptionEnabled == true && unlockedKeys[workspaceId] == null
     }
 
     private fun encryptText(workspaceId: Long, value: String): String {

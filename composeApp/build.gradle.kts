@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinxSerialization)
@@ -34,8 +34,11 @@ kotlin {
 //        binaries.executable()
 //    }
 
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    android {
+        namespace = "dev.zhdanov.apps.composeApp"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
@@ -54,12 +57,13 @@ kotlin {
     }
 
     sourceSets {
-        val desktopMain by getting
-        val desktopTest by getting
+        val desktopMain = getByName("desktopMain")
+        val desktopTest = getByName("desktopTest")
 
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.kotlin.coroutines)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -124,44 +128,6 @@ kotlin {
             implementation(libs.compose.ui.test.junit4.desktop)
             implementation(compose.desktop.currentOs)
         }
-    }
-}
-
-android {
-    namespace = "dev.zhdanov.apps.composeApp"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    sourceSets["main"].res.srcDirs("src/androidMain/res")
-    sourceSets["main"].resources.srcDirs("src/commonMain/resources")
-
-    defaultConfig {
-        applicationId = "dev.zhdanov.apps"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
-    }
-    dependencies {
-        debugImplementation(libs.compose.ui.tooling)
-        implementation(libs.kotlin.coroutines)
     }
 }
 

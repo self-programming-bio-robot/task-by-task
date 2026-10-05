@@ -1,16 +1,16 @@
 [versions]
 adaptive = "1.2.0"
-agp = "8.13.2"
-android-compileSdk = "36"
+agp = "9.4.1"
+android-compileSdk = "37"
 android-minSdk = "24"
-android-targetSdk = "36"
+android-targetSdk = "37"
 androidx-activityCompose = "1.9.0"
 jsystemthemedetector = "3.9.1"
 kcronCommon = "0.14.4"
 kotlinx-coroutines-android = "1.11.0"
 kotlin-datetime = "0.7.1-0.6.x-compat"
-compose-plugin = "1.11.1"
-compose-material3 = "1.11.0-alpha07"
+compose-plugin = "1.12.1"
+compose-material3 = "1.12.0-alpha03"
 compose-material-icons = "1.7.3"
 kotlin = "2.4.20"
 kotlinxCoroutinesCore = "1.11.0"
@@ -18,7 +18,7 @@ ktor = "3.6.0"
 logback = "1.5.6"
 multiplatformMarkdownRendererM3 = "0.26.0"
 navigation3 = "1.1.2"
-lifecycle = "2.10.0"
+lifecycle = "2.11.0"
 openaiClient = "4.1.0"
 slf4jApi = "2.0.13"
 koin = "4.2.2"
@@ -81,7 +81,7 @@ koalaplot-core = { module = "io.github.koalaplot:koalaplot-core", version.ref = 
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -118,6 +118,7 @@ kotlin {
             implementation(libs.ktor.client.jvm)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.jsystemthemedetector)
+            implementation(libs.nucleus.notification.windows)
         }
         desktopTest.dependencies {
             implementation(libs.jvm.driver)

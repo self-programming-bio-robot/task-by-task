@@ -17,6 +17,7 @@ kotlinxCoroutinesCore = "1.11.0"
 ktor = "3.6.0"
 logback = "1.6.5"
 multiplatformMarkdownRendererM3 = "0.45.0"
+nucleusNotificationWindows = "2.5.18"
 navigation3 = "1.1.2"
 lifecycle = "2.11.0"
 openaiClient = "4.1.0"
@@ -63,6 +64,7 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
 multiplatform-markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
+nucleus-notification-windows = { module = "dev.nucleusframework:nucleus.notification-windows", version.ref = "nucleusNotificationWindows" }
 navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
 openai-client = { module = "com.aallam.openai:openai-client", version.ref = "openaiClient" }

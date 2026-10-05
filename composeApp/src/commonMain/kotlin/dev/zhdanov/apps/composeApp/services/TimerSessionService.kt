@@ -68,7 +68,7 @@ class TimerSessionService(
 
             coroutineScope.launch {
                 notificationService.addNotification(
-                    Notification("Finish ${old.name.lowercase()}")
+                    Notification(text = "Finish ${old.name.lowercase()}", title = "Timer")
                 )
             }
 

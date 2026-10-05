@@ -1,8 +1,11 @@
 package dev.zhdanov.apps.composeApp
 
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.*
 import dev.zhdanov.apps.composeApp.di.initializeKoin
+import dev.zhdanov.apps.composeApp.notification.DesktopNotificationSender
 import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
 import kotlinx.coroutines.flow.launchIn
@@ -19,14 +22,16 @@ fun main() = application {
     val notificationService = koinInject<NotificationService>()
     val trayState = rememberTrayState()
     val coroutineScope = rememberCoroutineScope()
+    val notificationSender = remember { DesktopNotificationSender(trayState) }
+
+    DisposableEffect(Unit) {
+        notificationSender.initialize()
+        onDispose { notificationSender.shutdown() }
+    }
 
     notificationService.notifications
         .onEach {
-            val notification = androidx.compose.ui.window.Notification(
-                "Finish",
-                it.text
-            )
-            trayState.sendNotification(notification)
+            notificationSender.send(it.title, it.text)
         }
         .launchIn(coroutineScope)
 

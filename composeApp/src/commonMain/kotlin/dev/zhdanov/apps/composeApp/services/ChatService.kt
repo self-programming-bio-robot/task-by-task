@@ -80,7 +80,10 @@ class ChatService(
             )
 
             notificationService.addNotification(
-                Notification("Buddy replied: ${assistantContent.take(50)}${if (assistantContent.length > 50) "..." else ""}")
+                Notification(
+                    text = "${assistantContent.take(50)}${if (assistantContent.length > 50) "..." else ""}",
+                    title = "Buddy"
+                )
             )
 
             Result.success(assistantMsg)

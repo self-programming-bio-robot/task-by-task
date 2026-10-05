@@ -3,7 +3,7 @@ package dev.zhdanov.apps.composeApp.components.layout
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,17 +27,35 @@ val menuItems: List<Screen> = listOf(
     Screen.Settings
 )
 
+/**
+ * Coarse app-wide layout tiers derived from the window width:
+ * - [Compact]: one content pane, bottom navigation bar
+ * - [Medium]: one content pane, side navigation rail
+ * - [Expanded]: side navigation rail, up to two content panes
+ */
+enum class AppLayoutMode { Compact, Medium, Expanded }
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun rememberAppLayoutMode(): AppLayoutMode {
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+    return when {
+        !windowSizeClass.isWidthAtLeastBreakpoint(600) -> AppLayoutMode.Compact
+        !windowSizeClass.isWidthAtLeastBreakpoint(840) -> AppLayoutMode.Medium
+        else -> AppLayoutMode.Expanded
+    }
+}
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun AdaptiveLayout() {
-    val windowInfo = currentWindowAdaptiveInfo()
+    val layoutMode = rememberAppLayoutMode()
     val viewModel: NavigationViewModel = viewModel { NavigationViewModel() }
     val workspaceSessionService: WorkspaceSessionService = koinInject()
     val currentWorkspace by workspaceSessionService.currentWorkspace.collectAsState()
-    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
 
-    when {
-        isCompact -> {
+    when (layoutMode) {
+        AppLayoutMode.Compact -> {
             NavigationBarLayout(
                 menuItems = menuItems,
                 viewModel = viewModel,
@@ -56,7 +74,7 @@ fun AdaptiveLayout() {
             }
         }
 
-        else -> {
+        else -> { // Medium, Expanded
             NavigationRailLayout(
                 menuItems = menuItems,
                 viewModel = viewModel,
@@ -172,11 +190,8 @@ fun NavigationBarLayout(
 @Composable
 private fun rememberSelectedIndex(menuItems: List<Screen>, currentKey: NavKey?): Int {
     return remember(menuItems, currentKey) {
-        menuItems.indexOfFirst { item ->
-            when {
-                item is Screen.TaskList && currentKey is Screen.TaskList -> true
-                else -> item == currentKey
-            }
-        }.takeIf { it >= 0 } ?: 0
+        val menuScreen = (currentKey as? Screen)?.menuScreen()
+        menuItems.indexOfFirst { item -> item::class == menuScreen?.let { it::class } }
+            .takeIf { it >= 0 } ?: 0
     }
 }

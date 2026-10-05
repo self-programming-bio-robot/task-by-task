@@ -1,5 +1,5 @@
 [versions]
-adaptive = "1.2.0"
+adaptive = "1.3.0-rc01"
 agp = "9.4.1"
 android-compileSdk = "37"
 android-minSdk = "24"
@@ -32,6 +32,7 @@ kotlinx-serialization = "1.11.0"
 adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 adaptive-layout = { module = "org.jetbrains.compose.material3.adaptive:adaptive-layout", version.ref = "adaptive" }
 adaptive-navigation = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation", version.ref = "adaptive" }
+adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "adaptive" }
 jsystemthemedetector = { module = "com.github.dansoftowner:jSystemThemeDetector", version.ref = "jsystemthemedetector" }
 kcron-common = { module = "com.ucasoft.kcron:kcron-common", version.ref = "kcronCommon" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

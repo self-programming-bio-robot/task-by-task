@@ -29,6 +29,20 @@ sealed class Screen(
     data object Settings : Screen("Settings", Icons.Sharp.Settings)
 
     @Serializable
+    data object SettingsGeneral : Screen("General")
+
+    @Serializable
+    data object SettingsSecurity : Screen("Security")
+
+    @Serializable
+    data object SettingsTimers : Screen("Timers")
+
+    @Serializable
+    data class SettingsTimerEdit(
+        val timerId: Long? = null
+    ) : Screen("Timer")
+
+    @Serializable
     data class FinishedDay(
         val date: LocalDate,
         val summary: String,
@@ -53,4 +67,14 @@ sealed class Screen(
     data class DayDetail(
         val date: LocalDate
     ) : Screen("Day Detail", Icons.Sharp.HistoryEdu)
+
+    /**
+     * Top-level menu item this screen belongs to.
+     */
+    fun menuScreen(): Screen = when (this) {
+        is SettingsGeneral, is SettingsSecurity, is SettingsTimers, is SettingsTimerEdit -> Settings
+        is DayDetail, is FinishedDay -> History
+        is Feedback -> Home
+        else -> this
+    }
 }

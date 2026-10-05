@@ -5,8 +5,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
-import dev.zhdanov.apps.shared.model.TimerSettings
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.math.roundToInt
@@ -14,16 +15,21 @@ import kotlin.math.roundToInt
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun EditableTimerSettings(
-    timerSettings: TimerSettings?,
+    timerId: Long?,
     onBack: () -> Unit,
 ) {
+    val service = koinInject<TimerSettingsService>()
+    val allSettings by service.timerSettings.collectAsState()
+    val timerSettings = remember(allSettings, timerId) {
+        timerId?.let { id -> allSettings.find { it.id == id } }
+    }
     val initialState = timerSettings ?: DEFAULT_TIMER_SETTINGS
     val disabled: Boolean = timerSettings?.id == DEFAULT_TIMER_SETTINGS.id
 
-    var workDuration by remember { mutableStateOf(initialState.workDuration.toFloat() / 60) }
-    var shortBreakDuration by remember { mutableStateOf(initialState.shortBreakDuration.toFloat() / 60) }
-    var longBreakDuration by remember { mutableStateOf(initialState.longBreakDuration.toFloat() / 60) }
-    var workCycles by remember { mutableStateOf(initialState.workCycles.toFloat()) }
+    var workDuration by remember(timerSettings?.id) { mutableStateOf(initialState.workDuration.toFloat() / 60) }
+    var shortBreakDuration by remember(timerSettings?.id) { mutableStateOf(initialState.shortBreakDuration.toFloat() / 60) }
+    var longBreakDuration by remember(timerSettings?.id) { mutableStateOf(initialState.longBreakDuration.toFloat() / 60) }
+    var workCycles by remember(timerSettings?.id) { mutableStateOf(initialState.workCycles.toFloat()) }
 
     val viewModel = koinViewModel<EditableTimerSettingsViewModel>()
 

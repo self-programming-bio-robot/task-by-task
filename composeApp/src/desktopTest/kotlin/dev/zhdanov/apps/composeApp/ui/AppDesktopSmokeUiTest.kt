@@ -2,6 +2,8 @@ package dev.zhdanov.apps.composeApp.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -62,6 +64,28 @@ class AppDesktopSmokeUiTest {
             focusTaskService.focusedTask.value?.id == taskId
         }
         waitForTag(UiTestTags.HomeScreen)
+    }
+
+    @Test
+    fun settingsNavigateToTimersAndOpenEditor() {
+        rule.setContent {
+            App()
+        }
+
+        rule.onNodeWithTag(UiTestTags.AppRoot).assertExists()
+        waitForTag(UiTestTags.HomeScreen)
+
+        rule.onNodeWithTag(UiTestTags.navigationItem("Settings")).performClick()
+        waitForText("Security")
+
+        rule.onAllNodesWithText("Timers").onFirst().performClick()
+        waitForText("Work")
+
+        rule.onNodeWithContentDescription("New Timer").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) {
+            rule.onAllNodesWithText("Work Duration:", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun waitForTag(tag: String) {

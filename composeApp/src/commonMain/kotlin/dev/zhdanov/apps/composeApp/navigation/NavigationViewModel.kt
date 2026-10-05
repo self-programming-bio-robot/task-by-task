@@ -29,6 +29,34 @@ class NavigationViewModel : ViewModel() {
         backStack.add(key)
     }
 
+    fun popUntil(predicate: (NavKey) -> Boolean) {
+        while (backStack.size > 1 && !predicate(backStack.last())) {
+            backStack.removeLastOrNull()
+        }
+    }
+
+    /**
+     * Selects a settings section (detail pane), replacing any currently open
+     * section or extra pane instead of accumulating them on the back stack.
+     */
+    fun selectSettingsSection(section: Screen) {
+        popUntil { it == Screen.Settings }
+        if (backStack.lastOrNull() != section) {
+            backStack.add(section)
+        }
+    }
+
+    /**
+     * Opens the timer editor in the extra pane. Replaces the current extra
+     * pane if one is already open.
+     */
+    fun openTimerEditor(timerId: Long?) {
+        if (backStack.lastOrNull() is Screen.SettingsTimerEdit) {
+            backStack.removeLastOrNull()
+        }
+        backStack.add(Screen.SettingsTimerEdit(timerId))
+    }
+
     fun popUpTo(key: NavKey, inclusive: Boolean = false) {
         val index = backStack.indexOf(key)
         if (index >= 0) {

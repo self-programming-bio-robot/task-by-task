@@ -140,7 +140,7 @@ fun HomeScreen(
                                                 interactionSource = remember { MutableInteractionSource() },
                                                 onClick = { }
                                             )
-                                            .background(Color.White.copy(alpha = 0.3f)),
+                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CircularProgressIndicator(

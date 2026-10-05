@@ -1,5 +1,6 @@
 package dev.zhdanov.apps.composeApp
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,11 +35,9 @@ import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
 import dev.zhdanov.apps.composeApp.testing.UiTestTags
 import dev.zhdanov.apps.composeApp.theme.AppTheme
 import androidx.compose.ui.tooling.preview.Preview
-import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class)
 @Composable
 @Preview
 fun App() {
@@ -65,13 +64,16 @@ fun App() {
         }
     }
     AppTheme(useDarkTheme = useDarkTheme) {
-        Box(Modifier.fillMaxSize().testTag(UiTestTags.AppRoot)) {
-            KoinContext {
-                if (isWorkspaceLocked) {
-                    WorkspaceUnlockGate(workspaceSessionService)
-                } else {
-                    AdaptiveLayout()
-                }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .testTag(UiTestTags.AppRoot)
+        ) {
+            if (isWorkspaceLocked) {
+                WorkspaceUnlockGate(workspaceSessionService)
+            } else {
+                AdaptiveLayout()
             }
         }
     }
@@ -131,7 +133,8 @@ private fun WorkspaceUnlockGate(workspaceSessionService: WorkspaceSessionService
 @Composable
 fun rememberSystemTheme(): SystemTheme {
     val isSystemInDarkTheme = isSystemInDarkTheme()
-    val isDarkTheme = remember { mutableStateOf(if (isSystemInDarkTheme) SystemTheme.DARK else SystemTheme.LIGHT ) }
+    val isDarkTheme =
+        remember { mutableStateOf(if (isSystemInDarkTheme) SystemTheme.DARK else SystemTheme.LIGHT) }
     val themeChangeService = koinInject<ThemeChangeService>()
 
     DisposableEffect(Unit) {

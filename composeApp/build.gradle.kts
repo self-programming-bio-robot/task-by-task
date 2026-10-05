@@ -83,6 +83,7 @@ kotlin {
             implementation(libs.adaptive)
             implementation(libs.adaptive.layout)
             implementation(libs.adaptive.navigation)
+            implementation(libs.adaptive.navigation3)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlin.datetime)

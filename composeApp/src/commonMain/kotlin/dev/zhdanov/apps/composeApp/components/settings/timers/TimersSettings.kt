@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
@@ -20,65 +18,35 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3Api::class)
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 fun TimersSettings(
     onItemClick: (item: TimerSettings) -> Unit,
-    onCreate: () -> Unit,
-    onBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<TimersSettingsViewModel>()
     val timerSettings by viewModel.timerSettings.collectAsState(emptyList())
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Timers") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    FilledTonalIconButton(onClick = onCreate) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "New Timer"
-                        )
-                    }
-                }
-            )
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
-    ) { paddingValues ->
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(timerSettings) { item ->
-                    TimerSettingsCompactView(
-                        item,
-                        onClick = { onItemClick(item) },
-                        onDelete = { viewModel.removeSetting(it.id) },
-                        onSetDefault = { viewModel.setDefault(it.id) }
-                    )
-                }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(timerSettings) { item ->
+                TimerSettingsCompactView(
+                    item,
+                    onClick = { onItemClick(item) },
+                    onDelete = { viewModel.removeSetting(it.id) },
+                    onSetDefault = { viewModel.setDefault(it.id) }
+                )
             }
         }
     }

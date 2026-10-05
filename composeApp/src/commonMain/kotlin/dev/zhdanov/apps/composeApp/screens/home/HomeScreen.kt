@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.layout.LocalSnackbarHostState
@@ -235,7 +236,8 @@ fun TodayTaskItem(
         modifier = Modifier
             .fillMaxWidth()
             .testTag(UiTestTags.taskRow(task.id))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp)
+            .clip(MaterialTheme.shapes.extraLarge)
             .clickable { onClick() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically

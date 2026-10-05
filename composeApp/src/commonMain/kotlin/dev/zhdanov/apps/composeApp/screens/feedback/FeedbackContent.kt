@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.Task
 import org.koin.core.annotation.KoinExperimentalAPI
+import kotlin.time.Clock
 
 /**
  * Common feedback content that can be shown in main window or dialog
@@ -89,7 +90,7 @@ fun FeedbackContent(
                         CreateFocusTime(
                             duration = duration,
                             feedback = feedbackText,
-                            finishedAt = System.currentTimeMillis()
+                            finishedAt = Clock.System.now().toEpochMilliseconds()
                         )
                     )
                 },

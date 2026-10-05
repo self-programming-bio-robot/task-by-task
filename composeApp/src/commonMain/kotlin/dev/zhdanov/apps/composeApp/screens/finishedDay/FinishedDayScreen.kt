@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
+import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import dev.zhdanov.apps.shared.model.ChatMessage
 import dev.zhdanov.apps.shared.model.ChatRole
 import kotlinx.coroutines.launch
@@ -58,12 +59,14 @@ fun FinishedDayScreen(
         }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+    AppPane(
+        color = MaterialTheme.colorScheme.surface,
     ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
         // Single scrollable content
         LazyColumn(
             modifier = Modifier
@@ -210,6 +213,7 @@ fun FinishedDayScreen(
                 .padding(top = 16.dp)
         ) {
             Text("Continue")
+        }
         }
     }
 }

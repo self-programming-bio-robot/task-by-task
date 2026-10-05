@@ -1,4 +1,4 @@
-package dev.zhdanov.apps.composeApp.components.settings
+package dev.zhdanov.apps.composeApp.components.pane
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,17 +21,17 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 
 /**
- * Card-like container shared by all settings panes. The whole pane slot is
+ * Card-like container shared by all content panes. The whole pane slot is
  * painted with an opaque [MaterialTheme.colorScheme.surface] base — like the
  * root layout of single-pane screens — so scene transitions don't show
  * through. On compact windows the card fills the slot edge to edge; on wider
- * layouts it is a rounded card, matching the Home screen style. Gaps between
- * cards come from the scene's own partition spacer; outer edges are padded
- * by the scene-level container.
+ * layouts it is a rounded card with a bottom margin. Gaps between cards come
+ * from the scene's own partition spacer; outer edges are padded by the
+ * scene-level container.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun SettingsPaneSurface(
+fun AppPaneSurface(
     color: Color,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -59,18 +59,18 @@ fun SettingsPaneSurface(
 }
 
 /**
- * Common chrome for a settings pane: an optional title header followed by
+ * Common chrome for a content pane: an optional title header followed by
  * the pane content. Screen-level title, breadcrumbs and back navigation are
  * rendered by the scene top bar, not by the pane itself.
  */
 @Composable
-fun SettingsPane(
+fun AppPane(
     title: String? = null,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     content: @Composable () -> Unit,
 ) {
-    SettingsPaneSurface(
+    AppPaneSurface(
         modifier = modifier,
         color = color,
     ) {

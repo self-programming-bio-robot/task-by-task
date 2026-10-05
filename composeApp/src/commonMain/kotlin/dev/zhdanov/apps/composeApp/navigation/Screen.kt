@@ -50,9 +50,17 @@ sealed class Screen(
     ) : Screen("Finish day", Icons.AutoMirrored.Sharp.FactCheck)
 
     @Serializable
+    data object TodayTasks : Screen("For today")
+
+    @Serializable
     data class TaskList(
         val initialTaskId: Long? = null
     ) : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)
+
+    @Serializable
+    data class TaskEdit(
+        val taskId: Long
+    ) : Screen("Edit task")
 
     @Serializable
     data class Feedback(
@@ -74,7 +82,8 @@ sealed class Screen(
     fun menuScreen(): Screen = when (this) {
         is SettingsGeneral, is SettingsSecurity, is SettingsTimers, is SettingsTimerEdit -> Settings
         is DayDetail, is FinishedDay -> History
-        is Feedback -> Home
+        is TodayTasks, is Feedback -> Home
+        is TaskEdit -> TaskList()
         else -> this
     }
 }

@@ -24,7 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import dev.zhdanov.apps.composeApp.components.settings.SettingsPaneSurface
+import dev.zhdanov.apps.composeApp.components.pane.AppPaneSurface
 import dev.zhdanov.apps.composeApp.navigation.Screen
 
 /**
@@ -71,7 +71,7 @@ fun SettingsListPane(
  */
 @Composable
 fun SettingsDetailPlaceholder() {
-    SettingsPaneSurface(color = MaterialTheme.colorScheme.primaryContainer) {
+    AppPaneSurface(color = MaterialTheme.colorScheme.primaryContainer) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center

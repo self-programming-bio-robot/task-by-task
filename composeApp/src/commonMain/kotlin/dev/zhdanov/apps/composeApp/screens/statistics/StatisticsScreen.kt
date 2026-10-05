@@ -11,17 +11,15 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import dev.zhdanov.apps.composeApp.components.topBar.TopBar
+import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.math.max
@@ -59,32 +57,14 @@ fun StatisticsScreen() {
 
     val density = LocalDensity.current
     var availableHeightDp by remember { mutableStateOf(0.dp) }
-    val windowInfo = currentWindowAdaptiveInfo()
-
-    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
-    val padding = if (isCompact) 0.dp else 16.dp
-    val shape = if (isCompact)
-        RectangleShape else MaterialTheme.shapes.medium
 
     // Calculate if we have enough space for the chart
     val hasSpaceForChart = availableHeightDp >= HEADER_HEIGHT + MIN_CHART_HEIGHT
 
-    Scaffold(
-        topBar = { TopBar("Statistics") }
-    ) { paddings ->
-        Box(Modifier.padding(paddings)) {
-            Box(modifier = Modifier
-                .padding(start = padding, end = padding, bottom = padding)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = shape
-                        )
-                ) {
-                    Column(
+    AppPane(
+        color = MaterialTheme.colorScheme.primaryContainer,
+    ) {
+        Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
@@ -177,9 +157,6 @@ fun StatisticsScreen() {
                             }
                         }
                     }
-                }
-            }
-        }
     }
 }
 

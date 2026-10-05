@@ -11,21 +11,16 @@ import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import dev.zhdanov.apps.composeApp.components.layout.LocalSnackbarHostState
+import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import dev.zhdanov.apps.composeApp.components.timer.TimerView
-import dev.zhdanov.apps.composeApp.components.topBar.TopBar
+import dev.zhdanov.apps.composeApp.components.topBar.RegisterTopBarActions
+import dev.zhdanov.apps.composeApp.navigation.Screen
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
@@ -38,25 +33,51 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 fun HomeScreen(
-    onFinishDay: (review: AssistantReviewResponse) -> Unit
+    onFinishDay: (review: AssistantReviewResponse) -> Unit,
+    onOpenTodayTasks: () -> Unit,
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
 
-    val windowInfo = currentWindowAdaptiveInfo()
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     var finishDayError by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = LocalSnackbarHostState.current
     val isActive by viewModel.isActive.collectAsState()
 
-    val navigator = rememberSupportingPaneScaffoldNavigator<String>()
-    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
-    val padding = if (isCompact) 0.dp else 16.dp
-    val shape = if (isCompact)
-        RectangleShape else MaterialTheme.shapes.medium
+    RegisterTopBarActions(Screen.Home) {
+        IconButton(
+            enabled = isActive,
+            onClick = onOpenTodayTasks,
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = "Today tasks"
+            )
+        }
+        IconButton(
+            enabled = isActive,
+            onClick = {
+                coroutineScope.launch {
+                    isLoading = true
+                    try {
+                        onFinishDay(viewModel.finishDay())
+                    } catch (e: Exception) {
+                        finishDayError = e.message ?: "Failed to finish day"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.FactCheck,
+                contentDescription = "Finish day"
+            )
+        }
+    }
 
     LaunchedEffect(finishDayError) {
         finishDayError?.let { message ->
@@ -65,126 +86,51 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(
+    AppPane(
+        color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.testTag(UiTestTags.HomeScreen),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopBar(
-                title = "Home",
-                hasBack = navigator.canNavigateBack(),
-                onBack = { navigator.navigateBack() },
-                actions = {
-                    IconButton(
-                        enabled = isActive,
-                        onClick = {
-                            coroutineScope.launch {
-                                navigator.navigateTo(ThreePaneScaffoldRole.Secondary)
-                            }
-                        },
-                        modifier = Modifier
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarToday,
-                            contentDescription = "Today tasks"
-                        )
-                    }
-                    IconButton(
-                        enabled = isActive,
-                        onClick = {
-                            coroutineScope.launch {
-                                isLoading = true
-                                try {
-                                    onFinishDay(viewModel.finishDay())
-                                } catch (e: Exception) {
-                                    finishDayError = e.message ?: "Failed to finish day"
-                                } finally {
-                                    isLoading = false
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.FactCheck,
-                            contentDescription = "Finish day"
-                        )
-                    }
-                }
-            )
-        },
-        content = { paddings ->
-            Box(modifier = Modifier.padding(paddings)) {
-                SupportingPaneScaffold(
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            TimerView()
+
+            if (isLoading) {
+                Box(
                     modifier = Modifier
-                        .padding(start = padding, end = padding, bottom = padding),
-                    directive = navigator.scaffoldDirective,
-                    value = navigator.scaffoldValue,
-                    mainPane = {
-                        AnimatedPane {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = shape
-                                    ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                TimerView()
-
-                                if (isLoading) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clickable(
-                                                indication = null,
-                                                interactionSource = remember { MutableInteractionSource() },
-                                                onClick = { }
-                                            )
-                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(50.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    supportingPane = {
-                        AnimatedPane {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .background(
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        shape = shape
-                                    ),
-                            ) {
-                                Text(
-                                    text = "For today",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                )
-
-                                TodayTaskList(
-                                    onTaskClick = {},
-                                    onTaskFocused = {
-                                        // Navigate back to timer (main pane) after selecting a task
-                                        coroutineScope.launch {
-                                            navigator.navigateTo(ThreePaneScaffoldRole.Primary)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                )
+                        .fillMaxSize()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = { }
+                        )
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(50.dp)
+                    )
+                }
             }
         }
-    )
+    }
+}
+
+@OptIn(KoinExperimentalAPI::class)
+@Composable
+fun TodayTasksPane(
+    onTaskFocused: () -> Unit,
+) {
+    AppPane(
+        title = "For today",
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        TodayTaskList(
+            onTaskClick = {},
+            onTaskFocused = onTaskFocused
+        )
+    }
 }
 
 @OptIn(KoinExperimentalAPI::class)

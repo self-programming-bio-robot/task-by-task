@@ -1,8 +1,6 @@
 package dev.zhdanov.apps.composeApp.screens.tasks
 
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,22 +10,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import dev.zhdanov.apps.composeApp.components.topBar.TopBar
+import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import dev.zhdanov.apps.shared.model.Task
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -35,115 +25,70 @@ import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.composeApp.testing.UiTestTags
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 fun TaskListScreen(
     initialTaskId: Long? = null,
-    onNavigateToTimer: () -> Unit = {}
+    onNavigateToTimer: () -> Unit = {},
+    onTaskClick: (Long) -> Unit = {},
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val tasks by viewModel.tasks.collectAsState()
-    val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
-
-    val windowInfo = currentWindowAdaptiveInfo()
-    val coroutineScope = rememberCoroutineScope()
-    val navigator = rememberSupportingPaneScaffoldNavigator<TaskScreens>()
-    val isCompact = !windowInfo.windowSizeClass.isWidthAtLeastBreakpoint(600)
-    val padding = if (isCompact) 0.dp else 16.dp
-    val shape = if (isCompact)
-        RectangleShape else MaterialTheme.shapes.medium
 
     // Auto-navigate to initial task if provided
-    LaunchedEffect(initialTaskId, tasks) {
-        initialTaskId?.let { taskId ->
-            val task = tasks.find { it.id == taskId }
-            task?.let {
-                navigator.navigateTo(
-                    ThreePaneScaffoldRole.Secondary,
-                    TaskScreens.TaskDetails(task)
+    LaunchedEffect(initialTaskId) {
+        initialTaskId?.let(onTaskClick)
+    }
+
+    AppPane(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.testTag(UiTestTags.TaskListScreen),
+    ) {
+        TaskList(
+            tasks,
+            onTaskClick = { onTaskClick(it.id) },
+            onTaskFocused = onNavigateToTimer
+        )
+    }
+}
+
+@OptIn(KoinExperimentalAPI::class)
+@Composable
+fun TaskEditPane(
+    taskId: Long,
+    onDone: () -> Unit,
+) {
+    val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
+    val tasks by viewModel.tasks.collectAsState()
+    val task = tasks.find { it.id == taskId }
+    val coroutineScope = rememberCoroutineScope()
+
+    AppPane(
+        title = "Edit task",
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        if (task == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Task not found")
+            }
+        } else {
+            key(taskId) {
+                TaskDetails(
+                    task = task,
+                    onUpdatedTask = { updatedTask ->
+                        coroutineScope.launch {
+                            viewModel.updateTask(updatedTask)
+                            onDone()
+                        }
+                    },
+                    onCancel = onDone
                 )
             }
         }
     }
-
-    Scaffold(
-        modifier = Modifier.testTag(UiTestTags.TaskListScreen),
-        topBar = {
-            TopBar("Tasks")
-        },
-        content = { paddings ->
-            Box(modifier = Modifier.padding(paddings)) {
-                SupportingPaneScaffold(
-                    modifier = Modifier
-                        .padding(start = padding, end = padding, bottom = padding),
-                    directive = navigator.scaffoldDirective,
-                    value = navigator.scaffoldValue,
-                    mainPane = {
-                        AnimatedPane {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = shape
-                                    )
-                            ) {
-                                TaskList(
-                                    tasks,
-                                    onTaskClick = { task ->
-                                        coroutineScope.launch {
-                                            navigator.navigateTo(
-                                                ThreePaneScaffoldRole.Secondary,
-                                                TaskScreens.TaskDetails(task)
-                                            )
-                                        }
-                                    },
-                                    onTaskFocused = onNavigateToTimer
-                                )
-                            }
-                        }
-                    },
-                    supportingPane = {
-                        (navigator.currentDestination?.contentKey as? TaskScreens.TaskDetails)?.let {
-                            AnimatedPane {
-                                Column(
-                                    modifier = Modifier
-                                        .background(
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            shape = shape
-                                        ),
-                                ) {
-                                    val task = it.task
-
-                                    key(task.id) {
-                                        TaskDetails(
-                                            task = task,
-                                            onUpdatedTask = { updatedTask ->
-                                                coroutineScope.launch {
-                                                    viewModel.updateTask(updatedTask)
-                                                    navigator.navigateTo(
-                                                        ThreePaneScaffoldRole.Primary,
-                                                        TaskScreens.TaskList
-                                                    )
-                                                }
-                                            },
-                                            onCancel = {
-                                                coroutineScope.launch {
-                                                    navigator.navigateTo(
-                                                        ThreePaneScaffoldRole.Primary,
-                                                        TaskScreens.TaskList
-                                                    )
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                )
-            }
-        }
-    )
 }
 
 @OptIn(KoinExperimentalAPI::class)
@@ -304,11 +249,6 @@ fun TaskDetails(task: Task, onUpdatedTask: (task: Task) -> Unit, onCancel: () ->
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = "Edit Task",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -372,15 +312,6 @@ fun TaskDetails(task: Task, onUpdatedTask: (task: Task) -> Unit, onCancel: () ->
     }
 }
 
-sealed class TaskScreens {
 
-    @Serializable
-    data class TaskDetails(
-        val task: Task
-    ) : TaskScreens()
-
-    @Serializable
-    data object TaskList : TaskScreens()
-}
 
 

@@ -57,6 +57,37 @@ class NavigationViewModel : ViewModel() {
         backStack.add(Screen.SettingsTimerEdit(timerId))
     }
 
+    /**
+     * Opens the task editor pane. Replaces the current editor if one is
+     * already open.
+     */
+    fun openTaskDetails(taskId: Long) {
+        if (backStack.lastOrNull() is Screen.TaskEdit) {
+            backStack.removeLastOrNull()
+        }
+        backStack.add(Screen.TaskEdit(taskId))
+    }
+
+    /**
+     * Opens the day detail pane. Replaces the current detail pane if one is
+     * already open.
+     */
+    fun openDayDetail(date: kotlinx.datetime.LocalDate) {
+        if (backStack.lastOrNull() is Screen.DayDetail) {
+            backStack.removeLastOrNull()
+        }
+        backStack.add(Screen.DayDetail(date))
+    }
+
+    /**
+     * Opens the "For today" supporting pane on the Home scene.
+     */
+    fun openTodayTasks() {
+        if (backStack.lastOrNull() !is Screen.TodayTasks) {
+            backStack.add(Screen.TodayTasks)
+        }
+    }
+
     fun popUpTo(key: NavKey, inclusive: Boolean = false) {
         val index = backStack.indexOf(key)
         if (index >= 0) {

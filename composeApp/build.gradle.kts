@@ -40,7 +40,7 @@ kotlin {
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -108,17 +108,13 @@ kotlin {
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.serialization.kotlinx.json)
 
-            implementation(libs.kcron.common)
-
             implementation(libs.multiplatform.markdown.renderer.m3)
-            implementation(libs.multiplatform.markdown.renderer)
-
-            implementation(libs.koalaplot.core)
 
             api(libs.logging)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.kcron.common)
             implementation(libs.ktor.client.jvm)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.jsystemthemedetector)

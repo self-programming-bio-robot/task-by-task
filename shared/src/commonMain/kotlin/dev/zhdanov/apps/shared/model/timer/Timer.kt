@@ -30,7 +30,6 @@ interface Timer {
 }
 
 
-
 enum class TimerState {
     IDLE,
     IN_PROGRESS,

@@ -29,18 +29,23 @@ class HistoryService(
         val timeZone = TimeZone.currentSystemDefault()
         val startOfDay = settingsService.getStartOfDay()
         val startInstant = LocalDateTime(date, startOfDay).toInstant(timeZone)
-        val endInstant = LocalDateTime(date.plus(1, DateTimeUnit.DAY), startOfDay).toInstant(timeZone)
+        val endInstant =
+            LocalDateTime(date.plus(1, DateTimeUnit.DAY), startOfDay).toInstant(timeZone)
 
         val tasksById = taskDataService.getAllTasks().associateBy { it.id }
 
         return focusSessionDataService
-            .getFocusTimesBetween(startInstant.toEpochMilliseconds(), endInstant.toEpochMilliseconds())
+            .getFocusTimesBetween(
+                startInstant.toEpochMilliseconds(),
+                endInstant.toEpochMilliseconds()
+            )
             .map { focusTime ->
                 val linkedTasks = focusSessionDataService.getTasksForFocusTime(focusTime.id)
                 FocusTimeWithTasks(
                     focusTime = focusTime,
                     tasks = linkedTasks.ifEmpty {
-                        focusTime.taskId?.let { taskId -> listOfNotNull(tasksById[taskId]) }.orEmpty()
+                        focusTime.taskId?.let { taskId -> listOfNotNull(tasksById[taskId]) }
+                            .orEmpty()
                     }
                 )
             }

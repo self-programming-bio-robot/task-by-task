@@ -17,13 +17,24 @@ class JvmWorkspaceCryptoService : WorkspaceCryptoService {
 
     override fun generateDataKey(): ByteArray = ByteArray(KEY_BYTES).also(random::nextBytes)
 
-    override fun generateSalt(): String = base64.encodeToString(ByteArray(SALT_BYTES).also(random::nextBytes))
+    override fun generateSalt(): String =
+        base64.encodeToString(ByteArray(SALT_BYTES).also(random::nextBytes))
 
-    override fun wrapDataKey(pin: String, salt: String, iterations: Int, dataKey: ByteArray): String {
+    override fun wrapDataKey(
+        pin: String,
+        salt: String,
+        iterations: Int,
+        dataKey: ByteArray
+    ): String {
         return encryptBytes(dataKey, deriveKey(pin, salt, iterations))
     }
 
-    override fun unwrapDataKey(pin: String, salt: String, iterations: Int, wrappedDataKey: String): ByteArray {
+    override fun unwrapDataKey(
+        pin: String,
+        salt: String,
+        iterations: Int,
+        wrappedDataKey: String
+    ): ByteArray {
         return try {
             decryptBytes(wrappedDataKey, deriveKey(pin, salt, iterations))
         } catch (error: AEADBadTagException) {

@@ -37,8 +37,7 @@ fun AppPaneSurface(
     content: @Composable () -> Unit,
 ) {
     val isCompact = !currentWindowAdaptiveInfoV2().windowSizeClass.isWidthAtLeastBreakpoint(600)
-    val padding = if (isCompact) PaddingValues(0.dp)
-        else PaddingValues(bottom = 16.dp)
+    val padding = if (isCompact) PaddingValues(0.dp) else PaddingValues(bottom = 16.dp)
     val shape = if (isCompact) RectangleShape else MaterialTheme.shapes.medium
 
     Box(

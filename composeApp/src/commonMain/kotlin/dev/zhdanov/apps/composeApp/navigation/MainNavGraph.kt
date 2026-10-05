@@ -17,8 +17,8 @@ import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrate
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSceneStrategy
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
@@ -26,11 +26,11 @@ import dev.zhdanov.apps.composeApp.components.layout.AppLayoutMode
 import dev.zhdanov.apps.composeApp.components.layout.SceneScaffold
 import dev.zhdanov.apps.composeApp.components.layout.rememberAppLayoutMode
 import dev.zhdanov.apps.composeApp.components.pane.AppPane
-import dev.zhdanov.apps.composeApp.components.topBar.RegisterTopBarActions
 import dev.zhdanov.apps.composeApp.components.settings.general.GeneralSettings
 import dev.zhdanov.apps.composeApp.components.settings.security.SecuritySettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettings
+import dev.zhdanov.apps.composeApp.components.topBar.RegisterTopBarActions
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayScreen
 import dev.zhdanov.apps.composeApp.screens.history.DayDetailScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen

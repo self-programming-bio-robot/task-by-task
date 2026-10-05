@@ -1,15 +1,41 @@
 package dev.zhdanov.apps.composeApp.screens.finishedDay
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,153 +93,153 @@ fun FinishedDayScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-        // Single scrollable content
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            // Review Section Header
-            item {
-                Text(
-                    "Day Review",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            // Summary Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Summary",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Markdown(content = summary)
-                    }
-                }
-            }
-
-            // Buddy Response Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Buddy",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Markdown(content = response)
-                    }
-                }
-            }
-
-            // Chat Section Header
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                Text(
-                    "Chat with Buddy",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            // Chat Messages
-            items(session?.messages ?: emptyList()) { message ->
-                MessageBubble(message)
-            }
-
-            // Loading indicator
-            if (isLoading) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                }
-            }
-
-            // Error display
-            error?.let { err ->
+            // Single scrollable content
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                state = listState,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                // Review Section Header
                 item {
                     Text(
-                        text = err,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        "Day Review",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                // Summary Card
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Summary",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Markdown(content = summary)
+                        }
+                    }
+                }
+
+                // Buddy Response Card
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Buddy",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Markdown(content = response)
+                        }
+                    }
+                }
+
+                // Chat Section Header
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        "Chat with Buddy",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                // Chat Messages
+                items(session?.messages ?: emptyList()) { message ->
+                    MessageBubble(message)
+                }
+
+                // Loading indicator
+                if (isLoading) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                }
+
+                // Error display
+                error?.let { err ->
+                    item {
+                        Text(
+                            text = err,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+
+            // Input Field (always visible at bottom)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Type a message...") },
+                    enabled = !isLoading,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                FilledIconButton(
+                    onClick = {
+                        if (messageText.isNotBlank() && !isLoading) {
+                            val textToSend = messageText
+                            messageText = ""
+                            coroutineScope.launch {
+                                viewModel.sendMessage(textToSend)
+                            }
+                        }
+                    },
+                    enabled = messageText.isNotBlank() && !isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send"
                     )
                 }
             }
-        }
 
-        // Input Field (always visible at bottom)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = messageText,
-                onValueChange = { messageText = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Type a message...") },
-                enabled = !isLoading,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            FilledIconButton(
+            // Continue Button
+            Button(
                 onClick = {
-                    if (messageText.isNotBlank() && !isLoading) {
-                        val textToSend = messageText
-                        messageText = ""
-                        coroutineScope.launch {
-                            viewModel.sendMessage(textToSend)
-                        }
-                    }
+                    viewModel.clearSession()
+                    onNext()
                 },
-                enabled = messageText.isNotBlank() && !isLoading
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 16.dp)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send"
-                )
+                Text("Continue")
             }
-        }
-
-        // Continue Button
-        Button(
-            onClick = {
-                viewModel.clearSession()
-                onNext()
-            },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 16.dp)
-        ) {
-            Text("Continue")
-        }
         }
     }
 }

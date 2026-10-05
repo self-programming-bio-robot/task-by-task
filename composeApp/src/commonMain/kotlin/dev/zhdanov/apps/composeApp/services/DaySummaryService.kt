@@ -55,11 +55,19 @@ class DaySummaryService(
                         taskDataService.cleanTodayTaskList()
                         finishDayEvents.emit(Unit)
                         logger.i {
-                            "Finish day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${plannedTime.toLocalDateTime(timeZone)}"
+                            "Finish day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${
+                                plannedTime.toLocalDateTime(
+                                    timeZone
+                                )
+                            }"
                         }
                     }.onFailure { error ->
                         logger.i {
-                            "Skip finishing day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${plannedTime.toLocalDateTime(timeZone)}: ${error.message}"
+                            "Skip finishing day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${
+                                plannedTime.toLocalDateTime(
+                                    timeZone
+                                )
+                            }: ${error.message}"
                         }
                     }
                 }

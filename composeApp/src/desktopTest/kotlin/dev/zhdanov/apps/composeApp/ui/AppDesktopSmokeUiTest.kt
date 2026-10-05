@@ -105,7 +105,7 @@ class AppDesktopSmokeUiTest {
     private fun waitForTaskId(title: String): Long {
         rule.waitUntil(timeoutMillis = 5_000) {
             database.taskRepository.getAllTasks().any { it.title == title } &&
-                rule.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty()
+                    rule.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty()
         }
 
         return database.taskRepository.getAllTasks().single { it.title == title }.id

@@ -1,14 +1,13 @@
 package dev.zhdanov.apps.shared.utils
 
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
 class DateUtils {
@@ -73,7 +72,8 @@ class DateUtils {
         val result = startOfDayWithShift(time, timeZone)
 
         // Expected start of the day in Tokyo time zone (without applying shift)
-        val expected = Instant.parse("2024-10-10T15:00:00Z") // 00:00 Tokyo corresponds to 15:00 UTC on the previous day
+        val expected =
+            Instant.parse("2024-10-10T15:00:00Z") // 00:00 Tokyo corresponds to 15:00 UTC on the previous day
 
         // Then
         assertEquals(expected, result)

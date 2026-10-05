@@ -9,37 +9,36 @@ import dev.zhdanov.apps.shared.model.TimerSettings
 import dev.zhdanov.apps.shared.model.Workspace
 import dev.zhdanov.apps.shared.model.WorkspaceSecuritySettings
 import dev.zhdanov.apps.shared.utils.toLocalDate
-import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 private val summaryJson = Json { ignoreUnknownKeys = true }
 
-val workspaceMapper = { id: Long, syncId: String, name: String, icon: String, isSelected: Boolean, createdAt: Long, updatedAt: Long, deletedAt: Long? ->
-    Workspace(
-        id = id,
-        syncId = syncId,
-        name = name,
-        icon = icon,
-        isSelected = isSelected,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
-    )
-}
+val workspaceMapper =
+    { id: Long, syncId: String, name: String, icon: String, isSelected: Boolean, createdAt: Long, updatedAt: Long, deletedAt: Long? ->
+        Workspace(
+            id = id,
+            syncId = syncId,
+            name = name,
+            icon = icon,
+            isSelected = isSelected,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
+        )
+    }
 
-val workspaceSecuritySettingsMapper = {
-    workspaceId: Long,
-    openAiToken: String,
-    llmBaseUrl: String,
-    llmModelId: String,
-    encryptionEnabled: Boolean,
-    encryptionSalt: String?,
-    wrappedDataKey: String?,
-    encryptionIterations: Long ->
+val workspaceSecuritySettingsMapper = { workspaceId: Long,
+                                        openAiToken: String,
+                                        llmBaseUrl: String,
+                                        llmModelId: String,
+                                        encryptionEnabled: Boolean,
+                                        encryptionSalt: String?,
+                                        wrappedDataKey: String?,
+                                        encryptionIterations: Long ->
     WorkspaceSecuritySettings(
         workspaceId = workspaceId,
         openAiToken = openAiToken,
@@ -82,55 +81,59 @@ val daySummaryRecordMapper = { date: Long, focusTime: Long, review: String, link
     )
 }
 
-val focusTimeMapper = { id: Long, duration: Long, feedback: String?, finishedAt: Long, startedAt: Long?, pauseTime: Long?, taskId: Long?,
-                        workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
-    FocusTime(
-        id = id,
-        duration = duration.toInt(),
-        feedback = feedback ?: "",
-        finishedAt = finishedAt,
-        startedAt = startedAt,
-        pauseTime = pauseTime?.toInt(),
-        taskId = taskId,
-        workspaceId = workspaceId,
-        syncId = syncId,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
-    )
-}
+val focusTimeMapper =
+    { id: Long, duration: Long, feedback: String?, finishedAt: Long, startedAt: Long?, pauseTime: Long?, taskId: Long?,
+      workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
+        FocusTime(
+            id = id,
+            duration = duration.toInt(),
+            feedback = feedback ?: "",
+            finishedAt = finishedAt,
+            startedAt = startedAt,
+            pauseTime = pauseTime?.toInt(),
+            taskId = taskId,
+            workspaceId = workspaceId,
+            syncId = syncId,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
+        )
+    }
 
-val timerSettings = { id: Long, workDuration: Long, shortBreakDuration: Long, longBreakDuration: Long, workCycles: Long,
-                      isDefault: Boolean, workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
-    TimerSettings(
-        id = id,
-        default = isDefault,
-        workDuration = workDuration.toInt(),
-        shortBreakDuration = shortBreakDuration.toInt(),
-        longBreakDuration = longBreakDuration.toInt(),
-        workCycles = workCycles.toInt(),
-        workspaceId = workspaceId,
-        syncId = syncId,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
-    )
-}
+val timerSettings =
+    { id: Long, workDuration: Long, shortBreakDuration: Long, longBreakDuration: Long, workCycles: Long,
+      isDefault: Boolean, workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
+        TimerSettings(
+            id = id,
+            default = isDefault,
+            workDuration = workDuration.toInt(),
+            shortBreakDuration = shortBreakDuration.toInt(),
+            longBreakDuration = longBreakDuration.toInt(),
+            workCycles = workCycles.toInt(),
+            workspaceId = workspaceId,
+            syncId = syncId,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
+        )
+    }
 
 @OptIn(ExperimentalTime::class)
-val taskMapper = { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?,
-                   isCompleted: Boolean, isToday: Boolean, workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
-    Task(
-        id = id,
-        title = title,
-        description = description,
-        createdAt = Instant.fromEpochMilliseconds(createdAt).toLocalDateTime(TimeZone.currentSystemDefault()),
-        completedAt = completedAt?.let {
-            Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault())
-        },
-        isCompleted = isCompleted,
-        isToday = isToday,
-        workspaceId = workspaceId,
-        syncId = syncId,
-        updatedAt = updatedAt,
-        deletedAt = deletedAt
-    )
-}
+val taskMapper =
+    { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?,
+      isCompleted: Boolean, isToday: Boolean, workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
+        Task(
+            id = id,
+            title = title,
+            description = description,
+            createdAt = Instant.fromEpochMilliseconds(createdAt)
+                .toLocalDateTime(TimeZone.currentSystemDefault()),
+            completedAt = completedAt?.let {
+                Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault())
+            },
+            isCompleted = isCompleted,
+            isToday = isToday,
+            workspaceId = workspaceId,
+            syncId = syncId,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
+        )
+    }

@@ -63,9 +63,17 @@ class WorkspaceSessionServiceTest {
         val fixture = createFixture()
         val second = fixture.workspace.createWorkspace("Local model")
 
-        fixture.workspace.saveAssistantConfig("default-token", DEFAULT_ASSISTANT_BASE_URL, "gpt-4.1")
+        fixture.workspace.saveAssistantConfig(
+            "default-token",
+            DEFAULT_ASSISTANT_BASE_URL,
+            "gpt-4.1"
+        )
         fixture.workspace.selectWorkspace(second.id)
-        fixture.workspace.saveAssistantConfig("local-token", "http://localhost:11434/v1/", "llama3.1")
+        fixture.workspace.saveAssistantConfig(
+            "local-token",
+            "http://localhost:11434/v1/",
+            "llama3.1"
+        )
 
         assertEquals("local-token", fixture.workspace.getAssistantConfig()?.token)
         assertEquals("llama3.1", fixture.workspace.getAssistantConfig()?.modelId)

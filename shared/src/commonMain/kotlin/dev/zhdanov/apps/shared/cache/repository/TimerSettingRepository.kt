@@ -89,7 +89,12 @@ class TimerSettingRepository(
     // Delete a TimerSetting by id
     fun deleteTimerSettingById(id: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
         val now = now()
-        database.deleteTimerSettingById(deletedAt = now, updatedAt = now, workspaceId = workspaceId, id = id)
+        database.deleteTimerSettingById(
+            deletedAt = now,
+            updatedAt = now,
+            workspaceId = workspaceId,
+            id = id
+        )
     }
 
     // Set default timer setting
@@ -97,11 +102,18 @@ class TimerSettingRepository(
         val now = now()
         database.transaction {
             database.unsetDefaultTimerSetting(updatedAt = now, workspaceId = workspaceId)
-            database.setDefaultTimerSettingById(updatedAt = now, workspaceId = workspaceId, id = settingId)
+            database.setDefaultTimerSettingById(
+                updatedAt = now,
+                workspaceId = workspaceId,
+                id = settingId
+            )
         }
     }
 
-    fun addDefaultTimerSettingIfNotExists(settings: TimerSettings, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
+    fun addDefaultTimerSettingIfNotExists(
+        settings: TimerSettings,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ) {
         database.transaction {
             database.findDefaultTimerSettings(workspaceId).executeAsOneOrNull() ?: run {
                 insertTimerSetting(

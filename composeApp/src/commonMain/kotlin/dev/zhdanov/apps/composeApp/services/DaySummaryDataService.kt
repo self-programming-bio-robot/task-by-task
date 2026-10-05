@@ -5,8 +5,6 @@ import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.TaskSummary
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DaySummaryDataService(
@@ -21,7 +19,11 @@ class DaySummaryDataService(
             date = daySummary.date,
             focusTime = daySummary.focusTime,
             review = workspaceSessionService.encryptTextForCurrentWorkspace(daySummary.review),
-            linkedTasks = workspaceSessionService.encryptTextForCurrentWorkspace(json.encodeToString(daySummary.linkedTasks)),
+            linkedTasks = workspaceSessionService.encryptTextForCurrentWorkspace(
+                json.encodeToString(
+                    daySummary.linkedTasks
+                )
+            ),
             workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
         )
     }

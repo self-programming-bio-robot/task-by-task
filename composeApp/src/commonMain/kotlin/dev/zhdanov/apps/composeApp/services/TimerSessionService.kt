@@ -77,6 +77,7 @@ class TimerSessionService(
                     _state.value = TimerViewState.FEEDBACK
                     _lastPartDuration.value = duration
                 }
+
                 TimerStage.REST -> when (new) {
                     TimerStage.WORK -> _state.value = TimerViewState.WORK
                     TimerStage.REST -> _state.value = TimerViewState.BREAK
@@ -91,7 +92,8 @@ class TimerSessionService(
                 pauseStartTime = timeProvider.nowEpochMilliseconds()
             } else {
                 pauseStartTime?.let { pauseStart ->
-                    val pauseDuration = ((timeProvider.nowEpochMilliseconds() - pauseStart) / 1000).toInt()
+                    val pauseDuration =
+                        ((timeProvider.nowEpochMilliseconds() - pauseStart) / 1000).toInt()
                     _totalPauseTime.value += pauseDuration
                 }
                 pauseStartTime = null

@@ -42,7 +42,8 @@ class TimerSessionServiceTest {
         )
         val database = Database(TimerSessionInMemoryDriverFactory())
         val workspaceSessionService = createWorkspaceSessionService(database)
-        val focusSessionDataService = FocusSessionDataService(database, dispatchers, workspaceSessionService)
+        val focusSessionDataService =
+            FocusSessionDataService(database, dispatchers, workspaceSessionService)
         val timerSettingsService = TimerSettingsService(database, workspaceSessionService)
         val focusTaskService = FocusTaskService()
         val timerSessionService = TimerSessionService(

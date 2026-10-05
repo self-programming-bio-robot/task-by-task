@@ -41,9 +41,9 @@ import dev.zhdanov.apps.shared.model.ChatMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.datetime.TimeZone
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import kotlin.time.ExperimentalTime
 
@@ -101,7 +101,12 @@ private class InMemoryDriverFactory : DatabaseDriverFactory {
 
 @OptIn(ExperimentalTime::class)
 private class NoopSchedulerService : SchedulerService {
-    override fun addScheduler(tag: String, cron: String, timeZone: TimeZone, action: SchedulerAction) = Unit
+    override fun addScheduler(
+        tag: String,
+        cron: String,
+        timeZone: TimeZone,
+        action: SchedulerAction
+    ) = Unit
 
     override fun addScheduler(tag: String, cron: String, action: SchedulerAction) = Unit
 }
@@ -126,7 +131,11 @@ private class FakeReviewClient : ReviewClient {
 }
 
 private class FakeChatClient : ChatClient {
-    override suspend fun sendMessage(config: AssistantConfig, daySummary: String, messages: List<ChatMessage>): String {
+    override suspend fun sendMessage(
+        config: AssistantConfig,
+        daySummary: String,
+        messages: List<ChatMessage>
+    ): String {
         return "fake reply"
     }
 }

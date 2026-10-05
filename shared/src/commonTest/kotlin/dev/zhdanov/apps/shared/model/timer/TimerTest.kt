@@ -1,8 +1,8 @@
 package dev.zhdanov.apps.shared.model.timer
 
 import dev.zhdanov.apps.shared.model.TimerSettings
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield

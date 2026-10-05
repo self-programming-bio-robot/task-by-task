@@ -67,7 +67,8 @@ class ChatService(
             val updatedMessages = session.messages + userMsg
             _currentSession.value = session.copy(messages = updatedMessages)
 
-            val assistantContent = chatClient.sendMessage(assistantConfig, session.daySummary, updatedMessages)
+            val assistantContent =
+                chatClient.sendMessage(assistantConfig, session.daySummary, updatedMessages)
             val assistantMsg = ChatMessage(
                 id = Uuid.random().toString(),
                 role = ChatRole.ASSISTANT,

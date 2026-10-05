@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.layout.AdaptiveLayout
 import dev.zhdanov.apps.composeApp.services.AppSettingsService
@@ -34,9 +35,7 @@ import dev.zhdanov.apps.composeApp.services.TimerSettingsService
 import dev.zhdanov.apps.composeApp.services.WorkspaceSessionService
 import dev.zhdanov.apps.composeApp.testing.UiTestTags
 import dev.zhdanov.apps.composeApp.theme.AppTheme
-import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
-import org.koin.core.annotation.KoinExperimentalAPI
 
 @Composable
 @Preview

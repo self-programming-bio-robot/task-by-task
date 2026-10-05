@@ -25,7 +25,11 @@ class DaySummaryServiceTest {
     @Test
     fun `finishDay uses configured start of day and summarizes junction linked tasks`() = runTest {
         val fixture = createFixture()
-        fixture.settingsService.saveAssistantConfig("token", "https://api.openai.com/v1/", "gpt-4.1")
+        fixture.settingsService.saveAssistantConfig(
+            "token",
+            "https://api.openai.com/v1/",
+            "gpt-4.1"
+        )
         fixture.settingsService.saveStartOfDay(LocalTime(5, 0))
         fixture.taskDataService.addTask("Refactor")
         val task = fixture.taskDataService.getAllTasks().first()
@@ -72,8 +76,10 @@ class DaySummaryServiceTest {
         )
         val settingsService = AppSettingsService(database, dispatchers, workspaceSessionService)
         val taskDataService = TaskDataService(database, dispatchers, workspaceSessionService)
-        val focusSessionDataService = FocusSessionDataService(database, dispatchers, workspaceSessionService)
-        val daySummaryDataService = DaySummaryDataService(database, dispatchers, workspaceSessionService)
+        val focusSessionDataService =
+            FocusSessionDataService(database, dispatchers, workspaceSessionService)
+        val daySummaryDataService =
+            DaySummaryDataService(database, dispatchers, workspaceSessionService)
         val schedulerService = RecordingSchedulerService()
         val daySummaryService = DaySummaryService(
             daySummaryDataService = daySummaryDataService,
@@ -110,7 +116,12 @@ private class FakeReviewClient : ReviewClient {
 }
 
 private class RecordingSchedulerService : SchedulerService {
-    override fun addScheduler(tag: String, cron: String, timeZone: TimeZone, action: SchedulerAction) = Unit
+    override fun addScheduler(
+        tag: String,
+        cron: String,
+        timeZone: TimeZone,
+        action: SchedulerAction
+    ) = Unit
 
     override fun addScheduler(tag: String, cron: String, action: SchedulerAction) = Unit
 }

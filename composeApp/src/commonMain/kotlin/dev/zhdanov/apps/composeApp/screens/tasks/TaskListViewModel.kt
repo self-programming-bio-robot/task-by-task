@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.composeApp.services.TaskDataService
 import dev.zhdanov.apps.shared.model.Task
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class TaskListViewModel(

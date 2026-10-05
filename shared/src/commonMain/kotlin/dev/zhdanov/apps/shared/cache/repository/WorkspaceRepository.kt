@@ -6,8 +6,8 @@ import dev.zhdanov.apps.shared.cache.workspaceSecuritySettingsMapper
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_BASE_URL
 import dev.zhdanov.apps.shared.model.DEFAULT_ASSISTANT_MODEL
 import dev.zhdanov.apps.shared.model.DEFAULT_ENCRYPTION_ITERATIONS
-import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ICON
+import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_NAME
 import dev.zhdanov.apps.shared.model.Workspace
 import dev.zhdanov.apps.shared.model.WorkspaceSecuritySettings
@@ -22,7 +22,8 @@ class WorkspaceRepository(
 ) {
     fun ensureDefaultWorkspace(): Workspace {
         val now = now()
-        val existing = database.selectWorkspaceById(DEFAULT_WORKSPACE_ID, workspaceMapper).executeAsOneOrNull()
+        val existing =
+            database.selectWorkspaceById(DEFAULT_WORKSPACE_ID, workspaceMapper).executeAsOneOrNull()
         if (existing == null) {
             database.insertWorkspace(
                 syncId = "local-workspace",
@@ -65,7 +66,8 @@ class WorkspaceRepository(
             ensureSecuritySettings(workspaceId)
             workspaceId
         }
-        return getWorkspace(createdWorkspaceId) ?: error("Created workspace not found: $createdWorkspaceId")
+        return getWorkspace(createdWorkspaceId)
+            ?: error("Created workspace not found: $createdWorkspaceId")
     }
 
     fun selectWorkspace(id: Long) {
@@ -80,7 +82,11 @@ class WorkspaceRepository(
     }
 
     fun updateWorkspaceIcon(id: Long, icon: String) {
-        database.updateWorkspaceIcon(icon = icon.ifBlank { DEFAULT_WORKSPACE_ICON }, updatedAt = now(), id = id)
+        database.updateWorkspaceIcon(
+            icon = icon.ifBlank { DEFAULT_WORKSPACE_ICON },
+            updatedAt = now(),
+            id = id
+        )
     }
 
     fun softDeleteWorkspace(id: Long) {
@@ -106,7 +112,8 @@ class WorkspaceRepository(
     }
 
     fun getSecuritySettings(workspaceId: Long): WorkspaceSecuritySettings? =
-        database.selectWorkspaceSecuritySettings(workspaceId, workspaceSecuritySettingsMapper).executeAsOneOrNull()
+        database.selectWorkspaceSecuritySettings(workspaceId, workspaceSecuritySettingsMapper)
+            .executeAsOneOrNull()
 
     fun updateAssistantConfig(workspaceId: Long, token: String, baseUrl: String, modelId: String) {
         ensureSecuritySettings(workspaceId)

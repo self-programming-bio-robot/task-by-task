@@ -134,7 +134,8 @@ class StatisticsViewModel(
             }
 
             // Chart data with default column count
-            _chartData.value = buildChartData(focusTimes, startDate, endDate, getMaxColumnsForPeriod())
+            _chartData.value =
+                buildChartData(focusTimes, startDate, endDate, getMaxColumnsForPeriod())
         }
     }
 
@@ -182,6 +183,7 @@ class StatisticsViewModel(
                     ChartEntry(label, minutes)
                 }
             }
+
             StatisticsPeriod.WEEK -> {
                 // Week has exactly 7 days, no aggregation needed
                 val dayData = MutableList(7) { 0 }
@@ -196,6 +198,7 @@ class StatisticsViewModel(
                     ChartEntry(dayNames[index], minutes)
                 }
             }
+
             StatisticsPeriod.MONTH -> {
                 // Group days into buckets based on maxColumns
                 val daysInMonth = endDate.day
@@ -242,12 +245,14 @@ class StatisticsViewModel(
                 val baseDate = today.plus(offset, DateTimeUnit.DAY)
                 Pair(baseDate, baseDate)
             }
+
             StatisticsPeriod.WEEK -> {
                 val weekStart = today.plus(offset * 7, DateTimeUnit.DAY)
                     .let { it.minus(it.dayOfWeek.ordinal, DateTimeUnit.DAY) }
                 val weekEnd = weekStart.plus(6, DateTimeUnit.DAY)
                 Pair(weekStart, weekEnd)
             }
+
             StatisticsPeriod.MONTH -> {
                 // Calculate target month
                 var targetYear = today.year
@@ -270,19 +275,60 @@ class StatisticsViewModel(
         _periodLabel.value = when (_selectedPeriod.value) {
             StatisticsPeriod.DAY -> {
                 val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                val months = listOf(
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec"
+                )
                 "${dayNames[baseFromDate.dayOfWeek.ordinal]}, ${months[baseFromDate.month.ordinal]} ${baseFromDate.day}"
             }
+
             StatisticsPeriod.WEEK -> {
-                val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                val months = listOf(
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec"
+                )
                 if (baseFromDate.month == periodEnd.month) {
                     "${months[baseFromDate.month.ordinal]} ${baseFromDate.day} - ${periodEnd.day}"
                 } else {
                     "${months[baseFromDate.month.ordinal]} ${baseFromDate.day} - ${months[periodEnd.month.ordinal]} ${periodEnd.day}"
                 }
             }
+
             StatisticsPeriod.MONTH -> {
-                val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+                val months = listOf(
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December"
+                )
                 "${months[baseFromDate.month.ordinal]} ${baseFromDate.year}"
             }
         }

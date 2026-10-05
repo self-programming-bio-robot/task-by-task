@@ -27,9 +27,10 @@ class AppSettingsService(
         workspaceSessionService.getAssistantConfigForUi()
     }
 
-    suspend fun saveAssistantConfig(token: String, baseUrl: String, modelId: String) = withContext(dispatchers.io) {
-        workspaceSessionService.saveAssistantConfig(token, baseUrl, modelId)
-    }
+    suspend fun saveAssistantConfig(token: String, baseUrl: String, modelId: String) =
+        withContext(dispatchers.io) {
+            workspaceSessionService.saveAssistantConfig(token, baseUrl, modelId)
+        }
 
     suspend fun getTheme(): String? = withContext(dispatchers.io) {
         database.settingRepository.getSetting<String>(SettingKey.THEME)

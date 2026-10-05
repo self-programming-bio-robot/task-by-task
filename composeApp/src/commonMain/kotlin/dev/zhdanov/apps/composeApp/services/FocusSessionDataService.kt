@@ -36,22 +36,28 @@ class FocusSessionDataService(
             .map(::decryptFocusTime)
     }
 
-    suspend fun getFocusTimesBetween(from: Long, to: Long): List<FocusTime> = withContext(dispatchers.io) {
-        workspaceSessionService.requireUnlockedForCurrentWorkspace()
-        database.getAllFocusTimesBetween(
-            from = from,
-            to = to,
-            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
-        ).map(::decryptFocusTime)
-    }
+    suspend fun getFocusTimesBetween(from: Long, to: Long): List<FocusTime> =
+        withContext(dispatchers.io) {
+            workspaceSessionService.requireUnlockedForCurrentWorkspace()
+            database.getAllFocusTimesBetween(
+                from = from,
+                to = to,
+                workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
+            ).map(::decryptFocusTime)
+        }
 
     suspend fun getTasksForFocusTime(focusTimeId: Long): List<Task> = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
-        database.getTasksForFocusTime(focusTimeId, workspaceSessionService.requireCurrentWorkspaceId())
+        database.getTasksForFocusTime(
+            focusTimeId,
+            workspaceSessionService.requireCurrentWorkspaceId()
+        )
             .map { task ->
                 task.copy(
                     title = workspaceSessionService.decryptTextForCurrentWorkspace(task.title),
-                    description = workspaceSessionService.decryptNullableTextForCurrentWorkspace(task.description)
+                    description = workspaceSessionService.decryptNullableTextForCurrentWorkspace(
+                        task.description
+                    )
                 )
             }
     }

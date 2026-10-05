@@ -1,22 +1,22 @@
 package dev.zhdanov.apps.composeApp.services
 
+import com.diamondedge.logging.logging
 import com.ucasoft.kcron.Cron
 import com.ucasoft.kcron.core.builders.Builder
 import com.ucasoft.kcron.core.builders.DelicateIterableApi
 import com.ucasoft.kcron.core.common.WeekDays
 import com.ucasoft.kcron.kotlinx.datetime.CronLocalDateTime
 import com.ucasoft.kcron.kotlinx.datetime.CronLocalDateTimeProvider
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import com.diamondedge.logging.logging
-import java.util.*
+import java.util.PriorityQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
 class DesktopScheduler(
@@ -31,7 +31,12 @@ class DesktopScheduler(
     }
 
     @OptIn(DelicateIterableApi::class)
-    override fun addScheduler(tag: String, cron: String, timeZone: TimeZone, action: SchedulerAction) {
+    override fun addScheduler(
+        tag: String,
+        cron: String,
+        timeZone: TimeZone,
+        action: SchedulerAction
+    ) {
         val cronBuilder = Cron.parseAndBuild(cron) {
             it.firstDayOfWeek = WeekDays.Monday
         }
@@ -63,9 +68,18 @@ class DesktopScheduler(
                         logger.i { "Run scheduler: '${scheduler.tag}'" }
 
                         synchronized(lock) {
-                            addRun(scheduler.cron, scheduler.tag, scheduler.timeZone, scheduler.action)
+                            addRun(
+                                scheduler.cron,
+                                scheduler.tag,
+                                scheduler.timeZone,
+                                scheduler.action
+                            )
                         }
-                        scheduler.action.invoke(scheduler.nextRun, Clock.System.now(), scheduler.timeZone)
+                        scheduler.action.invoke(
+                            scheduler.nextRun,
+                            Clock.System.now(),
+                            scheduler.timeZone
+                        )
                     }
                 }
             },

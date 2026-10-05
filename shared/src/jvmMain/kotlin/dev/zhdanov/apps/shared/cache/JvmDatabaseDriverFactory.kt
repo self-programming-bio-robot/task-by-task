@@ -7,7 +7,7 @@ import java.io.File
 
 class JvmDatabaseDriverFactory(
     private val fileName: String = ""
-): DatabaseDriverFactory {
+) : DatabaseDriverFactory {
 
     override fun createDriver(): SqlDriver {
         try {

@@ -1,7 +1,7 @@
 package dev.zhdanov.apps.composeApp.services
 
-import java.util.concurrent.CopyOnWriteArraySet
 import com.jthemedetecor.OsThemeDetector
+import java.util.concurrent.CopyOnWriteArraySet
 
 class ThemeChangeServiceDesktop : ThemeChangeService {
 

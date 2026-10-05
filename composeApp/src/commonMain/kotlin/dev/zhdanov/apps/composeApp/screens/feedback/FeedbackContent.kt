@@ -12,8 +12,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.shared.model.CreateFocusTime
 import dev.zhdanov.apps.shared.model.Task
-import dev.zhdanov.apps.composeApp.services.FocusTaskService
-import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
 
 /**
@@ -87,11 +85,13 @@ fun FeedbackContent(
             }
             Button(
                 onClick = {
-                    onSubmit(CreateFocusTime(
-                        duration = duration,
-                        feedback = feedbackText,
-                        finishedAt = System.currentTimeMillis()
-                    ))
+                    onSubmit(
+                        CreateFocusTime(
+                            duration = duration,
+                            feedback = feedbackText,
+                            finishedAt = System.currentTimeMillis()
+                        )
+                    )
                 },
                 modifier = Modifier.weight(1f)
             ) {

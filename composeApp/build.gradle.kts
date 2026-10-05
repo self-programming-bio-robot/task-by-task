@@ -1,15 +1,13 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinxSerialization)
-    alias(libs.plugins.buildKonfig)
 }
 
 repositories {
@@ -36,17 +34,19 @@ kotlin {
 //        binaries.executable()
 //    }
 
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    android {
+        namespace = "dev.zhdanov.apps.composeApp"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
     jvm("desktop")
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -57,12 +57,13 @@ kotlin {
     }
 
     sourceSets {
-        val desktopMain by getting
-        val desktopTest by getting
+        val desktopMain = getByName("desktopMain")
+        val desktopTest = getByName("desktopTest")
 
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.kotlin.coroutines)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -87,14 +88,13 @@ kotlin {
             implementation(libs.kotlin.datetime)
 
             implementation(libs.lifecycle.viewmodel)
-
-            implementation(libs.navigation.compose)
             implementation(libs.viewmodel.compose)
 
             // Navigation 3
             implementation(libs.navigation3.ui)
             implementation(libs.lifecycle.viewmodel.navigation3)
-            implementation(libs.adaptive.navigation3)
+
+            implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
@@ -108,17 +108,13 @@ kotlin {
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.serialization.kotlinx.json)
 
-            implementation(libs.kcron.common)
-
             implementation(libs.multiplatform.markdown.renderer.m3)
-            implementation(libs.multiplatform.markdown.renderer)
-
-            implementation(libs.koalaplot.core)
 
             api(libs.logging)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.kcron.common)
             implementation(libs.ktor.client.jvm)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.jsystemthemedetector)
@@ -128,44 +124,6 @@ kotlin {
             implementation(libs.compose.ui.test.junit4.desktop)
             implementation(compose.desktop.currentOs)
         }
-    }
-}
-
-android {
-    namespace = "dev.zhdanov.apps.composeApp"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    sourceSets["main"].res.srcDirs("src/androidMain/res")
-    sourceSets["main"].resources.srcDirs("src/commonMain/resources")
-
-    defaultConfig {
-        applicationId = "dev.zhdanov.apps"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
-    }
-    dependencies {
-        debugImplementation(libs.compose.ui.tooling)
-        implementation(libs.kotlin.coroutines)
     }
 }
 
@@ -186,14 +144,5 @@ compose.desktop {
                 dockName = "Task By Task"
             }
         }
-    }
-}
-
-buildkonfig {
-    packageName = "dev.zhdanov.apps.composeApp"
-    // objectName = "YourAwesomeConfig"
-    // exposeObjectWithName = "YourAwesomePublicConfig"
-
-    defaultConfigs {
     }
 }

@@ -30,7 +30,6 @@ kotlin {
         }
     }
 
-    iosX64()
     iosArm64()
     iosSimulatorArm64()
 
@@ -39,6 +38,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.runtime)
             implementation(libs.kotlin.datetime)
 

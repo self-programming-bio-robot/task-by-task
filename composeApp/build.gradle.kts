@@ -1,7 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -9,7 +8,6 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinxSerialization)
-    alias(libs.plugins.buildKonfig)
 }
 
 repositories {
@@ -46,7 +44,6 @@ kotlin {
     jvm("desktop")
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -87,14 +84,13 @@ kotlin {
             implementation(libs.kotlin.datetime)
 
             implementation(libs.lifecycle.viewmodel)
-
-            implementation(libs.navigation.compose)
             implementation(libs.viewmodel.compose)
 
             // Navigation 3
             implementation(libs.navigation3.ui)
             implementation(libs.lifecycle.viewmodel.navigation3)
-            implementation(libs.adaptive.navigation3)
+
+            implementation(libs.kotlinx.serialization.json)
 
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
@@ -186,14 +182,5 @@ compose.desktop {
                 dockName = "Task By Task"
             }
         }
-    }
-}
-
-buildkonfig {
-    packageName = "dev.zhdanov.apps.composeApp"
-    // objectName = "YourAwesomeConfig"
-    // exposeObjectWithName = "YourAwesomePublicConfig"
-
-    defaultConfigs {
     }
 }

@@ -22,7 +22,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Windows MSI
-        run: ./gradlew :composeApp:packageMsi
+        run: ./gradlew :composeApp:packageMsi "-PappVersion=${{ github.ref_name }}"
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -46,7 +46,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build macOS DMG
-        run: ./gradlew :composeApp:packageDmg
+        run: ./gradlew :composeApp:packageDmg "-PappVersion=${{ github.ref_name }}"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
@@ -70,7 +70,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Linux DEB
-        run: ./gradlew :composeApp:packageDeb
+        run: ./gradlew :composeApp:packageDeb "-PappVersion=${{ github.ref_name }}"
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4

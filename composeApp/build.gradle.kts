@@ -132,14 +132,29 @@ kotlin {
     }
 }
 
+fun sanitizeVersion(version: String?): String {
+    if (version.isNullOrBlank()) {
+        return "0.0.0"
+    }
+    val trimmed = version.trim()
+    val regex = Regex("^v?\\d+\\.\\d+\\.\\d+$", RegexOption.IGNORE_CASE)
+    if (!regex.matches(trimmed)) {
+        error("Invalid app version '$version'. Version must be in format 'x.x.x' or 'vx.x.x' (e.g. '1.0.0' or 'v1.0.0').")
+    }
+    return trimmed.removePrefix("v").removePrefix("V")
+}
+
 compose.desktop {
     application {
         mainClass = "dev.zhdanov.apps.composeApp.DesktopKt"
 
         nativeDistributions {
+            val rawAppVersion = (project.findProperty("appVersion") as? String) ?: System.getenv("APP_VERSION")
+            val finalVersion = sanitizeVersion(rawAppVersion)
+
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "TaskByTask"
-            packageVersion = "1.0.0"
+            packageVersion = finalVersion
 
             jvmArgs += "-Dapple.awt.application.appearance=system"
 

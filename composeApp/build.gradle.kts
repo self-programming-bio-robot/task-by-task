@@ -139,7 +139,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "TaskByTask"
-            packageVersion = "1.0.0"
+            packageVersion = ((project.findProperty("appVersion") as? String)
+                ?: System.getenv("APP_VERSION"))
+                ?.removePrefix("v")
+                ?.takeIf { it.isNotBlank() }
+                ?: "1.0.0"
 
             jvmArgs += "-Dapple.awt.application.appearance=system"
 

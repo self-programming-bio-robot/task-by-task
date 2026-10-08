@@ -9,7 +9,7 @@ import org.koin.core.module.Module
  */
 interface DesktopOsServices {
 
-    /** Koin bindings for OS-specific services (OsNotificationChannel, ...). */
+    /** Koin bindings for OS-specific services (NotificationService, ...). */
     val koinModule: Module
 
     val platformUi: PlatformUi

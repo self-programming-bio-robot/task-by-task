@@ -7,6 +7,7 @@ import dev.zhdanov.apps.composeApp.components.settings.security.SecuritySettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
+import dev.zhdanov.apps.composeApp.notification.FakeNotificationService
 import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayViewModel
 import dev.zhdanov.apps.composeApp.screens.history.HistoryViewModel
@@ -55,7 +56,7 @@ internal fun startDesktopUiTestKoin() {
         modules(
             module {
                 single { AppDispatchers(UnconfinedTestDispatcher(), UnconfinedTestDispatcher()) }
-                single { NotificationService() }
+                single<NotificationService> { FakeNotificationService() }
                 single<DatabaseDriverFactory> { InMemoryDriverFactory() }
                 single { Database(get()) }
                 single<SchedulerService> { NoopSchedulerService() }

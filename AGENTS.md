@@ -108,7 +108,8 @@ Requires `kotlinx-serialization` plugin.
 - One application module per OS: `windowsApp`, `macosApp`, `linuxApp`
 - `compose.desktop.application` configured in each app module (Msi/Dmg/Deb)
 - Main classes: `dev.zhdanov.apps.<os>App.MainKt`
-- OS contracts (`OsNotificationChannel`, `PlatformUi`, `DesktopOsServices`) live in `composeApp/src/desktopMain/.../platform/`
+- OS contracts (`PlatformUi`, `DesktopOsServices`) live in `composeApp/src/desktopMain/.../platform/`
+- `NotificationService` is a contract in `commonMain`; each OS module binds its own implementation in `koinModule` (`WindowsNotificationService`, reusable `TrayNotificationService` from `desktopMain`)
 
 ### iOS
 - Static framework output (`isStatic = true`)

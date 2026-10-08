@@ -1,7 +1,6 @@
 package dev.zhdanov.apps.composeApp.services
 
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewState
-import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.INFINITE_TIMER_SETTINGS
@@ -68,7 +67,8 @@ class TimerSessionService(
 
             coroutineScope.launch {
                 notificationService.addNotification(
-                    Notification(text = "Finish ${old.name.lowercase()}", title = "Timer")
+                    text = "Finish ${old.name.lowercase()}",
+                    title = "Timer"
                 )
             }
 

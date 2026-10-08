@@ -1,6 +1,5 @@
 package dev.zhdanov.apps.composeApp.services
 
-import dev.zhdanov.apps.composeApp.notification.Notification
 import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.shared.model.ChatMessage
 import dev.zhdanov.apps.shared.model.ChatRole
@@ -81,10 +80,8 @@ class ChatService(
             )
 
             notificationService.addNotification(
-                Notification(
-                    text = "${assistantContent.take(50)}${if (assistantContent.length > 50) "..." else ""}",
-                    title = "Buddy"
-                )
+                text = "${assistantContent.take(50)}${if (assistantContent.length > 50) "..." else ""}",
+                title = "Buddy"
             )
 
             Result.success(assistantMsg)

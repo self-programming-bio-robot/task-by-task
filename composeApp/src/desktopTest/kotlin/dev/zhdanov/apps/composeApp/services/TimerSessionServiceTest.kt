@@ -3,7 +3,7 @@ package dev.zhdanov.apps.composeApp.services
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewState
-import dev.zhdanov.apps.composeApp.notification.NotificationService
+import dev.zhdanov.apps.composeApp.notification.FakeNotificationService
 import dev.zhdanov.apps.shared.INFINITE_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
@@ -47,7 +47,7 @@ class TimerSessionServiceTest {
         val timerSettingsService = TimerSettingsService(database, workspaceSessionService)
         val focusTaskService = FocusTaskService()
         val timerSessionService = TimerSessionService(
-            notificationService = NotificationService(),
+            notificationService = FakeNotificationService(),
             focusSessionDataService = focusSessionDataService,
             timerSettingsService = timerSettingsService,
             focusTaskService = focusTaskService,

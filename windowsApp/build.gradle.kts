@@ -15,6 +15,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
 
     implementation(libs.nucleus.notification.windows)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.koin.core)
     implementation(libs.logging)
 }

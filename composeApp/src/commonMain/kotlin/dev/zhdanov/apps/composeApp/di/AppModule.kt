@@ -5,7 +5,6 @@ import dev.zhdanov.apps.composeApp.components.settings.security.SecuritySettings
 import dev.zhdanov.apps.composeApp.components.settings.timers.TimersSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.settings.timers.editor.EditableTimerSettingsViewModel
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewModel
-import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayViewModel
 import dev.zhdanov.apps.composeApp.screens.history.HistoryViewModel
 import dev.zhdanov.apps.composeApp.screens.home.HomeViewModel
@@ -35,7 +34,6 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { AppDispatchers() }
-    single { NotificationService() }
     single { WorkspaceSessionService(get(), get()) }
     single { AppSettingsService(get(), get(), get()) }
     single { TaskDataService(get(), get(), get()) }

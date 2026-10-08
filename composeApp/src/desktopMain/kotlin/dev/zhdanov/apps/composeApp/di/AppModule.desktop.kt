@@ -1,5 +1,6 @@
 package dev.zhdanov.apps.composeApp.di
 
+import androidx.compose.ui.window.TrayState
 import dev.zhdanov.apps.composeApp.services.DesktopScheduler
 import dev.zhdanov.apps.composeApp.services.JvmWorkspaceCryptoService
 import dev.zhdanov.apps.composeApp.services.SchedulerService
@@ -29,4 +30,5 @@ actual val platformModule = module {
     single<WorkspaceCryptoService> {
         JvmWorkspaceCryptoService()
     }
+    single { TrayState() }
 }

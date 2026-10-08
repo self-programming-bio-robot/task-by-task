@@ -2,7 +2,7 @@ package dev.zhdanov.apps.composeApp.services
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import dev.zhdanov.apps.composeApp.notification.NotificationService
+import dev.zhdanov.apps.composeApp.notification.FakeNotificationService
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
 import dev.zhdanov.apps.shared.model.AssistantConfig
@@ -38,7 +38,7 @@ class ChatServiceTest {
         val workspace = createWorkspaceSessionService(database)
         val settings = AppSettingsService(database, dispatchers, workspace)
         settings.saveAssistantConfig("token", "https://api.openai.com/v1/", "gpt-4.1")
-        val service = ChatService(workspace, NotificationService(), FakeChatClient())
+        val service = ChatService(workspace, FakeNotificationService(), FakeChatClient())
         service.startSession(LocalDate(2026, 5, 15), "summary")
 
         val result = service.sendMessage("hello")
@@ -56,7 +56,7 @@ class ChatServiceTest {
         )
         return ChatService(
             workspaceSessionService = createWorkspaceSessionService(database),
-            notificationService = NotificationService(),
+            notificationService = FakeNotificationService(),
             chatClient = FakeChatClient()
         )
     }

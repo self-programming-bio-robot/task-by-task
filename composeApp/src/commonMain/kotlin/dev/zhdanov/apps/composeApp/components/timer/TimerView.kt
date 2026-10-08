@@ -236,10 +236,7 @@ fun TimerView() {
             duration = lastPartDuration.value.toInt(),
             completedTasks = completedTasks,
             activeTask = focusedTask,
-            onSubmit = { feedback ->
-                feedback?.let { viewModel.saveFeedback(it) }
-                viewModel.closeFeedback()
-            }
+            onSubmit = { feedback -> viewModel.submitFeedback(feedback) }
         )
     } else {
         Column(

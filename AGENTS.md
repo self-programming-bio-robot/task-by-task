@@ -16,8 +16,13 @@ Task-by-Task is a Kotlin Multiplatform (KMP) productivity application with timer
 ./gradlew :composeApp:assembleDebug
 ./gradlew :composeApp:assembleRelease
 
-# Desktop (native distributions: DMG, MSI, DEB)
-./gradlew :composeApp:packageReleaseDistributionForCurrentOS
+# Desktop (each OS is a separate application module)
+./gradlew :windowsApp:run          # run on Windows
+./gradlew :macosApp:run            # run on macOS
+./gradlew :linuxApp:run            # run on Linux
+./gradlew :windowsApp:packageMsi   # Windows installer
+./gradlew :macosApp:packageDmg     # macOS installer
+./gradlew :linuxApp:packageDeb     # Linux installer
 
 # Run tests
 ./gradlew test
@@ -41,15 +46,24 @@ Managed via `gradle/libs.versions.toml`:
 ## Module Architecture
 
 ```
-composeApp/     - Main client app (Android, iOS, Desktop)
+composeApp/     - Shared client library (Android, iOS, Desktop)
   commonMain/   - Shared Compose UI and business logic
   androidMain/  - Android-specific implementations
-  desktopMain/  - Desktop-specific implementations
+  desktopMain/  - Shared desktop code + OS contracts (platform/ package)
   iosMain/      - iOS-specific implementations
 shared/         - Shared data layer (models, repositories, database)
 server/         - Ktor backend server (optional)
+androidApp/     - Android application
 iosApp/         - Native iOS app wrapper
+windowsApp/     - Windows desktop application (MSI, native notifications)
+macosApp/       - macOS desktop application (DMG)
+linuxApp/       - Linux desktop application (DEB)
 ```
+
+Desktop OS modules are independent `kotlin("jvm")` applications: each has its own
+`main()` calling `runDesktopApp(...)` from `composeApp/desktopMain` and passes a
+`DesktopOsServices` implementation (Koin module + `PlatformUi`). OS-specific code
+never crosses module boundaries — no runtime OS detection.
 
 ### composeApp Structure
 - `components/` - Reusable UI components (timer, settings, history)
@@ -91,8 +105,11 @@ Requires `kotlinx-serialization` plugin.
 
 ### Desktop
 - Uses `jSystemThemeDetector` for system theme detection
-- Native distributions configured in `compose.desktop.application`
-- Main class: `dev.zhdanov.apps.composeApp.DesktopKt`
+- One application module per OS: `windowsApp`, `macosApp`, `linuxApp`
+- `compose.desktop.application` configured in each app module (Msi/Dmg/Deb)
+- Main classes: `dev.zhdanov.apps.<os>App.MainKt`
+- OS contracts (`PlatformUi`, `DesktopOsServices`) live in `composeApp/src/desktopMain/.../platform/`
+- `NotificationService` is a contract in `commonMain`; each OS module binds its own implementation in `koinModule` (`WindowsNotificationService`, reusable `TrayNotificationService` from `desktopMain`)
 
 ### iOS
 - Static framework output (`isStatic = true`)

@@ -1,8 +1,9 @@
 package dev.zhdanov.apps.composeApp.services
 
 import dev.zhdanov.apps.composeApp.components.timer.TimerViewState
-import dev.zhdanov.apps.composeApp.notification.Notification
+import dev.zhdanov.apps.composeApp.notification.NotificationResponse
 import dev.zhdanov.apps.composeApp.notification.NotificationService
+import dev.zhdanov.apps.composeApp.notification.TextInput
 import dev.zhdanov.apps.shared.DEFAULT_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.INFINITE_TIMER_SETTINGS
 import dev.zhdanov.apps.shared.model.CreateFocusTime
@@ -22,6 +23,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+
+private const val TIMER_NOTIFICATION_TITLE = "Timer"
+private const val FEEDBACK_INPUT_ID = "feedback"
 
 interface TimeProvider {
     fun nowEpochMilliseconds(): Long
@@ -51,6 +55,10 @@ class TimerSessionService(
     private val _settings = MutableStateFlow(DEFAULT_TIMER_SETTINGS)
     private val _lastPartDuration = MutableStateFlow(0)
 
+    /** Id of the feedback request still waiting for an answer; null once the screen is closed. */
+    private val pendingFeedbackId = MutableStateFlow<Long?>(null)
+    private var feedbackCounter = 0L
+
     private val _focusSessionStart = MutableStateFlow<Long?>(null)
     private val _totalPauseTime = MutableStateFlow(0)
     private var pauseStartTime: Long? = null
@@ -66,21 +74,23 @@ class TimerSessionService(
         override fun onFinish(old: TimerStage, new: TimerStage, duration: Int) {
             _isRunning.value = false
 
-            coroutineScope.launch {
-                notificationService.addNotification(
-                    Notification(text = "Finish ${old.name.lowercase()}", title = "Timer")
-                )
-            }
-
             when (old) {
                 TimerStage.WORK -> {
-                    _state.value = TimerViewState.FEEDBACK
+                    val feedbackId = ++feedbackCounter
                     _lastPartDuration.value = duration
+                    pendingFeedbackId.value = feedbackId
+                    _state.value = TimerViewState.FEEDBACK
+                    coroutineScope.launch { showFeedbackNotification(feedbackId) }
                 }
 
-                TimerStage.REST -> when (new) {
-                    TimerStage.WORK -> _state.value = TimerViewState.WORK
-                    TimerStage.REST -> _state.value = TimerViewState.BREAK
+                TimerStage.REST -> {
+                    when (new) {
+                        TimerStage.WORK -> _state.value = TimerViewState.WORK
+                        TimerStage.REST -> _state.value = TimerViewState.BREAK
+                    }
+                    coroutineScope.launch {
+                        notificationService.addNotification(text = "Finish rest", title = TIMER_NOTIFICATION_TITLE)
+                    }
                 }
             }
         }
@@ -135,7 +145,42 @@ class TimerSessionService(
         _timer.value.start()
     }
 
-    suspend fun saveFeedback(feedback: CreateFocusTime) {
+    /** Answer from the feedback screen; `null` means the user skipped it. */
+    suspend fun submitFeedback(feedback: CreateFocusTime?) {
+        val feedbackId = pendingFeedbackId.value ?: return
+        completeFeedback(feedbackId, feedback)
+    }
+
+    private suspend fun showFeedbackNotification(feedbackId: Long) {
+        notificationService.addNotification(
+            text = "Finish work. How did it go?",
+            title = TIMER_NOTIFICATION_TITLE,
+            form = TextInput(FEEDBACK_INPUT_ID, placeholder = "How did it go?"),
+            submitLabel = "Save",
+        ) { response ->
+            if (response !is NotificationResponse.Submitted) return@addNotification
+            val feedback = CreateFocusTime(
+                duration = _lastPartDuration.value,
+                feedback = response.value,
+                finishedAt = timeProvider.nowEpochMilliseconds(),
+            )
+            if (completeFeedback(feedbackId, feedback)) startTimer()
+        }
+    }
+
+    /**
+     * Closes the feedback request [feedbackId] and saves [feedback].
+     * Returns false if the request was already answered (screen closed or a newer session started),
+     * so late answers from the notification center are ignored.
+     */
+    private suspend fun completeFeedback(feedbackId: Long, feedback: CreateFocusTime?): Boolean {
+        if (!pendingFeedbackId.compareAndSet(feedbackId, null)) return false
+        closeFeedback()
+        feedback?.let { saveFeedback(it) }
+        return true
+    }
+
+    private suspend fun saveFeedback(feedback: CreateFocusTime) {
         val pauseTime = calculatePauseTime()
         val taskIds = focusTaskService.getAllTaskIdsForSession()
 
@@ -152,7 +197,7 @@ class TimerSessionService(
         resetFocusTracking()
     }
 
-    fun closeFeedback() {
+    private fun closeFeedback() {
         when (_timer.value.getStage()) {
             TimerStage.WORK -> _state.value = TimerViewState.WORK
             TimerStage.REST -> _state.value = TimerViewState.BREAK

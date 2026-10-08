@@ -24,3 +24,6 @@ jobs:
 
       - name: Run desktop and JVM tests
         run: ./gradlew :shared:jvmTest :composeApp:desktopTest :server:test
+
+      - name: Compile platform app modules
+        run: ./gradlew :windowsApp:compileKotlin :macosApp:compileKotlin :linuxApp:compileKotlin

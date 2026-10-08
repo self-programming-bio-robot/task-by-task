@@ -28,6 +28,7 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
@@ -35,3 +36,6 @@ include(":composeApp")
 include(":androidApp")
 include(":server")
 include(":shared")
+include(":windowsApp")
+include(":macosApp")
+include(":linuxApp")

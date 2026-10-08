@@ -23,14 +23,10 @@ class TimerViewModel(
         timerSessionService.startTimer()
     }
 
-    fun saveFeedback(feedback: CreateFocusTime) {
+    fun submitFeedback(feedback: CreateFocusTime?) {
         viewModelScope.launch {
-            timerSessionService.saveFeedback(feedback)
+            timerSessionService.submitFeedback(feedback)
         }
-    }
-
-    fun closeFeedback() {
-        timerSessionService.closeFeedback()
     }
 
     fun stopTimer() {

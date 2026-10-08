@@ -65,8 +65,8 @@ val appModule = module {
 
 expect val platformModule: Module
 
-fun initializeKoin() {
+fun initializeKoin(vararg extraModules: Module) {
     startKoin {
-        modules(appModule, platformModule)
+        modules(appModule, platformModule, *extraModules)
     }
 }

@@ -22,13 +22,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Windows MSI
-        run: ./gradlew :composeApp:packageMsi "-PappVersion=${{ github.ref_name }}"
+        run: ./gradlew :windowsApp:packageMsi "-PappVersion=${{ github.ref_name }}"
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-msi
-          path: composeApp/build/compose/binaries/main/msi/*.msi
+          path: windowsApp/build/compose/binaries/main/msi/*.msi
 
   build-macos:
     runs-on: macos-latest
@@ -46,13 +46,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build macOS DMG
-        run: ./gradlew :composeApp:packageDmg "-PappVersion=${{ github.ref_name }}"
+        run: ./gradlew :macosApp:packageDmg "-PappVersion=${{ github.ref_name }}"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
-          path: composeApp/build/compose/binaries/main/dmg/*.dmg
+          path: macosApp/build/compose/binaries/main/dmg/*.dmg
 
   build-linux:
     runs-on: ubuntu-latest
@@ -70,13 +70,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Linux DEB
-        run: ./gradlew :composeApp:packageDeb "-PappVersion=${{ github.ref_name }}"
+        run: ./gradlew :linuxApp:packageDeb "-PappVersion=${{ github.ref_name }}"
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-deb
-          path: composeApp/build/compose/binaries/main/deb/*.deb
+          path: linuxApp/build/compose/binaries/main/deb/*.deb
 
   create-release:
     needs: [build-windows, build-macos, build-linux]

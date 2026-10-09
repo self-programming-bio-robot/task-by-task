@@ -5,6 +5,7 @@ android-compileSdk = "37"
 android-minSdk = "24"
 android-targetSdk = "37"
 androidx-activityCompose = "1.13.0"
+jbrApi = "1.10.1"
 jsystemthemedetector = "3.9.1"
 kcronCommon = "0.33.9"
 kotlinx-coroutines-android = "1.11.0"
@@ -33,6 +34,7 @@ adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", versi
 adaptive-layout = { module = "org.jetbrains.compose.material3.adaptive:adaptive-layout", version.ref = "adaptive" }
 adaptive-navigation = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation", version.ref = "adaptive" }
 adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "adaptive" }
+jbr-api = { module = "org.jetbrains.runtime:jbr-api", version.ref = "jbrApi" }
 jsystemthemedetector = { module = "com.github.dansoftowner:jSystemThemeDetector", version.ref = "jsystemthemedetector" }
 kcron-common = { module = "com.ucasoft.kcron:kcron-common", version.ref = "kcronCommon" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

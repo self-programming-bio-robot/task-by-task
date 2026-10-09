@@ -70,15 +70,18 @@ fun HomeScreen(
 
     RegisterTopBarActions(Screen.Home) {
         IconButton(
+            modifier = Modifier.size(32.dp),
             enabled = isActive,
             onClick = onOpenTodayTasks,
         ) {
             Icon(
                 imageVector = Icons.Default.CalendarToday,
-                contentDescription = "Today tasks"
+                contentDescription = "Today tasks",
+                modifier = Modifier.size(20.dp)
             )
         }
         IconButton(
+            modifier = Modifier.size(32.dp),
             enabled = isActive,
             onClick = {
                 coroutineScope.launch {
@@ -95,7 +98,8 @@ fun HomeScreen(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.FactCheck,
-                contentDescription = "Finish day"
+                contentDescription = "Finish day",
+                modifier = Modifier.size(20.dp)
             )
         }
     }

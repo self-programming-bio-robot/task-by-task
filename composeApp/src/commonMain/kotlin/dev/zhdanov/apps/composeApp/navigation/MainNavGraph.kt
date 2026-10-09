@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FilledTonalIconButton
@@ -72,6 +73,7 @@ fun MainNavGraph(
     val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()).copy(
         maxHorizontalPartitions = if (singlePane) 1 else 2,
         defaultPanePreferredWidth = 300.dp,
+        horizontalPartitionSpacerSize = 16.dp,
     )
     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(
         shouldHandleSinglePaneLayout = true,
@@ -103,7 +105,7 @@ fun MainNavGraph(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    horizontal = if (layoutMode == AppLayoutMode.Compact) 0.dp else 16.dp
+                     end = if (layoutMode == AppLayoutMode.Compact) 0.dp else 16.dp
                 )
         ) {
             NavDisplay(
@@ -219,11 +221,13 @@ fun MainNavGraph(
                         ) {
                             RegisterTopBarActions(key) {
                                 FilledTonalIconButton(
+                                    modifier = Modifier.size(32.dp),
                                     onClick = { viewModel.openTimerEditor(null) }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Add,
-                                        contentDescription = "New Timer"
+                                        contentDescription = "New Timer",
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }

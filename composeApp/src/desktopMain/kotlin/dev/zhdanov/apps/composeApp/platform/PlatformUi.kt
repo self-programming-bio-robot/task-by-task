@@ -2,6 +2,7 @@ package dev.zhdanov.apps.composeApp.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.window.FrameWindowScope
 
 /**
  * Platform-specific UI hooks for the desktop window. Implementations live in
@@ -15,9 +16,13 @@ interface PlatformUi {
 
     val transparentWindow: Boolean get() = false
 
-    /** Wraps the app content inside the window; can inject OS-specific chrome. */
+    /**
+     * Wraps the app content inside the window; can inject OS-specific chrome
+     * (e.g. merge the native title bar and provide
+     * [dev.zhdanov.apps.composeApp.components.window.LocalTitleBarInsets]).
+     */
     @Composable
-    fun WindowContent(content: @Composable () -> Unit) {
+    fun FrameWindowScope.WindowContent(isDarkTheme: Boolean, content: @Composable () -> Unit) {
         content()
     }
 }

@@ -60,7 +60,7 @@ fun runDesktopApp(osServices: DesktopOsServices) {
             window.background =
                 if (isDarkTheme) AwtColor(0x14, 0x12, 0x18) else AwtColor(0xFE, 0xF7, 0xFF)
             CompositionLocalProvider(LocalPlatformUi provides platformUi) {
-                platformUi.WindowContent { App() }
+                with(platformUi) { WindowContent(isDarkTheme) { App() } }
             }
         }
     }

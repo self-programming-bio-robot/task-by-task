@@ -37,6 +37,7 @@ fun SceneScaffold(
     onBack: suspend () -> Unit,
     topKey: NavKey?,
     modifier: Modifier = Modifier,
+    topBarLeading: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val actionsRegistry = remember {
@@ -54,6 +55,7 @@ fun SceneScaffold(
                     title = title,
                     hasBack = hasBack,
                     onBack = onBack,
+                    leading = topBarLeading,
                     actions = {
                         topKey?.let { actionsRegistry[it]?.invoke(this) }
                     }

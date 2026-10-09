@@ -1,5 +1,6 @@
 package dev.zhdanov.apps.composeApp.components.topBar
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,7 @@ fun TopBar(
     title: String,
     hasBack: Boolean = false,
     onBack: suspend () -> Unit = {},
+    leading: (@Composable () -> Unit)? = null,
     titleExtra: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -46,20 +48,30 @@ fun TopBar(
                 }
             },
             navigationIcon = {
-                if (hasBack) {
-                    IconButton(
-                        modifier = Modifier.size(32.dp),
-                        onClick = {
-                            coroutineScope.launch {
-                                onBack()
-                            }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (leading != null) {
+                        Box(
+                            modifier = Modifier.size(TitleBarHeight),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            leading()
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            modifier = Modifier.size(20.dp)
-                        )
+                    }
+                    if (hasBack) {
+                        IconButton(
+                            modifier = Modifier.size(32.dp),
+                            onClick = {
+                                coroutineScope.launch {
+                                    onBack()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             },

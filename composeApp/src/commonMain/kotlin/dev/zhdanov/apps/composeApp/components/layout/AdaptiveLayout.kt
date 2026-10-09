@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,7 +43,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import dev.zhdanov.apps.composeApp.components.window.LocalTitleBarInsets
 import dev.zhdanov.apps.composeApp.components.window.TitleBarHeight
 import dev.zhdanov.apps.composeApp.components.workspace.WorkspaceSelector
 import dev.zhdanov.apps.composeApp.navigation.MainNavGraph
@@ -96,25 +93,11 @@ fun AdaptiveLayout() {
                 menuItems = menuItems,
                 viewModel = viewModel,
             ) {
-                // The workspace row is the top-most row here, so it takes the
-                // title bar insets instead of the scene top bar below it.
-                val titleBarInsets = LocalTitleBarInsets.current
-                Column {
-                    WorkspaceSelector(
-                        expandedContent = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .windowInsetsPadding(titleBarInsets)
+                key(currentWorkspace?.id) {
+                    MainNavGraph(
+                        viewModel = viewModel,
+                        topBarLeading = { WorkspaceSelector(expandedContent = false) },
                     )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .consumeWindowInsets(titleBarInsets)
-                    ) {
-                        key(currentWorkspace?.id) {
-                            MainNavGraph(viewModel = viewModel)
-                        }
-                    }
                 }
             }
         }

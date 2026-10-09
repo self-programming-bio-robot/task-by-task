@@ -63,7 +63,8 @@ private fun breadcrumbTitle(screen: Screen): String = when (screen) {
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun MainNavGraph(
-    viewModel: NavigationViewModel
+    viewModel: NavigationViewModel,
+    topBarLeading: (@Composable () -> Unit)? = null,
 ) {
     // In Compact and Medium modes only one content pane is visible at a time;
     // Expanded allows a second pane (list+detail, main+supporting or detail+extra).
@@ -100,6 +101,7 @@ fun MainNavGraph(
         hasBack = sceneStack.size > 1,
         onBack = { viewModel.goBack() },
         topKey = topKey,
+        topBarLeading = topBarLeading,
     ) {
         Box(
             modifier = Modifier

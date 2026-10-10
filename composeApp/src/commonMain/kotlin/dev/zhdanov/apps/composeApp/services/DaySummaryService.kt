@@ -10,15 +10,21 @@ import dev.zhdanov.apps.shared.utils.toDuration
 import dev.zhdanov.apps.shared.utils.toLocalDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
+import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -37,8 +43,12 @@ class DaySummaryService(
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + dispatchers.io)
 
+    private val rolloverMutex = Mutex()
+    private val finishAttempts = mutableMapOf<LocalDate, Int>()
+
     init {
         updateScheduler()
+        startDayRolloverWatchdog()
     }
 
     fun updateScheduler() {
@@ -48,30 +58,60 @@ class DaySummaryService(
                 "Finish day",
                 "${startOfDay.minute} ${startOfDay.hour} * * *",
                 TimeZone.currentSystemDefault()
-            ) { plannedTime, actualTime, timeZone ->
-                coroutineScope.launch {
-                    runCatching {
-                        finishDay(plannedTime.minus(1.seconds))
-                        taskDataService.cleanTodayTaskList()
-                        finishDayEvents.emit(Unit)
-                        logger.i {
-                            "Finish day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${
-                                plannedTime.toLocalDateTime(
-                                    timeZone
-                                )
-                            }"
-                        }
-                    }.onFailure { error ->
-                        logger.i {
-                            "Skip finishing day at ${actualTime.toLocalDateTime(timeZone)} for planned time: ${
-                                plannedTime.toLocalDateTime(
-                                    timeZone
-                                )
-                            }: ${error.message}"
-                        }
-                    }
-                }
+            ) { _, _, _ ->
+                coroutineScope.launch { runDayRollover() }
             }
+        }
+    }
+
+    private fun startDayRolloverWatchdog() {
+        coroutineScope.launch {
+            while (true) {
+                runDayRollover()
+                delay(ROLLOVER_CHECK_INTERVAL)
+            }
+        }
+    }
+
+    private suspend fun runDayRollover() {
+        runCatching { processDayRollover() }
+            .onFailure { logger.e(it) { "Day rollover failed" } }
+    }
+
+    private suspend fun processDayRollover() = rolloverMutex.withLock {
+        val currentDay = dayDateFor(Clock.System.now())
+        val previousDay = currentDay.minus(1, DateTimeUnit.DAY)
+        val lastProcessedDay = settingsService.getLastDayReset()
+            ?: currentDay.also { settingsService.saveLastDayReset(it) }
+
+        if (lastProcessedDay < currentDay) {
+            generateSequence(lastProcessedDay) { it.plus(1, DateTimeUnit.DAY) }
+                .takeWhile { it < previousDay }
+                .forEach { tryFinishDay(it) }
+
+            taskDataService.cleanTodayTaskList()
+            settingsService.saveLastDayReset(currentDay)
+            finishDayEvents.emit(Unit)
+            logger.i { "Processed day rollover: $lastProcessedDay -> $currentDay" }
+        }
+
+        if ((finishAttempts[previousDay] ?: 0) < MAX_FINISH_ATTEMPTS) {
+            tryFinishDay(previousDay)
+        }
+    }
+
+    private suspend fun tryFinishDay(day: LocalDate) {
+        runCatching {
+            if (daySummaryDataService.getDaySummary(day) == null) {
+                getFocusTimesForDay(day)
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { createDaySummary(day, it) }
+            }
+        }.onSuccess {
+            finishAttempts.remove(day)
+        }.onFailure { error ->
+            finishAttempts[day] = (finishAttempts[day] ?: 0) + 1
+            logger.i { "Skip finishing day $day: ${error.message}" }
         }
     }
 
@@ -81,40 +121,10 @@ class DaySummaryService(
 
     suspend fun finishDay(currentDateTime: Instant = Clock.System.now()): AssistantReviewResponse {
         val dayDate = dayDateFor(currentDateTime)
-
-        if (daySummaryDataService.getDaySummary(dayDate) != null) {
-            logger.i { "Day summary already exists for $dayDate" }
-            throw IllegalStateException("Day summary already exists for $dayDate")
+        check(daySummaryDataService.getDaySummary(dayDate) == null) {
+            "Day summary already exists for $dayDate"
         }
-
-        val startOfDay = settingsService.getStartOfDay()
-        val startDateTime = LocalDateTime(dayDate, startOfDay)
-        val endDateTime = LocalDateTime(dayDate.plus(1, DateTimeUnit.DAY), startOfDay)
-        val timeZone = TimeZone.currentSystemDefault()
-
-        val focusTimes = focusSessionDataService.getFocusTimesBetween(
-            from = startDateTime.toInstant(timeZone).toEpochMilliseconds(),
-            to = endDateTime.toInstant(timeZone).toEpochMilliseconds()
-        )
-
-        val linkedTasks = buildLinkedTasks(focusTimes)
-        val review = reviewDay(focusTimes)
-
-        daySummaryDataService.addDaySummary(
-            DaySummary(
-                date = dayDate,
-                focusTime = focusTimes.sumOf { it.duration }.toLong(),
-                review = review.summary,
-                linkedTasks = linkedTasks
-            )
-        )
-
-        logger.d { review }
-        return AssistantReviewResponse(
-            date = dayDate,
-            summary = review.summary,
-            response = review.response
-        )
+        return createDaySummary(dayDate, getFocusTimesForDay(dayDate))
     }
 
     fun migration() {
@@ -129,24 +139,44 @@ class DaySummaryService(
                         .toLocalDateTime(TimeZone.currentSystemDefault())
                         .date
                 }
-                .forEach { group ->
-                    if (daySummaryDataService.getDaySummary(group.key) == null) {
-                        runCatching {
-                            val review = reviewDay(group.value)
-                            daySummaryDataService.addDaySummary(
-                                DaySummary(
-                                    date = group.key,
-                                    focusTime = group.value.sumOf { it.duration }.toLong(),
-                                    review = review.summary,
-                                    linkedTasks = buildLinkedTasks(group.value)
-                                )
-                            )
-                        }.onFailure { error ->
-                            logger.e(error) { "Failed to add day summary" }
-                        }
+                .forEach { (day, focusTimes) ->
+                    if (daySummaryDataService.getDaySummary(day) == null) {
+                        runCatching { createDaySummary(day, focusTimes) }
+                            .onFailure { error -> logger.e(error) { "Failed to add day summary" } }
                     }
                 }
         }
+    }
+
+    private suspend fun getFocusTimesForDay(day: LocalDate): List<FocusTime> {
+        val startOfDay = settingsService.getStartOfDay()
+        val timeZone = TimeZone.currentSystemDefault()
+        return focusSessionDataService.getFocusTimesBetween(
+            from = LocalDateTime(day, startOfDay).toInstant(timeZone).toEpochMilliseconds(),
+            to = LocalDateTime(day.plus(1, DateTimeUnit.DAY), startOfDay).toInstant(timeZone)
+                .toEpochMilliseconds()
+        )
+    }
+
+    private suspend fun createDaySummary(
+        day: LocalDate,
+        focusTimes: List<FocusTime>
+    ): AssistantReviewResponse {
+        val review = reviewDay(focusTimes)
+        daySummaryDataService.addDaySummary(
+            DaySummary(
+                date = day,
+                focusTime = focusTimes.sumOf { it.duration }.toLong(),
+                review = review.summary,
+                linkedTasks = buildLinkedTasks(focusTimes)
+            )
+        )
+        logger.d { review }
+        return AssistantReviewResponse(
+            date = day,
+            summary = review.summary,
+            response = review.response
+        )
     }
 
     private suspend fun dayDateFor(currentDateTime: Instant) =
@@ -204,6 +234,8 @@ class DaySummaryService(
 
     companion object {
         private val logger = logging()
+        private val ROLLOVER_CHECK_INTERVAL = 1.minutes
+        private const val MAX_FINISH_ATTEMPTS = 120
     }
 }
 

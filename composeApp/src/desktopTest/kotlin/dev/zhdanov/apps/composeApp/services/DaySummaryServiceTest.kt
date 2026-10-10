@@ -6,18 +6,24 @@ import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
 import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.TaskSummary
+import dev.zhdanov.apps.shared.utils.toDuration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
@@ -67,6 +73,82 @@ class DaySummaryServiceTest {
         assertTrue(fixture.daySummaryService.isCurrentDayActive(finishTime))
     }
 
+    @Test
+    fun `scheduled rollover finishes missed previous day and resets today tasks`() = runTest {
+        val fixture = createFixture()
+        fixture.settingsService.saveAssistantConfig(
+            "token",
+            "https://api.openai.com/v1/",
+            "gpt-4.1"
+        )
+        val startOfDay = LocalTime(5, 0)
+        fixture.settingsService.saveStartOfDay(startOfDay)
+
+        val timeZone = TimeZone.currentSystemDefault()
+        val currentDay = Clock.System.now()
+            .minus(startOfDay.toDuration())
+            .toLocalDateTime(timeZone)
+            .date
+        val previousDay = currentDay.minus(1, DateTimeUnit.DAY)
+        fixture.settingsService.saveLastDayReset(previousDay)
+
+        fixture.taskDataService.addTask("Stale today task", isToday = true)
+        val task = fixture.taskDataService.getAllTasks().first()
+        fixture.focusSessionDataService.addFocusTimeWithTasks(
+            duration = 600,
+            finishedAt = LocalDateTime(previousDay, LocalTime(12, 0))
+                .toInstant(timeZone).toEpochMilliseconds(),
+            feedback = "work",
+            startedAt = null,
+            pauseTime = null,
+            taskIds = listOf(task.id)
+        )
+
+        fixture.schedulerService.scheduledActions.single().invoke(
+            Clock.System.now(),
+            Clock.System.now(),
+            timeZone
+        )
+
+        assertNotNull(fixture.daySummaryDataService.getDaySummary(previousDay))
+        assertTrue(fixture.taskDataService.getAllTasks().none { it.isToday })
+        assertTrue(fixture.daySummaryService.isCurrentDayActive())
+    }
+
+    @Test
+    fun `scheduled rollover resets today tasks when day was finished manually`() = runTest {
+        val fixture = createFixture()
+        fixture.settingsService.saveAssistantConfig(
+            "token",
+            "https://api.openai.com/v1/",
+            "gpt-4.1"
+        )
+        val startOfDay = LocalTime(5, 0)
+        fixture.settingsService.saveStartOfDay(startOfDay)
+
+        val timeZone = TimeZone.currentSystemDefault()
+        val currentDay = Clock.System.now()
+            .minus(startOfDay.toDuration())
+            .toLocalDateTime(timeZone)
+            .date
+        val previousDay = currentDay.minus(1, DateTimeUnit.DAY)
+        fixture.settingsService.saveLastDayReset(previousDay)
+
+        fixture.taskDataService.addTask("Stale today task", isToday = true)
+        fixture.daySummaryService.finishDay(
+            LocalDateTime(previousDay, LocalTime(20, 0)).toInstant(timeZone)
+        )
+
+        fixture.schedulerService.scheduledActions.single().invoke(
+            Clock.System.now(),
+            Clock.System.now(),
+            timeZone
+        )
+
+        assertTrue(fixture.taskDataService.getAllTasks().none { it.isToday })
+        assertTrue(fixture.daySummaryService.isCurrentDayActive())
+    }
+
     private fun createFixture(): Fixture {
         val database = Database(InMemoryDriverFactory())
         val workspaceSessionService = createWorkspaceSessionService(database)
@@ -96,7 +178,8 @@ class DaySummaryServiceTest {
             taskDataService = taskDataService,
             focusSessionDataService = focusSessionDataService,
             daySummaryDataService = daySummaryDataService,
-            daySummaryService = daySummaryService
+            daySummaryService = daySummaryService,
+            schedulerService = schedulerService
         )
     }
 }
@@ -106,7 +189,8 @@ private data class Fixture(
     val taskDataService: TaskDataService,
     val focusSessionDataService: FocusSessionDataService,
     val daySummaryDataService: DaySummaryDataService,
-    val daySummaryService: DaySummaryService
+    val daySummaryService: DaySummaryService,
+    val schedulerService: RecordingSchedulerService
 )
 
 private class FakeReviewClient : ReviewClient {
@@ -116,12 +200,16 @@ private class FakeReviewClient : ReviewClient {
 }
 
 private class RecordingSchedulerService : SchedulerService {
+    val scheduledActions = mutableListOf<SchedulerAction>()
+
     override fun addScheduler(
         tag: String,
         cron: String,
         timeZone: TimeZone,
         action: SchedulerAction
-    ) = Unit
+    ) {
+        scheduledActions.add(action)
+    }
 
     override fun addScheduler(tag: String, cron: String, action: SchedulerAction) = Unit
 }

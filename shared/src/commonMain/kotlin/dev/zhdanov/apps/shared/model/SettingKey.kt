@@ -5,4 +5,5 @@ enum class SettingKey(val id: Long) {
     THEME(2),
     FOCUSED_TASK_ID(3),
     START_OF_DAY(4),
+    LAST_DAY_RESET(5),
 }

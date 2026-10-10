@@ -8,6 +8,7 @@ import dev.zhdanov.apps.shared.model.SettingKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
 class AppSettingsService(
@@ -58,5 +59,13 @@ class AppSettingsService(
             SettingKey.START_OF_DAY,
             StartOfDaySetting.fromLocalTime(time)
         )
+    }
+
+    suspend fun getLastDayReset(): LocalDate? = withContext(dispatchers.io) {
+        database.settingRepository.getSetting<LocalDate>(SettingKey.LAST_DAY_RESET)
+    }
+
+    suspend fun saveLastDayReset(date: LocalDate) = withContext(dispatchers.io) {
+        database.settingRepository.saveSetting(SettingKey.LAST_DAY_RESET, date)
     }
 }

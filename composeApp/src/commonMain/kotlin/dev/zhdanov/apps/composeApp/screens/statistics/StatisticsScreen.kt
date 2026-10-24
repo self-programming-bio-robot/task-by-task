@@ -40,7 +40,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.math.max
@@ -82,98 +81,94 @@ fun StatisticsScreen() {
     // Calculate if we have enough space for the chart
     val hasSpaceForChart = availableHeightDp >= HEADER_HEIGHT + MIN_CHART_HEIGHT
 
-    AppPane(
-        color = MaterialTheme.colorScheme.primaryContainer,
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .onSizeChanged { size ->
+                val heightDp = with(density) { size.height.toDp() }
+                availableHeightDp = heightDp
+            },
+        verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
     ) {
-        Column(
+        // Period Selection
+        PeriodSelector(
+            selectedPeriod = selectedPeriod,
+            onPeriodChange = { viewModel.setPeriod(it) }
+        )
+
+        // Period Navigator
+        PeriodNavigator(
+            label = periodLabel,
+            isCurrentPeriod = periodOffset == 0,
+            onPrevious = { viewModel.goToPreviousPeriod() },
+            onNext = { viewModel.goToNextPeriod() },
+            onTodayClick = { viewModel.goToCurrentPeriod() }
+        )
+
+        // Statistics Cards
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .onSizeChanged { size ->
-                    val heightDp = with(density) { size.height.toDp() }
-                    availableHeightDp = heightDp
-                },
-            verticalArrangement = if (hasSpaceForChart) Arrangement.spacedBy(16.dp) else Arrangement.SpaceEvenly
+                .fillMaxWidth()
+                .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Period Selection
-            PeriodSelector(
-                selectedPeriod = selectedPeriod,
-                onPeriodChange = { viewModel.setPeriod(it) }
+            StatCard(
+                title = "Focus Time",
+                value = formatDuration(focusTimeData),
+                modifier = Modifier.weight(1f)
             )
-
-            // Period Navigator
-            PeriodNavigator(
-                label = periodLabel,
-                isCurrentPeriod = periodOffset == 0,
-                onPrevious = { viewModel.goToPreviousPeriod() },
-                onNext = { viewModel.goToNextPeriod() },
-                onTodayClick = { viewModel.goToCurrentPeriod() }
+            StatCard(
+                title = "Work Cycles",
+                value = workCyclesData.toString(),
+                modifier = Modifier.weight(1f)
             )
+            StatCard(
+                title = "Tasks Created",
+                value = tasksCreatedData.toString(),
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = "Tasks Done",
+                value = tasksDoneData.toString(),
+                modifier = Modifier.weight(1f)
+            )
+        }
 
-            // Statistics Cards
-            Row(
+        // Focus Time Chart - only show when height is sufficient
+        if (chartData.isNotEmpty() && hasSpaceForChart) {
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (!hasSpaceForChart) Modifier.weight(1f) else Modifier),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .weight(1f)
             ) {
-                StatCard(
-                    title = "Focus Time",
-                    value = formatDuration(focusTimeData),
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    title = "Work Cycles",
-                    value = workCyclesData.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    title = "Tasks Created",
-                    value = tasksCreatedData.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    title = "Tasks Done",
-                    value = tasksDoneData.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                // Calculate max columns based on available width at composition time
+                val availableWidth = maxWidth - 32.dp // Account for Card padding
+                val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
+                    .coerceIn(1, MAX_COLUMNS)
 
-            // Focus Time Chart - only show when height is sufficient
-            if (chartData.isNotEmpty() && hasSpaceForChart) {
-                BoxWithConstraints(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                // Update column count on initial composition and when constraints change
+                LaunchedEffect(maxColumns) {
+                    viewModel.updateColumnCount(maxColumns)
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    // Calculate max columns based on available width at composition time
-                    val availableWidth = maxWidth - 32.dp // Account for Card padding
-                    val maxColumns = (availableWidth / MIN_COLUMN_WIDTH).toInt()
-                        .coerceIn(1, MAX_COLUMNS)
-
-                    // Update column count on initial composition and when constraints change
-                    LaunchedEffect(maxColumns) {
-                        viewModel.updateColumnCount(maxColumns)
-                    }
-
-                    Card(
-                        modifier = Modifier.fillMaxSize()
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Focus Time (minutes)",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            SimpleBarChart(
-                                data = chartData,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                            )
-                        }
+                        Text(
+                            text = "Focus Time (minutes)",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        SimpleBarChart(
+                            data = chartData,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        )
                     }
                 }
             }

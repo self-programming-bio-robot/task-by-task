@@ -37,13 +37,21 @@ import dev.zhdanov.apps.composeApp.screens.history.DayDetailScreen
 import dev.zhdanov.apps.composeApp.screens.history.HistoryScreen
 import dev.zhdanov.apps.composeApp.screens.home.HomeScreen
 import dev.zhdanov.apps.composeApp.screens.home.TodayTasksPane
+import dev.zhdanov.apps.composeApp.screens.routines.RoutinesReportScreen
 import dev.zhdanov.apps.composeApp.screens.settings.SettingsDetailPlaceholder
 import dev.zhdanov.apps.composeApp.screens.settings.SettingsListPane
+import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsDetailPlaceholder
+import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsListPane
 import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsScreen
+import dev.zhdanov.apps.composeApp.screens.tasks.RoutineEditPane
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskEditPane
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListScreen
+import dev.zhdanov.apps.composeApp.screens.tasks.TaskRoutinesPane
+import dev.zhdanov.apps.composeApp.screens.tasks.TasksDetailPlaceholder
+import dev.zhdanov.apps.composeApp.screens.tasks.TasksListPane
 
 private const val SETTINGS_SCENE_KEY = "settings"
+private const val STATISTICS_SCENE_KEY = "statistics"
 private const val HOME_SCENE_KEY = "home"
 private const val HISTORY_SCENE_KEY = "history"
 private const val TASKS_SCENE_KEY = "tasks"
@@ -53,6 +61,14 @@ private val settingsDetailKeys = listOf<NavKey>(
     Screen.SettingsSecurity,
     Screen.SettingsTimers,
 )
+
+private val statisticsDetailKeys = listOf<NavKey>(
+    Screen.StatisticsFocus,
+    Screen.StatisticsRoutines,
+)
+
+private fun isTasksDetailKey(key: NavKey): Boolean =
+    key is Screen.TaskList || key == Screen.TaskRoutines
 
 private fun breadcrumbTitle(screen: Screen): String = when (screen) {
     is Screen.SettingsTimerEdit -> if (screen.timerId == null) "New timer" else "Edit timer"
@@ -159,7 +175,7 @@ fun MainNavGraph(
                             DayDetailScreen(
                                 date = key.date,
                                 onNavigateToTask = { taskId ->
-                                    viewModel.navigateTo(Screen.TaskList(initialTaskId = taskId))
+                                    viewModel.openTaskFromHistory(taskId)
                                 }
                             )
                         }
@@ -258,9 +274,26 @@ fun MainNavGraph(
                             }
                         }
 
+                        is Screen.Tasks -> NavEntry(
+                            key as NavKey,
+                            metadata = ListDetailSceneStrategy.listPane(
+                                sceneKey = TASKS_SCENE_KEY,
+                                detailPlaceholder = { TasksDetailPlaceholder() },
+                            )
+                        ) {
+                            AppPane(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                            ) {
+                                TasksListPane(
+                                    selected = viewModel.backStack.lastOrNull { isTasksDetailKey(it) } as? Screen,
+                                    onItemClick = { viewModel.selectTaskSection(it) },
+                                )
+                            }
+                        }
+
                         is Screen.TaskList -> NavEntry(
                             key as NavKey,
-                            metadata = SupportingPaneSceneStrategy.mainPane(TASKS_SCENE_KEY)
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = TASKS_SCENE_KEY)
                         ) {
                             TaskListScreen(
                                 initialTaskId = key.initialTaskId,
@@ -271,9 +304,18 @@ fun MainNavGraph(
                             )
                         }
 
+                        is Screen.TaskRoutines -> NavEntry(
+                            key as NavKey,
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = TASKS_SCENE_KEY)
+                        ) {
+                            TaskRoutinesPane(
+                                onRoutineClick = { viewModel.openRoutineDetails(it) }
+                            )
+                        }
+
                         is Screen.TaskEdit -> NavEntry(
                             key as NavKey,
-                            metadata = SupportingPaneSceneStrategy.supportingPane(TASKS_SCENE_KEY)
+                            metadata = ListDetailSceneStrategy.extraPane(sceneKey = TASKS_SCENE_KEY)
                         ) {
                             TaskEditPane(
                                 taskId = key.taskId,
@@ -281,8 +323,55 @@ fun MainNavGraph(
                             )
                         }
 
-                        is Screen.Statistics -> NavEntry(key as NavKey) {
-                            StatisticsScreen()
+                        is Screen.RoutineEdit -> NavEntry(
+                            key as NavKey,
+                            metadata = ListDetailSceneStrategy.extraPane(sceneKey = TASKS_SCENE_KEY)
+                        ) {
+                            RoutineEditPane(
+                                routineId = key.routineId,
+                                onDone = { viewModel.goBack() }
+                            )
+                        }
+
+                        is Screen.Statistics -> NavEntry(
+                            key as NavKey,
+                            metadata = ListDetailSceneStrategy.listPane(
+                                sceneKey = STATISTICS_SCENE_KEY,
+                                detailPlaceholder = { StatisticsDetailPlaceholder() },
+                            )
+                        ) {
+                            AppPane(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                            ) {
+                                StatisticsListPane(
+                                    selected = viewModel.backStack.lastOrNull { it in statisticsDetailKeys } as? Screen,
+                                    onItemClick = { viewModel.selectStatisticsSection(it) },
+                                )
+                            }
+                        }
+
+                        is Screen.StatisticsFocus -> NavEntry(
+                            key as NavKey,
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = STATISTICS_SCENE_KEY)
+                        ) {
+                            AppPane(
+                                title = key.title,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                StatisticsScreen()
+                            }
+                        }
+
+                        is Screen.StatisticsRoutines -> NavEntry(
+                            key as NavKey,
+                            metadata = ListDetailSceneStrategy.detailPane(sceneKey = STATISTICS_SCENE_KEY)
+                        ) {
+                            AppPane(
+                                title = key.title,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                RoutinesReportScreen()
+                            }
                         }
 
                         else -> NavEntry(key) {

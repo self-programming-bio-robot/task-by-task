@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -251,7 +252,16 @@ fun TodayTaskItem(
             onCheckedChange = { onToggleCompletion() },
             modifier = Modifier.testTag(UiTestTags.taskCompletion(task.id))
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        if (task.routineId != null) {
+            Icon(
+                imageVector = Icons.Default.Repeat,
+                contentDescription = "Routine task",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
         Text(
             text = task.title,
             style = MaterialTheme.typography.bodyLarge,

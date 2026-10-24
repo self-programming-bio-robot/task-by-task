@@ -1,6 +1,5 @@
 package dev.zhdanov.apps.shared.model
 
-
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -13,6 +12,8 @@ data class Task(
     val completedAt: LocalDateTime? = null,
     val isCompleted: Boolean = false,
     val isToday: Boolean = false,
+    val routineId: Long? = null,
+    val targetDate: Long? = null,
     val workspaceId: Long = DEFAULT_WORKSPACE_ID,
     val syncId: String = "",
     val updatedAt: Long = 0L,
@@ -23,5 +24,7 @@ data class Task(
 data class CreateTask(
     val title: String,
     val description: String? = null,
-    val isToday: Boolean? = null
+    val isToday: Boolean? = null,
+    val routineId: Long? = null,
+    val targetDate: Long? = null,
 )

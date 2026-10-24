@@ -37,7 +37,8 @@ class DaySummaryService(
     private val settingsService: AppSettingsService,
     private val schedulerService: SchedulerService,
     private val reviewClient: ReviewClient,
-    dispatchers: AppDispatchers
+    dispatchers: AppDispatchers,
+    private val routineDataService: RoutineDataService
 ) {
     val finishDayEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -45,6 +46,7 @@ class DaySummaryService(
 
     private val rolloverMutex = Mutex()
     private val finishAttempts = mutableMapOf<LocalDate, Int>()
+    private var lastSyncedRoutineDay: LocalDate? = null
 
     init {
         updateScheduler()
@@ -90,9 +92,16 @@ class DaySummaryService(
                 .forEach { tryFinishDay(it) }
 
             taskDataService.cleanTodayTaskList()
+            routineDataService.syncDailyRoutineTasks(currentDay)
+            lastSyncedRoutineDay = currentDay
             settingsService.saveLastDayReset(currentDay)
             finishDayEvents.emit(Unit)
             logger.i { "Processed day rollover: $lastProcessedDay -> $currentDay" }
+        } else if (lastSyncedRoutineDay != currentDay) {
+            runCatching {
+                routineDataService.syncDailyRoutineTasks(currentDay)
+                lastSyncedRoutineDay = currentDay
+            }.onFailure { logger.e(it) { "Failed to sync daily routine tasks" } }
         }
 
         if ((finishAttempts[previousDay] ?: 0) < MAX_FINISH_ATTEMPTS) {

@@ -2,6 +2,7 @@ package dev.zhdanov.apps.shared.cache
 
 import app.cash.sqldelight.db.QueryResult
 import com.diamondedge.logging.logging
+import dev.zhdanov.apps.shared.cache.repository.RoutineRepository
 import dev.zhdanov.apps.shared.cache.repository.SettingsRepository
 import dev.zhdanov.apps.shared.cache.repository.TaskRepository
 import dev.zhdanov.apps.shared.cache.repository.TimerSettingRepository
@@ -34,6 +35,7 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
 
     val timerSettingRepository = TimerSettingRepository(dbQuery)
     val taskRepository = TaskRepository(dbQuery)
+    val routineRepository = RoutineRepository(dbQuery)
     val settingRepository = SettingsRepository(dbQuery)
     val workspaceRepository = WorkspaceRepository(dbQuery)
 
@@ -56,6 +58,7 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
             }
             ensureLegacyCompatibility()
             ensureWorkspaceCompatibility()
+            deduplicateDaySummaries()
         } catch (e: Exception) {
             logger.e(e) { "Failed to migrate app database" }
             throw IllegalStateException("Failed to initialize app database", e)
@@ -80,7 +83,60 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         ensureColumn("FocusTime", "pauseTime", "INTEGER")
         ensureColumn("FocusTime", "taskId", "INTEGER")
         ensureColumn("DaySummary", "linkedTasks", "TEXT NOT NULL DEFAULT '[]'")
+        ensureColumn("Task", "routineId", "INTEGER")
+        ensureColumn("Task", "targetDate", "INTEGER")
         ensureFocusTimeTaskCrossRefTable()
+        ensureRoutineTable()
+    }
+
+    private fun ensureRoutineTable() {
+        driver.execute(
+            null,
+            """
+            CREATE TABLE IF NOT EXISTS Routine (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                scheduleType TEXT NOT NULL DEFAULT 'DAILY',
+                isActive INTEGER NOT NULL DEFAULT 1,
+                workspaceId INTEGER NOT NULL DEFAULT 1,
+                syncId TEXT NOT NULL DEFAULT '',
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL DEFAULT 0,
+                deletedAt INTEGER,
+                FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
+            )
+            """.trimIndent(),
+            0
+        )
+        if (tableExists("Task")) {
+            driver.execute(
+                null,
+                "CREATE INDEX IF NOT EXISTS idx_task_routine_date ON Task(workspaceId, routineId, targetDate)",
+                0
+            )
+        }
+    }
+
+    private fun deduplicateDaySummaries() {
+        if (!tableExists("DaySummary")) {
+            return
+        }
+        driver.execute(
+            null,
+            """
+            DELETE FROM DaySummary
+            WHERE rowid NOT IN (
+                SELECT MAX(rowid) FROM DaySummary GROUP BY workspaceId, date
+            )
+            """.trimIndent(),
+            0
+        )
+        driver.execute(
+            null,
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_day_summary_workspace_date ON DaySummary(workspaceId, date)",
+            0
+        )
     }
 
     private fun ensurePreMigrationCompatibility() {
@@ -512,9 +568,11 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         linkedTasks: String,
         workspaceId: Long = DEFAULT_WORKSPACE_ID
     ) {
+        val dateLong = date.toLong()
         dbQuery.transaction {
+            dbQuery.deleteDaySummaryOnDate(workspaceId = workspaceId, date = dateLong)
             dbQuery.insertDaySummary(
-                date = date.toLong(),
+                date = dateLong,
                 focusTime = focusTime,
                 review = review,
                 linkedTasks = linkedTasks,
@@ -529,6 +587,7 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         return dbQuery
             .selectAllDaySummaries(workspaceId, daySummaryMapper)
             .executeAsList()
+            .distinctBy { it.date }
     }
 
     fun getDaySummary(date: LocalDate, workspaceId: Long = DEFAULT_WORKSPACE_ID): DaySummary? {
@@ -541,6 +600,7 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         return dbQuery
             .selectAllDaySummaries(workspaceId, daySummaryRecordMapper)
             .executeAsList()
+            .distinctBy { it.date }
     }
 
     fun getDaySummaryRecord(

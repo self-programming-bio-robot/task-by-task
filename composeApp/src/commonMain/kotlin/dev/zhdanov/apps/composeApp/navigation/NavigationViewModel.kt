@@ -47,6 +47,37 @@ class NavigationViewModel : ViewModel() {
     }
 
     /**
+     * Selects a statistics section (detail pane), replacing any currently open
+     * section instead of accumulating them on the back stack.
+     */
+    fun selectStatisticsSection(section: Screen) {
+        popUntil { it == Screen.Statistics }
+        if (backStack.lastOrNull() != section) {
+            backStack.add(section)
+        }
+    }
+
+    /**
+     * Selects a task section (All Tasks or Routines), replacing any currently open
+     * section or extra pane instead of accumulating them on the back stack.
+     */
+    fun selectTaskSection(section: Screen) {
+        popUntil { it == Screen.Tasks }
+        if (backStack.lastOrNull() != section) {
+            backStack.add(section)
+        }
+    }
+
+    /**
+     * Navigates to the Tasks scene and opens a specific task for editing.
+     */
+    fun openTaskFromHistory(taskId: Long) {
+        backStack.clear()
+        backStack.add(Screen.Tasks)
+        backStack.add(Screen.TaskList(initialTaskId = taskId))
+    }
+
+    /**
      * Opens the timer editor in the extra pane. Replaces the current extra
      * pane if one is already open.
      */
@@ -62,10 +93,21 @@ class NavigationViewModel : ViewModel() {
      * already open.
      */
     fun openTaskDetails(taskId: Long) {
-        if (backStack.lastOrNull() is Screen.TaskEdit) {
+        if (backStack.lastOrNull() is Screen.TaskEdit || backStack.lastOrNull() is Screen.RoutineEdit) {
             backStack.removeLastOrNull()
         }
         backStack.add(Screen.TaskEdit(taskId))
+    }
+
+    /**
+     * Opens the routine template editor pane. Replaces the current editor if
+     * one is already open.
+     */
+    fun openRoutineDetails(routineId: Long) {
+        if (backStack.lastOrNull() is Screen.RoutineEdit || backStack.lastOrNull() is Screen.TaskEdit) {
+            backStack.removeLastOrNull()
+        }
+        backStack.add(Screen.RoutineEdit(routineId))
     }
 
     /**

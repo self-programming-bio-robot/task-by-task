@@ -56,7 +56,7 @@ val menuItems: List<Screen> = listOf(
     Screen.Home,
     Screen.Statistics,
     Screen.History,
-    Screen.TaskList(),
+    Screen.Tasks,
     Screen.Settings
 )
 

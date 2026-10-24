@@ -46,6 +46,9 @@ class AppDesktopSmokeUiTest {
         waitForTag(UiTestTags.HomeScreen)
 
         rule.onNodeWithTag(UiTestTags.navigationItem("Tasks")).performClick()
+        waitForTag(UiTestTags.TasksListPane)
+
+        rule.onNodeWithTag(UiTestTags.sectionItem("All Tasks")).performClick()
         waitForTag(UiTestTags.TaskListScreen)
 
         rule.onNodeWithTag(UiTestTags.NewTaskInput).performTextInput("Smoke task")
@@ -86,6 +89,33 @@ class AppDesktopSmokeUiTest {
             rule.onAllNodesWithText("Work Duration:", substring = true)
                 .fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun routinesCreateDailyTaskAndAppearInStatisticsMatrix() {
+        rule.setContent {
+            App()
+        }
+
+        rule.onNodeWithTag(UiTestTags.AppRoot).assertExists()
+        waitForTag(UiTestTags.HomeScreen)
+
+        rule.onNodeWithTag(UiTestTags.navigationItem("Tasks")).performClick()
+        waitForTag(UiTestTags.TasksListPane)
+
+        rule.onNodeWithTag(UiTestTags.sectionItem("Routines")).performClick()
+        waitForTag(UiTestTags.TaskRoutinesScreen)
+
+        rule.onNodeWithTag(UiTestTags.NewRoutineInput).performTextInput("Morning Exercise")
+        rule.onNodeWithTag(UiTestTags.AddRoutineButton).performClick()
+        waitForText("Morning Exercise")
+
+        rule.onNodeWithTag(UiTestTags.navigationItem("Statistics")).performClick()
+        waitForTag(UiTestTags.StatisticsListPane)
+
+        rule.onNodeWithTag(UiTestTags.sectionItem("Routines")).performClick()
+        waitForTag(UiTestTags.RoutinesReportScreen)
+        waitForText("Morning Exercise")
     }
 
     private fun waitForTag(tag: String) {

@@ -158,6 +158,8 @@ class DaySummaryServiceTest {
         )
         val settingsService = AppSettingsService(database, dispatchers, workspaceSessionService)
         val taskDataService = TaskDataService(database, dispatchers, workspaceSessionService)
+        val routineDataService =
+            RoutineDataService(database, dispatchers, workspaceSessionService, settingsService)
         val focusSessionDataService =
             FocusSessionDataService(database, dispatchers, workspaceSessionService)
         val daySummaryDataService =
@@ -170,12 +172,14 @@ class DaySummaryServiceTest {
             settingsService = settingsService,
             schedulerService = schedulerService,
             reviewClient = FakeReviewClient(),
-            dispatchers = dispatchers
+            dispatchers = dispatchers,
+            routineDataService = routineDataService
         )
 
         return Fixture(
             settingsService = settingsService,
             taskDataService = taskDataService,
+            routineDataService = routineDataService,
             focusSessionDataService = focusSessionDataService,
             daySummaryDataService = daySummaryDataService,
             daySummaryService = daySummaryService,
@@ -187,6 +191,7 @@ class DaySummaryServiceTest {
 private data class Fixture(
     val settingsService: AppSettingsService,
     val taskDataService: TaskDataService,
+    val routineDataService: RoutineDataService,
     val focusSessionDataService: FocusSessionDataService,
     val daySummaryDataService: DaySummaryDataService,
     val daySummaryService: DaySummaryService,

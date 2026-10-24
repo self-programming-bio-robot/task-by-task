@@ -16,15 +16,29 @@ class TaskRepository(private val database: AppDatabaseQueries) {
 
     fun addTask(task: CreateTask, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
         val now = Clock.System.now().toEpochMilliseconds()
-        database.insertTask(
-            title = task.title,
-            description = task.description,
-            isToday = task.isToday == true,
-            createdAt = now,
-            workspaceId = workspaceId,
-            syncId = Uuid.random().toString(),
-            updatedAt = now
-        )
+        if (task.routineId != null) {
+            database.insertTaskWithRoutine(
+                title = task.title,
+                description = task.description,
+                isToday = task.isToday == true,
+                routineId = task.routineId,
+                targetDate = task.targetDate,
+                createdAt = now,
+                workspaceId = workspaceId,
+                syncId = Uuid.random().toString(),
+                updatedAt = now
+            )
+        } else {
+            database.insertTask(
+                title = task.title,
+                description = task.description,
+                isToday = task.isToday == true,
+                createdAt = now,
+                workspaceId = workspaceId,
+                syncId = Uuid.random().toString(),
+                updatedAt = now
+            )
+        }
     }
 
     fun completeTask(id: Long, workspaceId: Long = DEFAULT_WORKSPACE_ID) {
@@ -71,5 +85,45 @@ class TaskRepository(private val database: AppDatabaseQueries) {
 
     fun selectAllTodayTasks(workspaceId: Long = DEFAULT_WORKSPACE_ID): List<Task> {
         return database.selectTodayTasks(workspaceId, taskMapper).executeAsList()
+    }
+
+    fun attachTaskToRoutine(
+        taskId: Long,
+        routineId: Long,
+        targetDate: Long,
+        isToday: Boolean = true,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ) {
+        database.updateTaskRoutine(
+            routineId = routineId,
+            targetDate = targetDate,
+            isToday = isToday,
+            updatedAt = Clock.System.now().toEpochMilliseconds(),
+            workspaceId = workspaceId,
+            id = taskId
+        )
+    }
+
+    fun getTaskByRoutineAndDate(
+        routineId: Long,
+        targetDate: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): Task? {
+        return database.selectTaskByRoutineAndDate(workspaceId, routineId, targetDate, taskMapper).executeAsOneOrNull()
+    }
+
+    fun getRoutineTasksInPeriod(
+        from: Long,
+        to: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): List<Task> {
+        return database.selectRoutineTasksInPeriod(workspaceId, from, to, taskMapper).executeAsList()
+    }
+
+    fun getCompletedRoutineTasksUpToDate(
+        to: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): List<Task> {
+        return database.selectCompletedRoutineTasksUpToDate(workspaceId, to, taskMapper).executeAsList()
     }
 }

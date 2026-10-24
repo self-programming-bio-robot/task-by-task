@@ -52,9 +52,33 @@ class TaskDataService(
         )
     }
 
+    suspend fun deleteTask(id: Long) = withContext(dispatchers.io) {
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.taskRepository.deleteTask(
+            id = id,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
+        )
+    }
+
     suspend fun cleanTodayTaskList() = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.taskRepository.cleanTodayTaskList(workspaceSessionService.requireCurrentWorkspaceId())
+    }
+
+    suspend fun attachTaskToRoutine(
+        taskId: Long,
+        routineId: Long,
+        targetDate: Long,
+        isToday: Boolean = true
+    ) = withContext(dispatchers.io) {
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.taskRepository.attachTaskToRoutine(
+            taskId = taskId,
+            routineId = routineId,
+            targetDate = targetDate,
+            isToday = isToday,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
+        )
     }
 
     private fun decryptTask(task: Task): Task {

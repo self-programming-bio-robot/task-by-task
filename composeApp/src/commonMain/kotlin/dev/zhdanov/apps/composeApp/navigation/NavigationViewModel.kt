@@ -93,7 +93,7 @@ class NavigationViewModel : ViewModel() {
      * already open.
      */
     fun openTaskDetails(taskId: Long) {
-        if (backStack.lastOrNull() is Screen.TaskEdit || backStack.lastOrNull() is Screen.RoutineEdit) {
+        if (backStack.lastOrNull() is Screen.TaskEdit) {
             backStack.removeLastOrNull()
         }
         backStack.add(Screen.TaskEdit(taskId))
@@ -104,7 +104,7 @@ class NavigationViewModel : ViewModel() {
      * one is already open.
      */
     fun openRoutineDetails(routineId: Long) {
-        if (backStack.lastOrNull() is Screen.RoutineEdit || backStack.lastOrNull() is Screen.TaskEdit) {
+        if (backStack.lastOrNull() is Screen.RoutineEdit) {
             backStack.removeLastOrNull()
         }
         backStack.add(Screen.RoutineEdit(routineId))

@@ -568,11 +568,10 @@ class Database(databaseDriverFactory: DatabaseDriverFactory) {
         linkedTasks: String,
         workspaceId: Long = DEFAULT_WORKSPACE_ID
     ) {
-        val dateLong = date.toLong()
         dbQuery.transaction {
-            dbQuery.deleteDaySummaryOnDate(workspaceId = workspaceId, date = dateLong)
+            dbQuery.deleteDaySummaryOnDate(workspaceId = workspaceId, date = date.toLong())
             dbQuery.insertDaySummary(
-                date = dateLong,
+                date = date.toLong(),
                 focusTime = focusTime,
                 review = review,
                 linkedTasks = linkedTasks,

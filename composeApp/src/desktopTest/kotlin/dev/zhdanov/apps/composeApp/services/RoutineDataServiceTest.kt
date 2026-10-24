@@ -93,8 +93,8 @@ class RoutineDataServiceTest {
 
     @Test
     fun `getRoutineMatrixReport calculates cells across periods and full streak beyond period window`() = runTest {
-        val (database, _, routineService) = createServices()
-        val today = routineService.currentLogicalDay()
+        val (database, _, routineService, logicalDayService) = createServices()
+        val today = logicalDayService.currentLogicalDay()
         val routineId = database.routineRepository.addRoutine(
             CreateRoutine(title = "Stretch")
         )
@@ -127,7 +127,14 @@ class RoutineDataServiceTest {
         assertEquals(CellStatus.PENDING, weekReport.cells.last().status)
     }
 
-    private fun createServices(): Triple<Database, TaskDataService, RoutineDataService> {
+    private data class ServicesFixture(
+        val database: Database,
+        val taskService: TaskDataService,
+        val routineService: RoutineDataService,
+        val logicalDayService: LogicalDayService
+    )
+
+    private fun createServices(): ServicesFixture {
         val database = Database(object : DatabaseDriverFactory {
             override fun createDriver(): SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         })
@@ -137,13 +144,14 @@ class RoutineDataServiceTest {
             default = UnconfinedTestDispatcher()
         )
         val settingsService = AppSettingsService(database, dispatchers, workspaceSessionService)
+        val logicalDayService = LogicalDayService(settingsService)
         val taskDataService = TaskDataService(database, dispatchers, workspaceSessionService)
         val routineDataService = RoutineDataService(
             database = database,
             dispatchers = dispatchers,
             workspaceSessionService = workspaceSessionService,
-            settingsService = settingsService
+            logicalDayService = logicalDayService
         )
-        return Triple(database, taskDataService, routineDataService)
+        return ServicesFixture(database, taskDataService, routineDataService, logicalDayService)
     }
 }

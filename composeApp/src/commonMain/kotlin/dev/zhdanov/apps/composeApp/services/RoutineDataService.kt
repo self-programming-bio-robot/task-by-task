@@ -5,20 +5,13 @@ import dev.zhdanov.apps.shared.model.CreateRoutine
 import dev.zhdanov.apps.shared.model.CreateTask
 import dev.zhdanov.apps.shared.model.Routine
 import dev.zhdanov.apps.shared.model.Task
-import dev.zhdanov.apps.shared.utils.toDuration
 import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 enum class RoutinePeriod(val days: Int, val title: String) {
     WEEK(7, "Week"),
@@ -46,26 +39,13 @@ data class RoutineReportRow(
     val currentStreak: Int
 )
 
-@OptIn(ExperimentalTime::class)
 class RoutineDataService(
     private val database: Database,
     private val dispatchers: AppDispatchers,
     private val workspaceSessionService: WorkspaceSessionService,
-    private val settingsService: AppSettingsService? = null
+    private val logicalDayService: LogicalDayService
 ) {
     val routineEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-
-    suspend fun currentLogicalDay(now: Instant = Clock.System.now()): LocalDate {
-        val shift = settingsService?.getStartOfDay()?.toDuration()
-        val adjusted = if (shift != null) now.minus(shift) else now
-        return adjusted.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    }
-
-    private suspend fun routineCreatedLogicalDate(routine: Routine): LocalDate {
-        val timeZone = TimeZone.currentSystemDefault()
-        val shift = settingsService?.getStartOfDay()?.toDuration() ?: return routine.createdAt.date
-        return routine.createdAt.toInstant(timeZone).minus(shift).toLocalDateTime(timeZone).date
-    }
 
     suspend fun getAllRoutines(): List<Routine> = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
@@ -102,7 +82,7 @@ class RoutineDataService(
             workspaceId = workspaceId
         )
 
-        val today = currentDate ?: currentLogicalDay()
+        val today = currentDate ?: logicalDayService.currentLogicalDay()
         ensureRoutineTaskForDate(
             routineId = routineId,
             encryptedTitle = encryptedTitle,
@@ -134,7 +114,7 @@ class RoutineDataService(
             workspaceId = workspaceId
         )
 
-        val today = currentDate ?: currentLogicalDay()
+        val today = currentDate ?: logicalDayService.currentLogicalDay()
         database.taskRepository.attachTaskToRoutine(
             taskId = task.id,
             routineId = routineId,
@@ -162,7 +142,7 @@ class RoutineDataService(
         )
         database.routineRepository.updateRoutine(encryptedRoutine, workspaceId)
 
-        val today = currentDate ?: currentLogicalDay()
+        val today = currentDate ?: logicalDayService.currentLogicalDay()
         val existingTodayTask = database.taskRepository.getTaskByRoutineAndDate(
             routineId = routine.id,
             targetDate = today.toLong(),
@@ -199,7 +179,7 @@ class RoutineDataService(
         val newActive = !routine.isActive
         database.routineRepository.updateRoutine(routine.copy(isActive = newActive), workspaceId)
         if (newActive) {
-            val today = currentDate ?: currentLogicalDay()
+            val today = currentDate ?: logicalDayService.currentLogicalDay()
             ensureRoutineTaskForDate(
                 routineId = routine.id,
                 encryptedTitle = routine.title,
@@ -226,10 +206,10 @@ class RoutineDataService(
         val activeRoutines = database.routineRepository.getActiveRoutines(workspaceId)
         if (activeRoutines.isEmpty()) return@withContext
 
-        val today = currentDate ?: currentLogicalDay()
+        val today = currentDate ?: logicalDayService.currentLogicalDay()
         var createdAny = false
         for (routine in activeRoutines) {
-            val createdDate = routineCreatedLogicalDate(routine)
+            val createdDate = logicalDayService.logicalDayFor(routine.createdAt)
             if (createdDate <= today) {
                 val created = ensureRoutineTaskForDate(
                     routineId = routine.id,
@@ -281,7 +261,7 @@ class RoutineDataService(
         val routines = database.routineRepository.getAllRoutines(workspaceId).map(::decryptRoutine)
         if (routines.isEmpty()) return@withContext emptyList()
 
-        val today = currentDate ?: currentLogicalDay()
+        val today = currentDate ?: logicalDayService.currentLogicalDay()
         val endDate = today.plus(periodOffset * period.days, DateTimeUnit.DAY)
         val startDate = endDate.minus(period.days - 1, DateTimeUnit.DAY)
         val startLong = startDate.toLong()
@@ -296,7 +276,7 @@ class RoutineDataService(
             .mapValues { (_, dates) -> dates.filterNotNull().toSet() }
 
         routines.map { routine ->
-            val createdDate = routineCreatedLogicalDate(routine)
+            val createdDate = logicalDayService.logicalDayFor(routine.createdAt)
             val cells = mutableListOf<RoutineMatrixCell>()
             var activeDaysCount = 0
             var completedDaysCount = 0

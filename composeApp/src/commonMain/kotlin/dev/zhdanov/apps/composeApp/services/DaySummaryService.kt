@@ -38,7 +38,8 @@ class DaySummaryService(
     private val schedulerService: SchedulerService,
     private val reviewClient: ReviewClient,
     dispatchers: AppDispatchers,
-    private val routineDataService: RoutineDataService
+    private val routineDataService: RoutineDataService,
+    private val logicalDayService: LogicalDayService
 ) {
     val finishDayEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -189,10 +190,7 @@ class DaySummaryService(
     }
 
     private suspend fun dayDateFor(currentDateTime: Instant) =
-        currentDateTime
-            .minus(settingsService.getStartOfDay().toDuration())
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date
+        logicalDayService.currentLogicalDay(currentDateTime)
 
     private suspend fun buildLinkedTasks(focusTimes: List<FocusTime>): List<TaskSummary> {
         val knownTaskTitles = taskDataService.getAllTasks()

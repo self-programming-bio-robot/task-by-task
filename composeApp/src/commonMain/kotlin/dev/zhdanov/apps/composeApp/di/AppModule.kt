@@ -11,6 +11,7 @@ import dev.zhdanov.apps.composeApp.screens.home.HomeViewModel
 import dev.zhdanov.apps.composeApp.screens.routines.RoutinesReportViewModel
 import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsViewModel
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
+import dev.zhdanov.apps.composeApp.screens.tasks.TaskRoutinesViewModel
 import dev.zhdanov.apps.composeApp.services.AppDispatchers
 import dev.zhdanov.apps.composeApp.services.AppSettingsService
 import dev.zhdanov.apps.composeApp.services.ChatClient
@@ -20,6 +21,7 @@ import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.composeApp.services.FocusSessionDataService
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.HistoryService
+import dev.zhdanov.apps.composeApp.services.LogicalDayService
 import dev.zhdanov.apps.composeApp.services.OpenAIChatClient
 import dev.zhdanov.apps.composeApp.services.OpenAIReviewClient
 import dev.zhdanov.apps.composeApp.services.ReviewClient
@@ -38,6 +40,7 @@ val appModule = module {
     single { AppDispatchers() }
     single { WorkspaceSessionService(get(), get()) }
     single { AppSettingsService(get(), get(), get()) }
+    single { LogicalDayService(get()) }
     single { TaskDataService(get(), get(), get()) }
     single { RoutineDataService(get(), get(), get(), get()) }
     single { FocusSessionDataService(get(), get(), get()) }
@@ -46,7 +49,7 @@ val appModule = module {
     single { HistoryService(get(), get(), get(), get()) }
     single<ReviewClient> { OpenAIReviewClient() }
     single<ChatClient> { OpenAIChatClient() }
-    single { DaySummaryService(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { DaySummaryService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { TimerSettingsService(get(), get()) }
     single { FocusTaskService() }
     single { ChatService(get(), get(), get()) }
@@ -62,7 +65,8 @@ val appModule = module {
     viewModel { TimersSettingsViewModel(get()) }
     viewModel { EditableTimerSettingsViewModel(get()) }
     viewModel { TaskListViewModel(get(), get(), get()) }
-    viewModel { RoutinesReportViewModel(get(), get()) }
+    viewModel { TaskRoutinesViewModel(get(), get()) }
+    viewModel { RoutinesReportViewModel(get(), get(), get()) }
 }
 
 expect val platformModule: Module

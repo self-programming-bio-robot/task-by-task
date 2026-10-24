@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
 import dev.zhdanov.apps.composeApp.services.RoutineDataService
 import dev.zhdanov.apps.composeApp.services.TaskDataService
-import dev.zhdanov.apps.shared.model.Routine
 import dev.zhdanov.apps.shared.model.Task
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 class TaskListViewModel(
     private val taskDataService: TaskDataService,
-    private val daySummaryService: DaySummaryService,
+    daySummaryService: DaySummaryService,
     private val routineDataService: RoutineDataService
 ) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
@@ -25,20 +25,14 @@ class TaskListViewModel(
     val tasks = _tasks.asStateFlow()
     val todayTask = _tasks.map { tasks -> tasks.filter { it.isToday } }
 
-    private val _routines = MutableStateFlow<List<Routine>>(emptyList())
-    val routines = _routines.asStateFlow()
-
     init {
         loadTasks()
-        loadRoutines()
-        merge(
+        val refreshEvents: Flow<Unit> = merge(
             daySummaryService.finishDayEvents,
             routineDataService.routineEvents
         )
-            .onEach {
-                loadTasks()
-                loadRoutines()
-            }
+        refreshEvents
+            .onEach { loadTasks() }
             .launchIn(viewModelScope)
     }
 
@@ -50,12 +44,6 @@ class TaskListViewModel(
                     { !it.isToday },
                 )
             )
-        }
-    }
-
-    fun loadRoutines() {
-        viewModelScope.launch {
-            _routines.value = routineDataService.getAllRoutines()
         }
     }
 
@@ -104,45 +92,10 @@ class TaskListViewModel(
         }
     }
 
-    fun addNewRoutine(title: String, description: String? = null) {
-        val trimmedTitle = title.trim()
-        if (trimmedTitle.isNotEmpty()) {
-            viewModelScope.launch {
-                routineDataService.addRoutine(trimmedTitle, description)
-                loadTasks()
-                loadRoutines()
-            }
-        }
-    }
-
-    fun updateRoutine(routine: Routine) {
-        viewModelScope.launch {
-            routineDataService.updateRoutine(routine)
-            loadTasks()
-            loadRoutines()
-        }
-    }
-
-    fun toggleRoutineActive(id: Long) {
-        viewModelScope.launch {
-            routineDataService.toggleRoutineActive(id)
-            loadTasks()
-            loadRoutines()
-        }
-    }
-
-    fun deleteRoutine(id: Long) {
-        viewModelScope.launch {
-            routineDataService.deleteRoutine(id)
-            loadRoutines()
-        }
-    }
-
     fun convertTaskToRoutine(task: Task) {
         viewModelScope.launch {
             routineDataService.convertTaskToRoutine(task)
             loadTasks()
-            loadRoutines()
         }
     }
 }

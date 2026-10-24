@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.zhdanov.apps.composeApp.services.CellStatus
@@ -54,10 +57,16 @@ import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
+private val MATRIX_ROW_HEIGHT = 44.dp
+private val MATRIX_HEADER_HEIGHT = 36.dp
+private val MIN_TITLE_COLUMN_WIDTH = 120.dp
+private val MAX_TITLE_COLUMN_WIDTH = 180.dp
+
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun RoutinesReportScreen() {
     val viewModel: RoutinesReportViewModel = koinViewModel()
+    val isLoading by viewModel.isLoading.collectAsState()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
     val periodOffset by viewModel.periodOffset.collectAsState()
     val periodLabel by viewModel.periodLabel.collectAsState()
@@ -84,21 +93,36 @@ fun RoutinesReportScreen() {
             onTodayClick = { viewModel.goToCurrentPeriod() }
         )
 
-        if (reportRows.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No routines created yet. Add routines in Tasks screen.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        when {
+            isLoading && reportRows.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
-        } else {
-            RoutineMatrixGrid(reportRows = reportRows)
+
+            reportRows.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No routines created yet. Add routines in Tasks screen.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            else -> {
+                RoutineMatrixGrid(reportRows = reportRows)
+            }
         }
     }
 }
@@ -200,81 +224,120 @@ internal fun RoutineMatrixGrid(
     reportRows: List<RoutineReportRow>
 ) {
     val horizontalScrollState = rememberScrollState()
+    val dates = reportRows.firstOrNull()?.cells?.map { it.date }.orEmpty()
 
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            val dates = reportRows.firstOrNull()?.cells?.map { it.date }.orEmpty()
-
-            Row(
+            // Left column: pinned routine titles with constrained width
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(horizontalScrollState)
+                    .widthIn(min = MIN_TITLE_COLUMN_WIDTH, max = MAX_TITLE_COLUMN_WIDTH)
+                    .padding(end = 12.dp)
             ) {
-                Spacer(modifier = Modifier.width(160.dp))
+                Box(
+                    modifier = Modifier.height(MATRIX_HEADER_HEIGHT),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "Routine",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                dates.forEach { date ->
-                    DateHeaderCell(date = date)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                reportRows.forEach { row ->
+                    RoutineInfoCell(
+                        row = row,
+                        modifier = Modifier.height(MATRIX_ROW_HEIGHT)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            reportRows.forEach { row ->
+            // Right column: horizontally scrollable date headers and matrix cells
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(horizontalScrollState)
+            ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                        .horizontalScroll(horizontalScrollState),
+                    modifier = Modifier.height(MATRIX_HEADER_HEIGHT),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .width(160.dp)
-                            .padding(end = 8.dp)
-                    ) {
-                        Text(
-                            text = row.routine.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (row.currentStreak > 0) {
-                                Icon(
-                                    imageVector = Icons.Default.LocalFireDepartment,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "${row.currentStreak} day streak",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                Text(
-                                    text = "${(row.completionRate * 100).toInt()}% completed",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    row.cells.forEach { cell ->
-                        MatrixSquareCell(
-                            routineId = row.routine.id,
-                            cell = cell
-                        )
+                    dates.forEach { date ->
+                        DateHeaderCell(date = date)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                reportRows.forEach { row ->
+                    Row(
+                        modifier = Modifier.height(MATRIX_ROW_HEIGHT),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        row.cells.forEach { cell ->
+                            MatrixSquareCell(
+                                routineId = row.routine.id,
+                                cell = cell
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoutineInfoCell(
+    row: RoutineReportRow,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = row.routine.title,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (row.currentStreak > 0) {
+                Icon(
+                    imageVector = Icons.Default.LocalFireDepartment,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "${row.currentStreak} day streak",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Text(
+                    text = "${(row.completionRate * 100).toInt()}% completed",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

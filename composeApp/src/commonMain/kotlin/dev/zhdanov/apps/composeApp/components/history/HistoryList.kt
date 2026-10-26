@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +38,8 @@ fun HistoryList(
     items: List<DaySummary>,
     onDayClick: (DaySummary) -> Unit = {}
 ) {
-    if (items.isEmpty()) {
+    val uniqueItems = remember(items) { items.distinctBy { it.date } }
+    if (uniqueItems.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -51,7 +53,7 @@ fun HistoryList(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(items, key = { it.date }) { item ->
+            items(uniqueItems, key = { it.date }) { item ->
                 ListItemView(item, onClick = { onDayClick(item) })
             }
         }

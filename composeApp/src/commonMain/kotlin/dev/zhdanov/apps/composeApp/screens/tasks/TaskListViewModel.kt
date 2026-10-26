@@ -3,18 +3,22 @@ package dev.zhdanov.apps.composeApp.screens.tasks
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.zhdanov.apps.composeApp.services.DaySummaryService
+import dev.zhdanov.apps.composeApp.services.RoutineDataService
 import dev.zhdanov.apps.composeApp.services.TaskDataService
 import dev.zhdanov.apps.shared.model.Task
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class TaskListViewModel(
     private val taskDataService: TaskDataService,
-    private val daySummaryService: DaySummaryService
+    daySummaryService: DaySummaryService,
+    private val routineDataService: RoutineDataService
 ) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
 
@@ -23,17 +27,21 @@ class TaskListViewModel(
 
     init {
         loadTasks()
-        daySummaryService.finishDayEvents
+        val refreshEvents: Flow<Unit> = merge(
+            daySummaryService.finishDayEvents,
+            routineDataService.routineEvents
+        )
+        refreshEvents
             .onEach { loadTasks() }
             .launchIn(viewModelScope)
     }
 
-    private fun loadTasks() {
+    fun loadTasks() {
         viewModelScope.launch {
             _tasks.value = taskDataService.getAllTasks().sortedWith(
                 compareBy(
                     { it.isCompleted },
-                    { it.createdAt }
+                    { !it.isToday },
                 )
             )
         }
@@ -70,9 +78,23 @@ class TaskListViewModel(
         }
     }
 
-    fun updateTask(updatedTask: Task) {
+    fun updateTask(task: Task) {
         viewModelScope.launch {
-            taskDataService.updateTask(updatedTask)
+            taskDataService.updateTask(task)
+            loadTasks()
+        }
+    }
+
+    fun deleteTask(id: Long) {
+        viewModelScope.launch {
+            taskDataService.deleteTask(id)
+            loadTasks()
+        }
+    }
+
+    fun convertTaskToRoutine(task: Task) {
+        viewModelScope.launch {
+            routineDataService.convertTaskToRoutine(task)
             loadTasks()
         }
     }

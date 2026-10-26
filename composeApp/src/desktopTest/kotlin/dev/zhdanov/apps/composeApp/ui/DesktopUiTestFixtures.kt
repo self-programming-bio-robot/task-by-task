@@ -12,8 +12,10 @@ import dev.zhdanov.apps.composeApp.notification.NotificationService
 import dev.zhdanov.apps.composeApp.screens.finishedDay.FinishedDayViewModel
 import dev.zhdanov.apps.composeApp.screens.history.HistoryViewModel
 import dev.zhdanov.apps.composeApp.screens.home.HomeViewModel
+import dev.zhdanov.apps.composeApp.screens.routines.RoutinesReportViewModel
 import dev.zhdanov.apps.composeApp.screens.statistics.StatisticsViewModel
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
+import dev.zhdanov.apps.composeApp.screens.tasks.TaskRoutinesViewModel
 import dev.zhdanov.apps.composeApp.services.AppDispatchers
 import dev.zhdanov.apps.composeApp.services.AppSettingsService
 import dev.zhdanov.apps.composeApp.services.ChatClient
@@ -25,7 +27,9 @@ import dev.zhdanov.apps.composeApp.services.FocusSessionDataService
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.HistoryService
 import dev.zhdanov.apps.composeApp.services.JvmWorkspaceCryptoService
+import dev.zhdanov.apps.composeApp.services.LogicalDayService
 import dev.zhdanov.apps.composeApp.services.ReviewClient
+import dev.zhdanov.apps.composeApp.services.RoutineDataService
 import dev.zhdanov.apps.composeApp.services.SchedulerAction
 import dev.zhdanov.apps.composeApp.services.SchedulerService
 import dev.zhdanov.apps.composeApp.services.StatisticsDataService
@@ -64,14 +68,16 @@ internal fun startDesktopUiTestKoin() {
                 single<WorkspaceCryptoService> { JvmWorkspaceCryptoService() }
                 single { WorkspaceSessionService(get(), get()) }
                 single { AppSettingsService(get(), get(), get()) }
+                single { LogicalDayService(get()) }
                 single { TaskDataService(get(), get(), get()) }
+                single { RoutineDataService(get(), get(), get(), get()) }
                 single { FocusSessionDataService(get(), get(), get()) }
                 single { DaySummaryDataService(get(), get(), get()) }
                 single { StatisticsDataService(get(), get()) }
                 single { HistoryService(get(), get(), get(), get()) }
                 single<ReviewClient> { FakeReviewClient() }
                 single<ChatClient> { FakeChatClient() }
-                single { DaySummaryService(get(), get(), get(), get(), get(), get(), get()) }
+                single { DaySummaryService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
                 single { TimerSettingsService(get(), get()) }
                 single { FocusTaskService() }
                 single { ChatService(get(), get(), get()) }
@@ -86,7 +92,9 @@ internal fun startDesktopUiTestKoin() {
                 viewModel { HistoryViewModel(get()) }
                 viewModel { TimersSettingsViewModel(get()) }
                 viewModel { EditableTimerSettingsViewModel(get()) }
-                viewModel { TaskListViewModel(get(), get()) }
+                viewModel { TaskListViewModel(get(), get(), get()) }
+                viewModel { TaskRoutinesViewModel(get(), get()) }
+                viewModel { RoutinesReportViewModel(get(), get(), get()) }
             }
         )
     }

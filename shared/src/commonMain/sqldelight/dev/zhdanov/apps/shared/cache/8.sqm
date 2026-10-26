@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS Routine (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    scheduleType TEXT NOT NULL DEFAULT 'DAILY',
+    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
+);
+
+ALTER TABLE Task ADD COLUMN routineId INTEGER;
+ALTER TABLE Task ADD COLUMN targetDate INTEGER;
+CREATE INDEX IF NOT EXISTS idx_task_routine_date ON Task(workspaceId, routineId, targetDate);
+
+DELETE FROM DaySummary
+WHERE rowid NOT IN (
+    SELECT MAX(rowid) FROM DaySummary GROUP BY workspaceId, date
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_day_summary_workspace_date ON DaySummary(workspaceId, date);
+
+PRAGMA user_version = 9;

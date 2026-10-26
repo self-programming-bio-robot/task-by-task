@@ -53,14 +53,25 @@ sealed class Screen(
     data object TodayTasks : Screen("For today")
 
     @Serializable
+    data object Tasks : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)
+
+    @Serializable
     data class TaskList(
         val initialTaskId: Long? = null
-    ) : Screen("Tasks", Icons.AutoMirrored.Sharp.ListAlt)
+    ) : Screen("All Tasks")
+
+    @Serializable
+    data object TaskRoutines : Screen("Routines")
 
     @Serializable
     data class TaskEdit(
         val taskId: Long
     ) : Screen("Edit task")
+
+    @Serializable
+    data class RoutineEdit(
+        val routineId: Long
+    ) : Screen("Edit routine")
 
     @Serializable
     data class Feedback(
@@ -70,6 +81,12 @@ sealed class Screen(
 
     @Serializable
     data object Statistics : Screen("Statistics", Icons.Sharp.BarChart)
+
+    @Serializable
+    data object StatisticsFocus : Screen("Focus Statistics")
+
+    @Serializable
+    data object StatisticsRoutines : Screen("Routines")
 
     @Serializable
     data class DayDetail(
@@ -83,7 +100,8 @@ sealed class Screen(
         is SettingsGeneral, is SettingsSecurity, is SettingsTimers, is SettingsTimerEdit -> Settings
         is DayDetail, is FinishedDay -> History
         is TodayTasks, is Feedback -> Home
-        is TaskEdit -> TaskList()
+        is TaskList, is TaskEdit, is TaskRoutines, is RoutineEdit -> Tasks
+        is StatisticsFocus, is StatisticsRoutines -> Statistics
         else -> this
     }
 }

@@ -149,6 +149,12 @@ CREATE TABLE IF NOT EXISTS DaySummary (
     FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_day_summary_workspace_date ON DaySummary(workspaceId, date);
+
+deleteDaySummaryOnDate:
+DELETE FROM DaySummary
+WHERE workspaceId = ? AND date = ?;
+
 insertDaySummary:
 INSERT INTO DaySummary (
     date,
@@ -252,6 +258,59 @@ SELECT * FROM Settings WHERE settingKey = ?;
 deleteSetting:
 DELETE FROM Settings WHERE settingKey = ?;
 
+-- Routines
+
+CREATE TABLE IF NOT EXISTS Routine (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    scheduleType TEXT NOT NULL DEFAULT 'DAILY',
+    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
+);
+
+insertRoutine:
+INSERT INTO Routine (
+    title,
+    description,
+    scheduleType,
+    isActive,
+    createdAt,
+    workspaceId,
+    syncId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAllRoutines:
+SELECT * FROM Routine
+WHERE workspaceId = ? AND deletedAt IS NULL
+ORDER BY createdAt DESC;
+
+selectActiveRoutines:
+SELECT * FROM Routine
+WHERE workspaceId = ? AND deletedAt IS NULL AND isActive = 1
+ORDER BY createdAt DESC;
+
+selectRoutineById:
+SELECT * FROM Routine
+WHERE workspaceId = ? AND deletedAt IS NULL AND id = ?;
+
+updateRoutine:
+UPDATE Routine
+SET title = ?, description = ?, scheduleType = ?, isActive = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
+
+softDeleteRoutine:
+UPDATE Routine
+SET deletedAt = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
+
 -- Tasks
 
 CREATE TABLE IF NOT EXISTS Task (
@@ -262,12 +321,16 @@ CREATE TABLE IF NOT EXISTS Task (
     completedAt INTEGER,
     isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
     isToday INTEGER AS Boolean NOT NULL DEFAULT 0,
+    routineId INTEGER,
+    targetDate INTEGER,
     workspaceId INTEGER NOT NULL DEFAULT 1,
     syncId TEXT NOT NULL DEFAULT '',
     updatedAt INTEGER NOT NULL DEFAULT 0,
     deletedAt INTEGER,
     FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_task_routine_date ON Task(workspaceId, routineId, targetDate);
 
 insertTask:
 INSERT INTO Task (
@@ -280,6 +343,20 @@ INSERT INTO Task (
     updatedAt
 )
 VALUES (?, ?, ?, ?, ?, ?, ?);
+
+insertTaskWithRoutine:
+INSERT INTO Task (
+    title,
+    description,
+    isToday,
+    routineId,
+    targetDate,
+    createdAt,
+    workspaceId,
+    syncId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateTaskCompletion:
 UPDATE Task
@@ -320,6 +397,24 @@ UPDATE Task
 SET deletedAt = ?, updatedAt = ?
 WHERE workspaceId = ? AND id = ?;
 
+updateTaskRoutine:
+UPDATE Task
+SET routineId = ?, targetDate = ?, isToday = ?, updatedAt = ?
+WHERE workspaceId = ? AND id = ?;
+
+selectTaskByRoutineAndDate:
+SELECT * FROM Task
+WHERE workspaceId = ? AND deletedAt IS NULL AND routineId = ? AND targetDate = ?
+LIMIT 1;
+
+selectRoutineTasksInPeriod:
+SELECT * FROM Task
+WHERE workspaceId = ? AND deletedAt IS NULL AND routineId IS NOT NULL AND targetDate BETWEEN ? AND ?;
+
+selectCompletedRoutineTasksUpToDate:
+SELECT * FROM Task
+WHERE workspaceId = ? AND deletedAt IS NULL AND routineId IS NOT NULL AND isCompleted = 1 AND targetDate <= ?;
+
 -- FocusTime <-> Task Junction Table (Many-to-Many)
 
 CREATE TABLE IF NOT EXISTS FocusTimeTaskCrossRef(
@@ -335,7 +430,7 @@ INSERT INTO FocusTimeTaskCrossRef (focusTimeId, taskId)
 VALUES (?, ?);
 
 selectTasksForFocusTime:
-SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.isToday, Task.workspaceId, Task.syncId, Task.updatedAt, Task.deletedAt
+SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.isToday, Task.routineId, Task.targetDate, Task.workspaceId, Task.syncId, Task.updatedAt, Task.deletedAt
 FROM Task
 INNER JOIN FocusTimeTaskCrossRef ON Task.id = FocusTimeTaskCrossRef.taskId
 WHERE Task.workspaceId = ? AND Task.deletedAt IS NULL AND FocusTimeTaskCrossRef.focusTimeId = ?;

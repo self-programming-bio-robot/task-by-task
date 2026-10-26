@@ -3,6 +3,7 @@ package dev.zhdanov.apps.shared.cache
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.DaySummaryRecord
 import dev.zhdanov.apps.shared.model.FocusTime
+import dev.zhdanov.apps.shared.model.Routine
 import dev.zhdanov.apps.shared.model.Task
 import dev.zhdanov.apps.shared.model.TaskSummary
 import dev.zhdanov.apps.shared.model.TimerSettings
@@ -16,6 +17,24 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 private val summaryJson = Json { ignoreUnknownKeys = true }
+
+val routineMapper =
+    { id: Long, title: String, description: String?, scheduleType: String, isActive: Boolean,
+      workspaceId: Long, syncId: String, createdAt: Long, updatedAt: Long, deletedAt: Long? ->
+        Routine(
+            id = id,
+            title = title,
+            description = description,
+            scheduleType = scheduleType,
+            isActive = isActive,
+            workspaceId = workspaceId,
+            syncId = syncId,
+            createdAt = Instant.fromEpochMilliseconds(createdAt)
+                .toLocalDateTime(TimeZone.currentSystemDefault()),
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
+        )
+    }
 
 val workspaceMapper =
     { id: Long, syncId: String, name: String, icon: String, isSelected: Boolean, createdAt: Long, updatedAt: Long, deletedAt: Long? ->
@@ -119,7 +138,8 @@ val timerSettings =
 @OptIn(ExperimentalTime::class)
 val taskMapper =
     { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?,
-      isCompleted: Boolean, isToday: Boolean, workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
+      isCompleted: Boolean, isToday: Boolean, routineId: Long?, targetDate: Long?,
+      workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
         Task(
             id = id,
             title = title,
@@ -131,9 +151,12 @@ val taskMapper =
             },
             isCompleted = isCompleted,
             isToday = isToday,
+            routineId = routineId,
+            targetDate = targetDate,
             workspaceId = workspaceId,
             syncId = syncId,
             updatedAt = updatedAt,
             deletedAt = deletedAt
         )
     }
+

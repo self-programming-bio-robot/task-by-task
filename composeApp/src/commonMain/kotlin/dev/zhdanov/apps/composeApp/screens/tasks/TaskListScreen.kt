@@ -1,6 +1,5 @@
 package dev.zhdanov.apps.composeApp.screens.tasks
 
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,12 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -25,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.pane.AppPane
+import dev.zhdanov.apps.composeApp.navigation.Screen
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.composeApp.testing.UiTestTags
@@ -68,17 +72,21 @@ fun TaskListScreen(
     }
 
     AppPane(
+        title = Screen.TaskList().title,
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.testTag(UiTestTags.TaskListScreen),
     ) {
         TaskList(
-            tasks,
+            tasks = tasks,
             onTaskClick = { onTaskClick(it.id) },
             onTaskFocused = onNavigateToTimer
         )
     }
 }
 
+/**
+ * Supporting pane that edits a single task identified by [taskId].
+ */
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun TaskEditPane(
@@ -86,13 +94,15 @@ fun TaskEditPane(
     onDone: () -> Unit,
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
+    val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
     val tasks by viewModel.tasks.collectAsState()
+    val focusedTask by focusTaskService.focusedTask.collectAsState()
     val task = tasks.find { it.id == taskId }
     val coroutineScope = rememberCoroutineScope()
 
     AppPane(
         title = "Edit task",
-        color = MaterialTheme.colorScheme.secondaryContainer,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
         if (task == null) {
             Box(
@@ -108,6 +118,24 @@ fun TaskEditPane(
                     onUpdatedTask = { updatedTask ->
                         coroutineScope.launch {
                             viewModel.updateTask(updatedTask)
+                            if (focusedTask?.id == updatedTask.id) {
+                                focusTaskService.updateFocusedTask(updatedTask)
+                            }
+                            onDone()
+                        }
+                    },
+                    onConvertToRoutine = {
+                        coroutineScope.launch {
+                            viewModel.convertTaskToRoutine(task)
+                            onDone()
+                        }
+                    },
+                    onDeleteTask = {
+                        coroutineScope.launch {
+                            if (focusedTask?.id == task.id) {
+                                focusTaskService.setFocusedTask(null)
+                            }
+                            viewModel.deleteTask(task.id)
                             onDone()
                         }
                     },
@@ -166,6 +194,12 @@ fun TaskList(
                             onTaskFocused()
                         }
                     },
+                    onDelete = {
+                        if (focusedTask?.id == currentTask.id) {
+                            focusTaskService.setFocusedTask(null)
+                        }
+                        viewModel.deleteTask(currentTask.id)
+                    },
                     onClick = { onTaskClick(currentTask) },
                 )
             }
@@ -180,6 +214,7 @@ fun TaskItem(
     onToggleCompletion: () -> Unit,
     onAddToday: (Boolean) -> Unit,
     onFocusToggle: () -> Unit,
+    onDelete: () -> Unit = {},
     onClick: () -> Unit,
 ) {
     Row(
@@ -198,11 +233,32 @@ fun TaskItem(
             modifier = Modifier.testTag(UiTestTags.taskCompletion(task.id))
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = task.title,
-            style = MaterialTheme.typography.bodyLarge,
+        if (task.routineId != null) {
+            Icon(
+                imageVector = Icons.Default.Repeat,
+                contentDescription = "Routine task",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Column(
             modifier = Modifier.weight(1f)
-        )
+        ) {
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            val desc = task.description
+            if (!desc.isNullOrBlank()) {
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+        }
         Spacer(modifier = Modifier.width(8.dp))
         IconButton(
             onClick = { if (!task.isCompleted || isFocused) onFocusToggle() },
@@ -224,6 +280,17 @@ fun TaskItem(
             Icon(
                 imageVector = Icons.Default.Today,
                 contentDescription = "Today",
+            )
+        }
+        Spacer(modifier = Modifier.width(4.dp))
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.testTag(UiTestTags.taskDelete(task.id))
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete task",
+                tint = MaterialTheme.colorScheme.error
             )
         }
     }
@@ -265,7 +332,13 @@ fun NewTaskInput(
 }
 
 @Composable
-fun TaskDetails(task: Task, onUpdatedTask: (task: Task) -> Unit, onCancel: () -> Unit) {
+fun TaskDetails(
+    task: Task,
+    onUpdatedTask: (task: Task) -> Unit,
+    onConvertToRoutine: () -> Unit = {},
+    onDeleteTask: () -> Unit = {},
+    onCancel: () -> Unit
+) {
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description.orEmpty()) }
     var isToday by remember { mutableStateOf(task.isToday) }
@@ -297,50 +370,81 @@ fun TaskDetails(task: Task, onUpdatedTask: (task: Task) -> Unit, onCancel: () ->
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Add to Today")
-                Spacer(modifier = Modifier.width(8.dp))
                 Switch(
                     checked = isToday,
                     onCheckedChange = { isToday = it }
                 )
             }
+            if (task.routineId == null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onConvertToRoutine,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(UiTestTags.ConvertToRoutineButton)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Repeat,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Make Daily Routine", maxLines = 1, softWrap = false)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = {
-                    title = task.title
-                    description = task.description.orEmpty()
-                    isToday = task.isToday
-
-                    onCancel()
-                }
+            IconButton(
+                onClick = onDeleteTask,
+                modifier = Modifier.testTag(UiTestTags.TaskDeleteButton)
             ) {
-                Text("Cancel")
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete task",
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = {
-                    onUpdatedTask(
-                        task.copy(
-                            title = title,
-                            description = description.ifEmpty { null },
-                            isToday = isToday
-                        )
-                    )
-                }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Save")
+                Button(
+                    onClick = {
+                        title = task.title
+                        description = task.description.orEmpty()
+                        isToday = task.isToday
+
+                        onCancel()
+                    }
+                ) {
+                    Text("Cancel", maxLines = 1, softWrap = false)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        onUpdatedTask(
+                            task.copy(
+                                title = title,
+                                description = description.takeIf { it.isNotBlank() },
+                                isToday = isToday
+                            )
+                        )
+                    },
+                    enabled = title.isNotBlank()
+                ) {
+                    Text("Save", maxLines = 1, softWrap = false)
+                }
             }
         }
     }
 }
-
-
-
-

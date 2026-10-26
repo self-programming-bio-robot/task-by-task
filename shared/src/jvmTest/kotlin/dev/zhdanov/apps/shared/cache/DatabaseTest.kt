@@ -3,16 +3,20 @@ package dev.zhdanov.apps.shared.cache
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.zhdanov.apps.shared.StartOfDaySetting
+import dev.zhdanov.apps.shared.model.CreateRoutine
 import dev.zhdanov.apps.shared.model.CreateTask
 import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ICON
 import dev.zhdanov.apps.shared.model.DEFAULT_WORKSPACE_ID
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.SettingKey
 import dev.zhdanov.apps.shared.model.TaskSummary
+import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DatabaseTest {
@@ -158,6 +162,81 @@ class DatabaseTest {
         assertEquals(listOf(task.id), database.getTasksForFocusTime(focusTimeId).map { it.id })
         assertNotNull(database.getDaySummary(LocalDate(2026, 5, 15)))
         assertTrue(database.getDaySummary(LocalDate(2026, 5, 15))!!.linkedTasks.isNotEmpty())
+    }
+
+    @Test
+    fun `routine repository supports CRUD soft delete and task linking with Long targetDate`() {
+        val database = Database(InMemoryDriverFactory())
+        val routineId = database.routineRepository.addRoutine(
+            CreateRoutine(title = "Morning Run", description = "5km")
+        )
+
+        val created = database.routineRepository.getRoutineById(routineId)
+        assertNotNull(created)
+        assertEquals("Morning Run", created.title)
+        assertTrue(created.isActive)
+
+        val dateLong = LocalDate(2026, 5, 16).toLong()
+        assertEquals(20260516L, dateLong)
+
+        database.taskRepository.addTask(
+            CreateTask(
+                title = "Morning Run",
+                isToday = true,
+                routineId = routineId,
+                targetDate = dateLong
+            )
+        )
+
+        val linkedTask = database.taskRepository.getTaskByRoutineAndDate(routineId, dateLong)
+        assertNotNull(linkedTask)
+        assertEquals(routineId, linkedTask.routineId)
+        assertEquals(20260516L, linkedTask.targetDate)
+
+        database.routineRepository.updateRoutine(created.copy(isActive = false))
+        assertFalse(database.routineRepository.getRoutineById(routineId)!!.isActive)
+        assertTrue(database.routineRepository.getActiveRoutines().isEmpty())
+
+        database.routineRepository.deleteRoutine(routineId)
+        assertNull(database.routineRepository.getRoutineById(routineId))
+    }
+
+    @Test
+    fun `legacy duplicate day summaries on same date are deduplicated on init`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        driver.execute(
+            null,
+            "CREATE TABLE FocusTime (id INTEGER PRIMARY KEY AUTOINCREMENT, duration INTEGER NOT NULL, feedback TEXT, finishedAt INTEGER NOT NULL)",
+            0
+        )
+        driver.execute(
+            null,
+            "CREATE TABLE DaySummary (date INTEGER NOT NULL, focusTime INTEGER NOT NULL, review TEXT NOT NULL)",
+            0
+        )
+        driver.execute(
+            null,
+            "CREATE TABLE Task (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, createdAt INTEGER NOT NULL, completedAt INTEGER, isCompleted INTEGER NOT NULL DEFAULT 0, isToday INTEGER NOT NULL DEFAULT 0)",
+            0
+        )
+        driver.execute(
+            null,
+            "INSERT INTO DaySummary (date, focusTime, review) VALUES (20261014, 600, 'First summary')",
+            0
+        )
+        driver.execute(
+            null,
+            "INSERT INTO DaySummary (date, focusTime, review) VALUES (20261014, 1200, 'Updated summary')",
+            0
+        )
+        driver.execute(null, "PRAGMA user_version = 6", 0)
+
+        val database = Database(SingleDriverFactory(driver))
+        val summaries = database.getAllDaySummaries()
+
+        assertEquals(1, summaries.size)
+        assertEquals(LocalDate(2026, 10, 14), summaries.single().date)
+        assertEquals("Updated summary", summaries.single().review)
     }
 }
 

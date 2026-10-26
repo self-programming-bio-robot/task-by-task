@@ -55,6 +55,7 @@ class TaskComponentsUiTest {
         val task = task(id = 7, title = "Plan release")
         var completionClicks = 0
         var focusClicks = 0
+        var deleteClicks = 0
         var rowClicks = 0
         val todayValues = mutableListOf<Boolean>()
 
@@ -66,6 +67,7 @@ class TaskComponentsUiTest {
                     onToggleCompletion = { completionClicks += 1 },
                     onAddToday = todayValues::add,
                     onFocusToggle = { focusClicks += 1 },
+                    onDelete = { deleteClicks += 1 },
                     onClick = { rowClicks += 1 }
                 )
             }
@@ -75,10 +77,12 @@ class TaskComponentsUiTest {
         onNodeWithTag(UiTestTags.taskCompletion(task.id)).performClick()
         onNodeWithTag(UiTestTags.taskFocus(task.id)).assertIsEnabled().performClick()
         onNodeWithTag(UiTestTags.taskToday(task.id)).performClick()
+        onNodeWithTag(UiTestTags.taskDelete(task.id)).performClick()
 
         assertEquals(1, rowClicks)
         assertEquals(1, completionClicks)
         assertEquals(1, focusClicks)
+        assertEquals(1, deleteClicks)
         assertEquals(listOf(true), todayValues)
     }
 

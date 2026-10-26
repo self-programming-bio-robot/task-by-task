@@ -250,6 +250,16 @@ class WorkspaceSessionService(
             )
         }
 
+        database.routineRepository.getAllRoutines(workspaceId).forEach { routine ->
+            database.routineRepository.updateRoutine(
+                routine.copy(
+                    title = transformText(routine.title, dataKey, encrypt),
+                    description = routine.description?.let { transformText(it, dataKey, encrypt) }
+                ),
+                workspaceId = workspaceId
+            )
+        }
+
         database.getAllFocusTimes(workspaceId).forEach { focusTime ->
             database.updateFocusTimeFeedback(
                 id = focusTime.id,

@@ -157,7 +157,10 @@ class DaySummaryServiceTest {
             default = UnconfinedTestDispatcher()
         )
         val settingsService = AppSettingsService(database, dispatchers, workspaceSessionService)
+        val logicalDayService = LogicalDayService(settingsService)
         val taskDataService = TaskDataService(database, dispatchers, workspaceSessionService)
+        val routineDataService =
+            RoutineDataService(database, dispatchers, workspaceSessionService, logicalDayService)
         val focusSessionDataService =
             FocusSessionDataService(database, dispatchers, workspaceSessionService)
         val daySummaryDataService =
@@ -170,12 +173,15 @@ class DaySummaryServiceTest {
             settingsService = settingsService,
             schedulerService = schedulerService,
             reviewClient = FakeReviewClient(),
-            dispatchers = dispatchers
+            dispatchers = dispatchers,
+            routineDataService = routineDataService,
+            logicalDayService = logicalDayService
         )
 
         return Fixture(
             settingsService = settingsService,
             taskDataService = taskDataService,
+            routineDataService = routineDataService,
             focusSessionDataService = focusSessionDataService,
             daySummaryDataService = daySummaryDataService,
             daySummaryService = daySummaryService,
@@ -187,6 +193,7 @@ class DaySummaryServiceTest {
 private data class Fixture(
     val settingsService: AppSettingsService,
     val taskDataService: TaskDataService,
+    val routineDataService: RoutineDataService,
     val focusSessionDataService: FocusSessionDataService,
     val daySummaryDataService: DaySummaryDataService,
     val daySummaryService: DaySummaryService,

@@ -18,8 +18,10 @@ class AppSettingsService(
     private val workspaceSessionService: WorkspaceSessionService
 ) {
     private val _theme = MutableStateFlow("auto")
+    private val _startOfDay = MutableStateFlow(readStartOfDay())
 
     val theme = _theme.asStateFlow()
+    val startOfDay = _startOfDay.asStateFlow()
 
     suspend fun getAssistantConfig(): AssistantConfig? = withContext(dispatchers.io) {
         workspaceSessionService.getAssistantConfig()
@@ -50,16 +52,21 @@ class AppSettingsService(
     }
 
     suspend fun getStartOfDay(): LocalTime = withContext(dispatchers.io) {
-        database.settingRepository.getSetting<StartOfDaySetting>(SettingKey.START_OF_DAY)
-            ?.toLocalTime()
-            ?: DEFAULT_START_OF_DAY
+        readStartOfDay().also { _startOfDay.value = it }
     }
 
     suspend fun saveStartOfDay(time: LocalTime) = withContext(dispatchers.io) {
+        _startOfDay.value = time
         database.settingRepository.saveSetting(
             SettingKey.START_OF_DAY,
             StartOfDaySetting.fromLocalTime(time)
         )
+    }
+
+    private fun readStartOfDay(): LocalTime {
+        return database.settingRepository.getSetting<StartOfDaySetting>(SettingKey.START_OF_DAY)
+            ?.toLocalTime()
+            ?: DEFAULT_START_OF_DAY
     }
 
     suspend fun getLastDayReset(): LocalDate? = withContext(dispatchers.io) {

@@ -1,6 +1,5 @@
 package dev.zhdanov.apps.composeApp.services
 
-import dev.zhdanov.apps.shared.DEFAULT_START_OF_DAY
 import dev.zhdanov.apps.shared.utils.toDuration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +19,7 @@ class LogicalDayService(
 ) {
     private val _currentDay = MutableStateFlow(
         Clock.System.now()
-            .minus(DEFAULT_START_OF_DAY.toDuration())
+            .minus(settingsService.startOfDay.value.toDuration())
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
     )

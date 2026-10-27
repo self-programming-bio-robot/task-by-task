@@ -268,6 +268,7 @@ fun TaskEditPane(
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
     val tasks by viewModel.tasks.collectAsState()
+    val today by viewModel.today.collectAsState()
     val focusedTask by focusTaskService.focusedTask.collectAsState()
     val task = tasks.find { it.id == taskId }
     val coroutineScope = rememberCoroutineScope()
@@ -287,6 +288,7 @@ fun TaskEditPane(
             key(taskId) {
                 TaskDetails(
                     task = task,
+                    today = today,
                     onUpdatedTask = { updatedTask ->
                         coroutineScope.launch {
                             viewModel.updateTask(updatedTask)
@@ -630,7 +632,8 @@ fun TaskDetails(
     onUpdatedTask: (task: Task) -> Unit,
     onConvertToRoutine: () -> Unit = {},
     onDeleteTask: () -> Unit = {},
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    today: LocalDate? = null,
 ) {
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description.orEmpty()) }
@@ -641,7 +644,7 @@ fun TaskDetails(
         val currentDate = remember(targetDate) { targetDate?.toLocalDate() }
         AutoSelectDatePickerDialog(
             initialSelectedDate = currentDate,
-            initialDisplayedDate = currentDate,
+            initialDisplayedDate = currentDate ?: today,
             onDateSelected = { pickedDate ->
                 targetDate = pickedDate.toLong()
                 showDatePicker = false
@@ -694,7 +697,13 @@ fun TaskDetails(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = targetDate?.let { formatShortDate(it.toLocalDate()) } ?: "No date",
+                            text = targetDate?.let { dateLong ->
+                                if (today != null) {
+                                    formatGroupDateHeader(dateLong, today)
+                                } else {
+                                    formatShortDate(dateLong.toLocalDate())
+                                }
+                            } ?: "No date",
                             maxLines = 1,
                         )
                     }

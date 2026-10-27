@@ -57,6 +57,7 @@ class DaySummaryService(
     fun updateScheduler() {
         coroutineScope.launch {
             val startOfDay = settingsService.getStartOfDay()
+            logicalDayService.currentLogicalDay()
             schedulerService.addScheduler(
                 "Finish day",
                 "${startOfDay.minute} ${startOfDay.hour} * * *",

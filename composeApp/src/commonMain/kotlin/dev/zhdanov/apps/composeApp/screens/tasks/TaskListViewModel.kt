@@ -21,12 +21,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class TaskListViewModel(
     private val taskDataService: TaskDataService,
     daySummaryService: DaySummaryService,
@@ -35,14 +30,11 @@ class TaskListViewModel(
     private val logicalDayService: LogicalDayService,
 ) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
-    private val _today = MutableStateFlow(
-        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    )
     private val _filter = MutableStateFlow(TaskListFilter())
     private val _searchQuery = MutableStateFlow("")
 
     val tasks = _tasks.asStateFlow()
-    val today = _today.asStateFlow()
+    val today: StateFlow<LocalDate> = logicalDayService.currentDay
     val filter = _filter.asStateFlow()
     val searchQuery = _searchQuery.asStateFlow()
 
@@ -50,19 +42,20 @@ class TaskListViewModel(
         _tasks,
         _filter,
         _searchQuery,
-        _today,
-    ) { tasks, filter, query, today ->
-        tasks.applyFilter(filter, query, today)
+        today,
+    ) { tasks, filter, query, currentDay ->
+        tasks.applyFilter(filter, query, currentDay)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val todayTask: Flow<List<Task>> = combine(_tasks, _today) { tasks, today ->
+    val todayTask: Flow<List<Task>> = combine(_tasks, today) { tasks, currentDay ->
         tasks
-            .filter { it.isDueOn(today) }
+            .filter { it.isDueOn(currentDay) }
             .sortedWith(compareBy<Task>({ it.isCompleted }).thenByDescending { it.createdAt })
     }
 
     init {
         viewModelScope.launch {
+            logicalDayService.currentLogicalDay()
             _filter.value = settingsService.getTaskListFilter()
         }
         loadTasks()
@@ -77,7 +70,6 @@ class TaskListViewModel(
 
     fun loadTasks() {
         viewModelScope.launch {
-            _today.value = logicalDayService.currentLogicalDay()
             _tasks.value = taskDataService.getAllTasks()
         }
     }
@@ -96,9 +88,8 @@ class TaskListViewModel(
 
     fun setDueToday(task: Task, dueToday: Boolean) {
         viewModelScope.launch {
-            val today = logicalDayService.currentLogicalDay()
-            _today.value = today
-            val newDate = if (dueToday) today.toLong() else null
+            val currentDay = logicalDayService.currentLogicalDay()
+            val newDate = if (dueToday) currentDay.toLong() else null
             taskDataService.updateTask(task.copy(targetDate = newDate))
             loadTasks()
         }
@@ -118,8 +109,8 @@ class TaskListViewModel(
         val trimmedTitle = title.trim()
         if (trimmedTitle.isNotEmpty()) {
             viewModelScope.launch {
-                val today = logicalDayService.currentLogicalDay()
-                taskDataService.addTask(trimmedTitle, targetDate = today)
+                val currentDay = logicalDayService.currentLogicalDay()
+                taskDataService.addTask(trimmedTitle, targetDate = currentDay)
                 loadTasks()
             }
         }

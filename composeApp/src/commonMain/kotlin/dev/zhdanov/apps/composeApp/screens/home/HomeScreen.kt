@@ -46,7 +46,6 @@ import dev.zhdanov.apps.composeApp.navigation.Screen
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.composeApp.screens.tasks.NewTaskInput
 import dev.zhdanov.apps.composeApp.screens.tasks.TaskListViewModel
-import dev.zhdanov.apps.composeApp.screens.tasks.isDueOn
 import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.composeApp.testing.UiTestTags
@@ -170,7 +169,6 @@ fun TodayTaskList(
     val focusTaskService: FocusTaskService = koinInject<FocusTaskService>()
     val timerSessionService: TimerSessionService = koinInject<TimerSessionService>()
     val todayTasks by viewModel.todayTask.collectAsState(listOf())
-    val today by viewModel.today.collectAsState()
     val focusedTask by focusTaskService.focusedTask.collectAsState()
     val isTimerRunning by timerSessionService.isRunning.collectAsState()
 
@@ -209,10 +207,6 @@ fun TodayTaskList(
                         }
                     },
                     onFocusToggle = {
-                        // Add to today if not already
-                        if (currentTask.routineId == null && !currentTask.isDueOn(today)) {
-                            viewModel.setDueToday(currentTask, true)
-                        }
                         // Try to select the task
                         val success =
                             focusTaskService.toggleTaskSelection(currentTask, isTimerRunning)

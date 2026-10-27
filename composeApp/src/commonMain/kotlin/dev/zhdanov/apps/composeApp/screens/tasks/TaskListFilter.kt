@@ -37,6 +37,7 @@ fun Task.isOverdueOn(day: LocalDate): Boolean {
     return !isCompleted && due < day.toLong()
 }
 
+// TODO: implement filtering in db query
 fun List<Task>.applyFilter(
     filter: TaskListFilter,
     query: String,

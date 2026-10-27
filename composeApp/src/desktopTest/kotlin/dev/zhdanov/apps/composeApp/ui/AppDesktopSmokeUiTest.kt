@@ -59,7 +59,7 @@ class AppDesktopSmokeUiTest {
 
         rule.onNodeWithTag(UiTestTags.taskToday(taskId)).performClick()
         rule.waitUntil(timeoutMillis = 5_000) {
-            database.taskRepository.getTaskById(taskId)?.isToday == true
+            database.taskRepository.getTaskById(taskId)?.targetDate != null
         }
 
         rule.onNodeWithTag(UiTestTags.taskFocus(taskId)).performClick()

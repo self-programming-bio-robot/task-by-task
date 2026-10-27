@@ -320,7 +320,6 @@ CREATE TABLE IF NOT EXISTS Task (
     createdAt INTEGER NOT NULL,
     completedAt INTEGER,
     isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
-    isToday INTEGER AS Boolean NOT NULL DEFAULT 0,
     routineId INTEGER,
     targetDate INTEGER,
     workspaceId INTEGER NOT NULL DEFAULT 1,
@@ -336,7 +335,7 @@ insertTask:
 INSERT INTO Task (
     title,
     description,
-    isToday,
+    targetDate,
     createdAt,
     workspaceId,
     syncId,
@@ -348,7 +347,6 @@ insertTaskWithRoutine:
 INSERT INTO Task (
     title,
     description,
-    isToday,
     routineId,
     targetDate,
     createdAt,
@@ -356,7 +354,7 @@ INSERT INTO Task (
     syncId,
     updatedAt
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 updateTaskCompletion:
 UPDATE Task
@@ -368,19 +366,9 @@ SELECT * FROM Task
 WHERE workspaceId = ? AND deletedAt IS NULL
 ORDER BY createdAt DESC;
 
-selectTodayTasks:
-SELECT * FROM Task
-WHERE workspaceId = ? AND deletedAt IS NULL AND isToday = 1
-ORDER BY createdAt DESC;
-
-cleanTodayTaskList:
-UPDATE Task
-SET isToday = 0, updatedAt = ?
-WHERE workspaceId = ? AND isToday = 1;
-
 updateTask:
 UPDATE Task
-SET title = ?, description = ?, isToday = ?, updatedAt = ?
+SET title = ?, description = ?, targetDate = ?, updatedAt = ?
 WHERE workspaceId = ? AND id = ?;
 
 updateTaskEncryptedFields:
@@ -399,7 +387,7 @@ WHERE workspaceId = ? AND id = ?;
 
 updateTaskRoutine:
 UPDATE Task
-SET routineId = ?, targetDate = ?, isToday = ?, updatedAt = ?
+SET routineId = ?, targetDate = ?, updatedAt = ?
 WHERE workspaceId = ? AND id = ?;
 
 selectTaskByRoutineAndDate:
@@ -430,7 +418,7 @@ INSERT INTO FocusTimeTaskCrossRef (focusTimeId, taskId)
 VALUES (?, ?);
 
 selectTasksForFocusTime:
-SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.isToday, Task.routineId, Task.targetDate, Task.workspaceId, Task.syncId, Task.updatedAt, Task.deletedAt
+SELECT Task.id, Task.title, Task.description, Task.createdAt, Task.completedAt, Task.isCompleted, Task.routineId, Task.targetDate, Task.workspaceId, Task.syncId, Task.updatedAt, Task.deletedAt
 FROM Task
 INNER JOIN FocusTimeTaskCrossRef ON Task.id = FocusTimeTaskCrossRef.taskId
 WHERE Task.workspaceId = ? AND Task.deletedAt IS NULL AND FocusTimeTaskCrossRef.focusTimeId = ?;

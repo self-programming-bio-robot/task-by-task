@@ -88,7 +88,6 @@ class RoutineDataService(
             encryptedTitle = encryptedTitle,
             encryptedDescription = encryptedDesc,
             date = today,
-            isToday = true,
             workspaceId = workspaceId
         )
         routineEvents.tryEmit(Unit)
@@ -119,7 +118,6 @@ class RoutineDataService(
             taskId = task.id,
             routineId = routineId,
             targetDate = today.toLong(),
-            isToday = true,
             workspaceId = workspaceId
         )
         routineEvents.tryEmit(Unit)
@@ -162,7 +160,6 @@ class RoutineDataService(
                 encryptedTitle = encryptedTitle,
                 encryptedDescription = encryptedDesc,
                 date = today,
-                isToday = true,
                 workspaceId = workspaceId
             )
         }
@@ -185,7 +182,6 @@ class RoutineDataService(
                 encryptedTitle = routine.title,
                 encryptedDescription = routine.description,
                 date = today,
-                isToday = true,
                 workspaceId = workspaceId
             )
         }
@@ -216,7 +212,6 @@ class RoutineDataService(
                     encryptedTitle = routine.title,
                     encryptedDescription = routine.description,
                     date = today,
-                    isToday = true,
                     workspaceId = workspaceId
                 )
                 if (created) createdAny = true
@@ -232,7 +227,6 @@ class RoutineDataService(
         encryptedTitle: String,
         encryptedDescription: String?,
         date: LocalDate,
-        isToday: Boolean,
         workspaceId: Long
     ): Boolean {
         val dateLong = date.toLong()
@@ -242,7 +236,6 @@ class RoutineDataService(
             CreateTask(
                 title = encryptedTitle,
                 description = encryptedDescription,
-                isToday = isToday,
                 routineId = routineId,
                 targetDate = dateLong
             ),

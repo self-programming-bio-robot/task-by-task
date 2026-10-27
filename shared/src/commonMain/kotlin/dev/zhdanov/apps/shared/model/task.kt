@@ -11,7 +11,6 @@ data class Task(
     val createdAt: LocalDateTime,
     val completedAt: LocalDateTime? = null,
     val isCompleted: Boolean = false,
-    val isToday: Boolean = false,
     val routineId: Long? = null,
     val targetDate: Long? = null,
     val workspaceId: Long = DEFAULT_WORKSPACE_ID,
@@ -24,7 +23,6 @@ data class Task(
 data class CreateTask(
     val title: String,
     val description: String? = null,
-    val isToday: Boolean? = null,
     val routineId: Long? = null,
     val targetDate: Long? = null,
 )

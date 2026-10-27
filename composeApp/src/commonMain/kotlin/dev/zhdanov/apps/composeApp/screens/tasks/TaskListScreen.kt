@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,24 +15,33 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +54,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import dev.zhdanov.apps.composeApp.components.pane.AppPane
@@ -51,12 +64,24 @@ import dev.zhdanov.apps.composeApp.services.FocusTaskService
 import dev.zhdanov.apps.composeApp.services.TimerSessionService
 import dev.zhdanov.apps.composeApp.testing.UiTestTags
 import dev.zhdanov.apps.shared.model.Task
+import dev.zhdanov.apps.shared.utils.toLocalDate
+import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-@OptIn(KoinExperimentalAPI::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskListScreen(
     initialTaskId: Long? = null,
@@ -64,7 +89,10 @@ fun TaskListScreen(
     onTaskClick: (Long) -> Unit = {},
 ) {
     val viewModel: TaskListViewModel = koinViewModel<TaskListViewModel>()
-    val tasks by viewModel.tasks.collectAsState()
+    val groups by viewModel.groupedTasks.collectAsState()
+    val today by viewModel.today.collectAsState()
+    val filter by viewModel.filter.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     // Auto-navigate to initial task if provided
     LaunchedEffect(initialTaskId) {
@@ -75,12 +103,156 @@ fun TaskListScreen(
         title = Screen.TaskList().title,
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.testTag(UiTestTags.TaskListScreen),
+        actions = {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::setSearchQuery,
+                modifier = Modifier
+                    .widthIn(min = 140.dp, max = 220.dp)
+                    .testTag(UiTestTags.TaskSearchInput),
+                placeholder = {
+                    Text(
+                        "Search",
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(
+                            onClick = { viewModel.setSearchQuery("") },
+                            modifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
+                        ) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear search",
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                singleLine = true,
+            )
+        }
     ) {
-        TaskList(
-            tasks = tasks,
-            onTaskClick = { onTaskClick(it.id) },
-            onTaskFocused = onNavigateToTimer
-        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilterChip(
+                    selected = filter.todayOnly,
+                    onClick = { viewModel.updateFilter { it.copy(todayOnly = !it.todayOnly) } },
+                    label = {
+                        Text(
+                            "Today",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
+                    modifier = Modifier.testTag(UiTestTags.QuickFilterToday),
+                )
+                FilterChip(
+                    selected = filter.overdueOnly,
+                    onClick = { viewModel.updateFilter { it.copy(overdueOnly = !it.overdueOnly) } },
+                    label = {
+                        Text(
+                            "Overdue",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
+                    modifier = Modifier.testTag(UiTestTags.QuickFilterOverdue),
+                )
+                FilterChip(
+                    selected = TaskTypeFilter.REGULAR in filter.taskTypes,
+                    onClick = {
+                        viewModel.updateFilter { current ->
+                            val updated = if (TaskTypeFilter.REGULAR in current.taskTypes) {
+                                current.taskTypes - TaskTypeFilter.REGULAR
+                            } else {
+                                current.taskTypes + TaskTypeFilter.REGULAR
+                            }
+                            current.copy(taskTypes = updated)
+                        }
+                    },
+                    label = {
+                        Text(
+                            "Regular",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
+                    modifier = Modifier.testTag(UiTestTags.QuickFilterRegular),
+                )
+                FilterChip(
+                    selected = TaskTypeFilter.ROUTINE in filter.taskTypes,
+                    onClick = {
+                        viewModel.updateFilter { current ->
+                            val updated = if (TaskTypeFilter.ROUTINE in current.taskTypes) {
+                                current.taskTypes - TaskTypeFilter.ROUTINE
+                            } else {
+                                current.taskTypes + TaskTypeFilter.ROUTINE
+                            }
+                            current.copy(taskTypes = updated)
+                        }
+                    },
+                    label = {
+                        Text(
+                            "Routines",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
+                    modifier = Modifier.testTag(UiTestTags.QuickFilterRoutines),
+                )
+                FilterChip(
+                    selected = filter.showCompleted,
+                    onClick = { viewModel.updateFilter { it.copy(showCompleted = !it.showCompleted) } },
+                    label = {
+                        Text(
+                            "Completed",
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
+                    modifier = Modifier.testTag(UiTestTags.QuickFilterCompleted),
+                )
+                if (!filter.isDefault || searchQuery.isNotBlank()) {
+                    TextButton(
+                        onClick = {
+                            viewModel.setSearchQuery("")
+                            viewModel.updateFilter { TaskListFilter() }
+                        }
+                    ) {
+                        Text("Reset", maxLines = 1, softWrap = false)
+                    }
+                }
+            }
+            TaskList(
+                groups = groups,
+                today = today,
+                onTaskClick = { onTaskClick(it.id) },
+                onTaskFocused = onNavigateToTimer,
+            )
+        }
     }
 }
 
@@ -149,7 +321,8 @@ fun TaskEditPane(
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun TaskList(
-    tasks: List<Task>,
+    groups: List<TaskGroup>,
+    today: LocalDate,
     onTaskClick: (Task) -> Unit,
     onTaskFocused: () -> Unit = {}
 ) {
@@ -158,50 +331,84 @@ fun TaskList(
     val timerSessionService: TimerSessionService = koinInject<TimerSessionService>()
     val focusedTask by focusTaskService.focusedTask.collectAsState()
     val isTimerRunning by timerSessionService.isRunning.collectAsState()
+    val todayLong = today.toLong()
 
     Column {
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            item {
+            item(key = "new-task-input") {
                 NewTaskInput(
-                    onAddTask = viewModel::addNewTask
+                    onAddTask = { viewModel.addNewTask(it) },
+                    onAddTaskWithDate = viewModel::addNewTask,
+                    today = today,
                 )
             }
-            items(tasks, key = { it.id }) { task ->
-                val currentTask = task // Capture for lambda
-                TaskItem(
-                    task = currentTask,
-                    isFocused = focusedTask?.id == currentTask.id,
-                    onToggleCompletion = {
-                        viewModel.toggleTaskCompletion(currentTask)
-                        // Update focused task if this is the focused one
-                        if (focusedTask?.id == currentTask.id) {
-                            focusTaskService.updateFocusedTask(currentTask.copy(isCompleted = !currentTask.isCompleted))
-                        }
-                    },
-                    onAddToday = { viewModel.updateTask(currentTask.copy(isToday = it)) },
-                    onFocusToggle = {
-                        // Add to today if not already
-                        if (!currentTask.isToday) {
-                            viewModel.updateTask(currentTask.copy(isToday = true))
-                        }
-                        // Try to select the task
-                        val success =
-                            focusTaskService.toggleTaskSelection(currentTask, isTimerRunning)
-                        if (success) {
-                            onTaskFocused()
-                        }
-                    },
-                    onDelete = {
-                        if (focusedTask?.id == currentTask.id) {
-                            focusTaskService.setFocusedTask(null)
-                        }
-                        viewModel.deleteTask(currentTask.id)
-                    },
-                    onClick = { onTaskClick(currentTask) },
-                )
+            if (groups.isEmpty()) {
+                item(key = "empty-tasks") {
+                    Text(
+                        text = "No matching tasks",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                }
+            } else {
+                groups.forEach { group ->
+                    val headerKey = "header-${group.date ?: "none"}"
+                    val isOverdueGroup = group.date != null && group.date < todayLong
+                    item(key = headerKey) {
+                        Text(
+                            text = formatGroupDateHeader(group.date, today),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (isOverdueGroup) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 6.dp),
+                        )
+                    }
+                    items(group.tasks, key = { it.id }) { task ->
+                        val currentTask = task
+                        TaskItem(
+                            task = currentTask,
+                            isFocused = focusedTask?.id == currentTask.id,
+                            today = today,
+                            onToggleCompletion = {
+                                viewModel.toggleTaskCompletion(currentTask)
+                                if (focusedTask?.id == currentTask.id) {
+                                    focusTaskService.updateFocusedTask(currentTask.copy(isCompleted = !currentTask.isCompleted))
+                                }
+                            },
+                            onAddToday = { dueToday ->
+                                viewModel.setDueToday(currentTask, dueToday)
+                            },
+                            onFocusToggle = {
+                                if (currentTask.routineId == null && !currentTask.isDueOn(today)) {
+                                    viewModel.setDueToday(currentTask, true)
+                                }
+                                val success =
+                                    focusTaskService.toggleTaskSelection(currentTask, isTimerRunning)
+                                if (success) {
+                                    onTaskFocused()
+                                }
+                            },
+                            onDelete = {
+                                if (focusedTask?.id == currentTask.id) {
+                                    focusTaskService.setFocusedTask(null)
+                                }
+                                viewModel.deleteTask(currentTask.id)
+                            },
+                            onClick = { onTaskClick(currentTask) },
+                        )
+                    }
+                }
             }
         }
     }
@@ -216,7 +423,10 @@ fun TaskItem(
     onFocusToggle: () -> Unit,
     onDelete: () -> Unit = {},
     onClick: () -> Unit,
+    today: LocalDate? = null,
 ) {
+    val isDueToday = if (today != null) task.isDueOn(today) else task.targetDate != null
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -273,8 +483,9 @@ fun TaskItem(
         }
         Spacer(modifier = Modifier.width(4.dp))
         IconToggleButton(
-            checked = task.isToday,
+            checked = isDueToday,
             onCheckedChange = { onAddToday(it) },
+            enabled = task.routineId == null,
             modifier = Modifier.testTag(UiTestTags.taskToday(task.id))
         ) {
             Icon(
@@ -296,11 +507,28 @@ fun TaskItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun NewTaskInput(
-    onAddTask: (value: String) -> Unit
+    onAddTask: (value: String) -> Unit,
+    onAddTaskWithDate: ((value: String, targetDate: LocalDate?) -> Unit)? = null,
+    today: LocalDate? = null,
 ) {
     var value by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        AutoSelectDatePickerDialog(
+            initialSelectedDate = selectedDate,
+            initialDisplayedDate = selectedDate ?: today,
+            onDateSelected = {
+                selectedDate = it
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false },
+        )
+    }
 
     Row(
         modifier = Modifier
@@ -313,6 +541,65 @@ fun NewTaskInput(
             onValueChange = { value = it },
             modifier = Modifier.weight(1f).testTag(UiTestTags.NewTaskInput),
             placeholder = { Text("Enter new task") },
+            trailingIcon = if (onAddTaskWithDate != null) {
+                {
+                    val date = selectedDate
+                    if (date == null) {
+                        IconButton(
+                            onClick = { showDatePicker = true },
+                            modifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Set due date",
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 4.dp),
+                        ) {
+                            TextButton(
+                                onClick = { showDatePicker = true },
+                                modifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (today != null) {
+                                        formatGroupDateHeader(date.toLong(), today)
+                                    } else {
+                                        formatShortDate(date, includeYear = false)
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                            IconButton(
+                                onClick = { selectedDate = null },
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .pointerHoverIcon(PointerIcon.Hand),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear due date",
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                null
+            },
             singleLine = true
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -320,9 +607,14 @@ fun NewTaskInput(
             onClick = {
                 val title = value.trim()
                 if (title.isNotEmpty()) {
-                    onAddTask(title)
+                    if (onAddTaskWithDate != null) {
+                        onAddTaskWithDate(title, selectedDate)
+                    } else {
+                        onAddTask(title)
+                    }
                 }
                 value = ""
+                selectedDate = null
             },
             modifier = Modifier.testTag(UiTestTags.AddTaskButton)
         ) {
@@ -331,6 +623,7 @@ fun NewTaskInput(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun TaskDetails(
     task: Task,
@@ -341,7 +634,21 @@ fun TaskDetails(
 ) {
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description.orEmpty()) }
-    var isToday by remember { mutableStateOf(task.isToday) }
+    var targetDate by remember { mutableStateOf(task.targetDate) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        val currentDate = remember(targetDate) { targetDate?.toLocalDate() }
+        AutoSelectDatePickerDialog(
+            initialSelectedDate = currentDate,
+            initialDisplayedDate = currentDate,
+            onDateSelected = { pickedDate ->
+                targetDate = pickedDate.toLong()
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false },
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -366,7 +673,7 @@ fun TaskDetails(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                maxLines = Int.MAX_VALUE // Allow multiline input
+                maxLines = Int.MAX_VALUE
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -374,11 +681,32 @@ fun TaskDetails(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Add to Today")
-                Switch(
-                    checked = isToday,
-                    onCheckedChange = { isToday = it }
-                )
+                Text(text = "Due date")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(
+                        onClick = { showDatePicker = true },
+                        enabled = task.routineId == null,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = targetDate?.let { formatShortDate(it.toLocalDate()) } ?: "No date",
+                            maxLines = 1,
+                        )
+                    }
+                    if (targetDate != null && task.routineId == null) {
+                        IconButton(onClick = { targetDate = null }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear due date"
+                            )
+                        }
+                    }
+                }
             }
             if (task.routineId == null) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -422,7 +750,7 @@ fun TaskDetails(
                     onClick = {
                         title = task.title
                         description = task.description.orEmpty()
-                        isToday = task.isToday
+                        targetDate = task.targetDate
 
                         onCancel()
                     }
@@ -436,7 +764,7 @@ fun TaskDetails(
                             task.copy(
                                 title = title,
                                 description = description.takeIf { it.isNotBlank() },
-                                isToday = isToday
+                                targetDate = targetDate
                             )
                         )
                     },
@@ -446,5 +774,82 @@ fun TaskDetails(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@Composable
+private fun AutoSelectDatePickerDialog(
+    initialSelectedDate: LocalDate?,
+    initialDisplayedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val systemToday = remember {
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    }
+    val initialSelectedMillis = remember(initialSelectedDate) {
+        initialSelectedDate
+            ?.atStartOfDayIn(TimeZone.UTC)
+            ?.toEpochMilliseconds()
+    }
+    val initialDisplayedMillis = remember(initialDisplayedDate, systemToday) {
+        (initialDisplayedDate ?: systemToday)
+            .atStartOfDayIn(TimeZone.UTC)
+            .toEpochMilliseconds()
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialSelectedMillis,
+        initialDisplayedMonthMillis = initialDisplayedMillis,
+    )
+    LaunchedEffect(datePickerState.selectedDateMillis) {
+        val millis = datePickerState.selectedDateMillis
+        if (millis != null && millis != initialSelectedMillis) {
+            val pickedDate = Instant.fromEpochMilliseconds(millis)
+                .toLocalDateTime(TimeZone.UTC)
+                .date
+            onDateSelected(pickedDate)
+        }
+    }
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+internal fun formatGroupDateHeader(dateLong: Long?, today: LocalDate): String {
+    if (dateLong == null) return "No date"
+    val date = dateLong.toLocalDate()
+    return when (date) {
+        today -> "Today"
+        today.plus(1, DateTimeUnit.DAY) -> "Tomorrow"
+        today.minus(1, DateTimeUnit.DAY) -> "Yesterday"
+        else -> formatShortDate(date, includeYear = date.year != today.year)
+    }
+}
+
+private val SHORT_MONTHS = arrayOf(
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+)
+
+private val SHORT_DAYS = arrayOf(
+    "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+)
+
+private fun formatShortDate(date: LocalDate, includeYear: Boolean = true): String {
+    val dow = SHORT_DAYS[date.dayOfWeek.ordinal]
+    val month = SHORT_MONTHS[date.month.ordinal]
+    return if (includeYear) {
+        "$dow, ${date.day} $month ${date.year}"
+    } else {
+        "$dow, ${date.day} $month"
     }
 }

@@ -1,0 +1,40 @@
+CREATE TABLE Task_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    createdAt INTEGER NOT NULL,
+    completedAt INTEGER,
+    isCompleted INTEGER AS Boolean NOT NULL DEFAULT 0,
+    routineId INTEGER,
+    targetDate INTEGER,
+    workspaceId INTEGER NOT NULL DEFAULT 1,
+    syncId TEXT NOT NULL DEFAULT '',
+    updatedAt INTEGER NOT NULL DEFAULT 0,
+    deletedAt INTEGER,
+    FOREIGN KEY(workspaceId) REFERENCES Workspace(id)
+);
+
+INSERT INTO Task_new (
+    id, title, description, createdAt, completedAt, isCompleted,
+    routineId, targetDate, workspaceId, syncId, updatedAt, deletedAt
+)
+SELECT
+    id, title, description, createdAt, completedAt, isCompleted,
+    routineId,
+    CASE
+        WHEN isToday = 1 AND targetDate IS NULL THEN COALESCE(
+            (SELECT CAST(REPLACE(TRIM(data, '"'), '-', '') AS INTEGER) FROM Settings WHERE settingKey = 5),
+            CAST(strftime('%Y%m%d', 'now', 'localtime') AS INTEGER)
+        )
+        ELSE targetDate
+    END,
+    workspaceId, syncId, updatedAt, deletedAt
+FROM Task;
+
+DROP TABLE Task;
+
+ALTER TABLE Task_new RENAME TO Task;
+
+CREATE INDEX IF NOT EXISTS idx_task_routine_date ON Task(workspaceId, routineId, targetDate);
+
+PRAGMA user_version = 10;

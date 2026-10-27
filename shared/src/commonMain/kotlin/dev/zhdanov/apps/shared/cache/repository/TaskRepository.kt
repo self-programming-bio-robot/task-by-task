@@ -20,7 +20,6 @@ class TaskRepository(private val database: AppDatabaseQueries) {
             database.insertTaskWithRoutine(
                 title = task.title,
                 description = task.description,
-                isToday = task.isToday == true,
                 routineId = task.routineId,
                 targetDate = task.targetDate,
                 createdAt = now,
@@ -32,7 +31,7 @@ class TaskRepository(private val database: AppDatabaseQueries) {
             database.insertTask(
                 title = task.title,
                 description = task.description,
-                isToday = task.isToday == true,
+                targetDate = task.targetDate,
                 createdAt = now,
                 workspaceId = workspaceId,
                 syncId = Uuid.random().toString(),
@@ -69,35 +68,22 @@ class TaskRepository(private val database: AppDatabaseQueries) {
         database.updateTask(
             title = task.title,
             description = task.description,
-            isToday = task.isToday,
+            targetDate = task.targetDate,
             updatedAt = Clock.System.now().toEpochMilliseconds(),
             workspaceId = workspaceId,
             id = task.id
         )
     }
 
-    fun cleanTodayTaskList(workspaceId: Long = DEFAULT_WORKSPACE_ID) {
-        database.cleanTodayTaskList(
-            updatedAt = Clock.System.now().toEpochMilliseconds(),
-            workspaceId = workspaceId
-        )
-    }
-
-    fun selectAllTodayTasks(workspaceId: Long = DEFAULT_WORKSPACE_ID): List<Task> {
-        return database.selectTodayTasks(workspaceId, taskMapper).executeAsList()
-    }
-
     fun attachTaskToRoutine(
         taskId: Long,
         routineId: Long,
         targetDate: Long,
-        isToday: Boolean = true,
         workspaceId: Long = DEFAULT_WORKSPACE_ID
     ) {
         database.updateTaskRoutine(
             routineId = routineId,
             targetDate = targetDate,
-            isToday = isToday,
             updatedAt = Clock.System.now().toEpochMilliseconds(),
             workspaceId = workspaceId,
             id = taskId

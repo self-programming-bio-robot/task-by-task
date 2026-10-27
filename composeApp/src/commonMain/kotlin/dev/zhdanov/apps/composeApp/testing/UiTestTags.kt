@@ -15,6 +15,12 @@ internal object UiTestTags {
     const val RoutineDeleteInEditorButton = "routine-delete-in-editor-button"
     const val StatisticsListPane = "statistics-list-pane"
     const val RoutinesReportScreen = "routines-report-screen"
+    const val TaskSearchInput = "task-search-input"
+    const val QuickFilterToday = "quick-filter-today"
+    const val QuickFilterOverdue = "quick-filter-overdue"
+    const val QuickFilterRegular = "quick-filter-regular"
+    const val QuickFilterRoutines = "quick-filter-routines"
+    const val QuickFilterCompleted = "quick-filter-completed"
 
     fun navigationItem(title: String) = "navigation-item-$title"
     fun sectionItem(title: String) = "section-item-$title"

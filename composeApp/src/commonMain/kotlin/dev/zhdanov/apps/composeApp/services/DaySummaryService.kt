@@ -92,7 +92,6 @@ class DaySummaryService(
                 .takeWhile { it < previousDay }
                 .forEach { tryFinishDay(it) }
 
-            taskDataService.cleanTodayTaskList()
             routineDataService.syncDailyRoutineTasks(currentDay)
             lastSyncedRoutineDay = currentDay
             settingsService.saveLastDayReset(currentDay)

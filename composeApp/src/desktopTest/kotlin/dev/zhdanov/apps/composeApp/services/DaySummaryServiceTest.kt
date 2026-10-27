@@ -7,6 +7,7 @@ import dev.zhdanov.apps.shared.cache.DatabaseDriverFactory
 import dev.zhdanov.apps.shared.model.AssistantConfig
 import dev.zhdanov.apps.shared.model.TaskSummary
 import dev.zhdanov.apps.shared.utils.toDuration
+import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -92,7 +93,7 @@ class DaySummaryServiceTest {
         val previousDay = currentDay.minus(1, DateTimeUnit.DAY)
         fixture.settingsService.saveLastDayReset(previousDay)
 
-        fixture.taskDataService.addTask("Stale today task", isToday = true)
+        fixture.taskDataService.addTask("Stale today task", targetDate = previousDay)
         val task = fixture.taskDataService.getAllTasks().first()
         fixture.focusSessionDataService.addFocusTimeWithTasks(
             duration = 600,
@@ -111,7 +112,7 @@ class DaySummaryServiceTest {
         )
 
         assertNotNull(fixture.daySummaryDataService.getDaySummary(previousDay))
-        assertTrue(fixture.taskDataService.getAllTasks().none { it.isToday })
+        assertTrue(fixture.taskDataService.getAllTasks().none { it.targetDate == currentDay.toLong() })
         assertTrue(fixture.daySummaryService.isCurrentDayActive())
     }
 
@@ -134,7 +135,7 @@ class DaySummaryServiceTest {
         val previousDay = currentDay.minus(1, DateTimeUnit.DAY)
         fixture.settingsService.saveLastDayReset(previousDay)
 
-        fixture.taskDataService.addTask("Stale today task", isToday = true)
+        fixture.taskDataService.addTask("Stale today task", targetDate = previousDay)
         fixture.daySummaryService.finishDay(
             LocalDateTime(previousDay, LocalTime(20, 0)).toInstant(timeZone)
         )
@@ -145,7 +146,7 @@ class DaySummaryServiceTest {
             timeZone
         )
 
-        assertTrue(fixture.taskDataService.getAllTasks().none { it.isToday })
+        assertTrue(fixture.taskDataService.getAllTasks().none { it.targetDate == currentDay.toLong() })
         assertTrue(fixture.daySummaryService.isCurrentDayActive())
     }
 

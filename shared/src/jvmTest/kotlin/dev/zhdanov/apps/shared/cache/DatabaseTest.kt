@@ -182,7 +182,6 @@ class DatabaseTest {
         database.taskRepository.addTask(
             CreateTask(
                 title = "Morning Run",
-                isToday = true,
                 routineId = routineId,
                 targetDate = dateLong
             )
@@ -237,6 +236,80 @@ class DatabaseTest {
         assertEquals(1, summaries.size)
         assertEquals(LocalDate(2026, 10, 14), summaries.single().date)
         assertEquals("Updated summary", summaries.single().review)
+    }
+
+    @Test
+    fun `migration from v9 migrates isToday to targetDate and drops isToday column`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        driver.execute(
+            null,
+            """
+            CREATE TABLE Workspace (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                syncId TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                icon TEXT NOT NULL DEFAULT 'workspaces',
+                isSelected INTEGER NOT NULL DEFAULT 0,
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL,
+                deletedAt INTEGER
+            )
+            """.trimIndent(),
+            0
+        )
+        driver.execute(
+            null,
+            """
+            CREATE TABLE Settings (
+                settingKey INTEGER NOT NULL PRIMARY KEY,
+                data TEXT NOT NULL
+            )
+            """.trimIndent(),
+            0
+        )
+        driver.execute(
+            null,
+            "INSERT INTO Settings (settingKey, data) VALUES (5, '\"2026-05-16\"')",
+            0
+        )
+        driver.execute(
+            null,
+            """
+            CREATE TABLE Task (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                createdAt INTEGER NOT NULL,
+                completedAt INTEGER,
+                isCompleted INTEGER NOT NULL DEFAULT 0,
+                isToday INTEGER NOT NULL DEFAULT 0,
+                routineId INTEGER,
+                targetDate INTEGER,
+                workspaceId INTEGER NOT NULL DEFAULT 1,
+                syncId TEXT NOT NULL DEFAULT '',
+                updatedAt INTEGER NOT NULL DEFAULT 0,
+                deletedAt INTEGER
+            )
+            """.trimIndent(),
+            0
+        )
+        driver.execute(
+            null,
+            "INSERT INTO Task (title, createdAt, isToday, syncId, updatedAt) VALUES ('Today task', 1000, 1, 's1', 1000)",
+            0
+        )
+        driver.execute(
+            null,
+            "INSERT INTO Task (title, createdAt, isToday, syncId, updatedAt) VALUES ('Backlog task', 1000, 0, 's2', 1000)",
+            0
+        )
+        driver.execute(null, "PRAGMA user_version = 9", 0)
+
+        val database = Database(SingleDriverFactory(driver))
+        val tasks = database.taskRepository.getAllTasks().associateBy { it.title }
+
+        assertEquals(20260516L, tasks.getValue("Today task").targetDate)
+        assertNull(tasks.getValue("Backlog task").targetDate)
     }
 }
 

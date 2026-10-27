@@ -138,7 +138,7 @@ val timerSettings =
 @OptIn(ExperimentalTime::class)
 val taskMapper =
     { id: Long, title: String, description: String?, createdAt: Long, completedAt: Long?,
-      isCompleted: Boolean, isToday: Boolean, routineId: Long?, targetDate: Long?,
+      isCompleted: Boolean, routineId: Long?, targetDate: Long?,
       workspaceId: Long, syncId: String, updatedAt: Long, deletedAt: Long? ->
         Task(
             id = id,
@@ -150,7 +150,6 @@ val taskMapper =
                 Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault())
             },
             isCompleted = isCompleted,
-            isToday = isToday,
             routineId = routineId,
             targetDate = targetDate,
             workspaceId = workspaceId,

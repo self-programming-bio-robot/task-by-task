@@ -57,6 +57,7 @@ class DaySummaryService(
     fun updateScheduler() {
         coroutineScope.launch {
             val startOfDay = settingsService.getStartOfDay()
+            logicalDayService.currentLogicalDay()
             schedulerService.addScheduler(
                 "Finish day",
                 "${startOfDay.minute} ${startOfDay.hour} * * *",
@@ -92,7 +93,6 @@ class DaySummaryService(
                 .takeWhile { it < previousDay }
                 .forEach { tryFinishDay(it) }
 
-            taskDataService.cleanTodayTaskList()
             routineDataService.syncDailyRoutineTasks(currentDay)
             lastSyncedRoutineDay = currentDay
             settingsService.saveLastDayReset(currentDay)

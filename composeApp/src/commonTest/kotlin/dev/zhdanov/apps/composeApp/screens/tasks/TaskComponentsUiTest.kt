@@ -165,6 +165,6 @@ class TaskComponentsUiTest {
         title = title,
         createdAt = LocalDateTime(2026, 5, 16, 9, 0),
         isCompleted = isCompleted,
-        isToday = isToday
+        targetDate = if (isToday) 20260516L else null
     )
 }

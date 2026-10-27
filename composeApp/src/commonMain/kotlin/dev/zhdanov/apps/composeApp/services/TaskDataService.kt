@@ -3,19 +3,21 @@ package dev.zhdanov.apps.composeApp.services
 import dev.zhdanov.apps.shared.cache.Database
 import dev.zhdanov.apps.shared.model.CreateTask
 import dev.zhdanov.apps.shared.model.Task
+import dev.zhdanov.apps.shared.utils.toLong
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDate
 
 class TaskDataService(
     private val database: Database,
     private val dispatchers: AppDispatchers,
     private val workspaceSessionService: WorkspaceSessionService
 ) {
-    suspend fun addTask(title: String, isToday: Boolean = false) = withContext(dispatchers.io) {
+    suspend fun addTask(title: String, targetDate: LocalDate? = null) = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.taskRepository.addTask(
             CreateTask(
                 title = workspaceSessionService.encryptTextForCurrentWorkspace(title),
-                isToday = isToday
+                targetDate = targetDate?.toLong()
             ),
             workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
         )
@@ -60,23 +62,16 @@ class TaskDataService(
         )
     }
 
-    suspend fun cleanTodayTaskList() = withContext(dispatchers.io) {
-        workspaceSessionService.requireUnlockedForCurrentWorkspace()
-        database.taskRepository.cleanTodayTaskList(workspaceSessionService.requireCurrentWorkspaceId())
-    }
-
     suspend fun attachTaskToRoutine(
         taskId: Long,
         routineId: Long,
-        targetDate: Long,
-        isToday: Boolean = true
+        targetDate: Long
     ) = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.taskRepository.attachTaskToRoutine(
             taskId = taskId,
             routineId = routineId,
             targetDate = targetDate,
-            isToday = isToday,
             workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
         )
     }

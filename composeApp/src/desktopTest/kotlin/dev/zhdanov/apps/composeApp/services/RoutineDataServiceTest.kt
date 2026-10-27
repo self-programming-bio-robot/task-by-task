@@ -38,7 +38,6 @@ class RoutineDataServiceTest {
         assertEquals("2L daily", task.description)
         assertEquals(routineId, task.routineId)
         assertEquals(today.toLong(), task.targetDate)
-        assertTrue(task.isToday)
         assertNotNull(database.taskRepository.getTaskByRoutineAndDate(routineId, today.toLong()))
     }
 
@@ -76,7 +75,7 @@ class RoutineDataServiceTest {
         val (_, taskService, routineService) = createServices()
         val today = LocalDate(2026, 5, 16)
 
-        taskService.addTask("Journal", isToday = false)
+        taskService.addTask("Journal")
         val originalTask = taskService.getAllTasks().single()
 
         val routineId = routineService.convertTaskToRoutine(originalTask, currentDate = today)
@@ -88,7 +87,6 @@ class RoutineDataServiceTest {
         assertEquals(originalTask.id, linked.id)
         assertEquals(routineId, linked.routineId)
         assertEquals(today.toLong(), linked.targetDate)
-        assertTrue(linked.isToday)
     }
 
     @Test
@@ -105,7 +103,6 @@ class RoutineDataServiceTest {
             database.taskRepository.addTask(
                 CreateTask(
                     title = "Stretch",
-                    isToday = false,
                     routineId = routineId,
                     targetDate = date.toLong()
                 )

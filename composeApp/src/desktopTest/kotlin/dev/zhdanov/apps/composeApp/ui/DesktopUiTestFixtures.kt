@@ -92,7 +92,7 @@ internal fun startDesktopUiTestKoin() {
                 viewModel { HistoryViewModel(get()) }
                 viewModel { TimersSettingsViewModel(get()) }
                 viewModel { EditableTimerSettingsViewModel(get()) }
-                viewModel { TaskListViewModel(get(), get(), get()) }
+                viewModel { TaskListViewModel(get(), get(), get(), get(), get()) }
                 viewModel { TaskRoutinesViewModel(get(), get()) }
                 viewModel { RoutinesReportViewModel(get(), get(), get()) }
             }

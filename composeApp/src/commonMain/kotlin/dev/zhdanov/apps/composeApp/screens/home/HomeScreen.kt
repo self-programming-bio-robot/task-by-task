@@ -207,10 +207,6 @@ fun TodayTaskList(
                         }
                     },
                     onFocusToggle = {
-                        // Add to today if not already
-                        if (!currentTask.isToday) {
-                            viewModel.updateTask(currentTask.copy(isToday = true))
-                        }
                         // Try to select the task
                         val success =
                             focusTaskService.toggleTaskSelection(currentTask, isTimerRunning)

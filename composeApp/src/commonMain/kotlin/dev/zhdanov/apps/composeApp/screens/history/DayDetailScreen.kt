@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,12 +35,13 @@ import dev.zhdanov.apps.composeApp.components.pane.AppPane
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
 import dev.zhdanov.apps.shared.model.Task
+import dev.zhdanov.apps.shared.model.TaskSummary
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import kotlin.time.ExperimentalTime
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalTime::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalTime::class, ExperimentalLayoutApi::class)
 @Composable
 fun DayDetailScreen(
     date: LocalDate,
@@ -89,6 +92,26 @@ fun DayDetailScreen(
                                 text = "Total focus time: ${summary.focusTime / 60} minutes",
                                 style = MaterialTheme.typography.bodyMedium
                             )
+                            if (summary.linkedTasks.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Tasks:",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    summary.linkedTasks.forEach { linkedTask ->
+                                        SummaryTaskChip(
+                                            task = linkedTask,
+                                            onClick = { onNavigateToTask(linkedTask.taskId) }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -207,6 +230,31 @@ private fun TaskChip(
             text = task.title,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun SummaryTaskChip(
+    task: TaskSummary,
+    onClick: () -> Unit
+) {
+    val label = if (task.totalDuration > 0) {
+        "${task.title} (${task.totalDuration / 60}m)"
+    } else {
+        task.title
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = RoundedCornerShape(4.dp),
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             maxLines = 1
         )

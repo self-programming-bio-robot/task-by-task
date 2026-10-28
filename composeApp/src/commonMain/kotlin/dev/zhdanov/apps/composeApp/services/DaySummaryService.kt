@@ -4,6 +4,8 @@ import com.diamondedge.logging.logging
 import dev.zhdanov.apps.composeApp.screens.history.AssistantReviewResponse
 import dev.zhdanov.apps.shared.model.DaySummary
 import dev.zhdanov.apps.shared.model.FocusTime
+import dev.zhdanov.apps.shared.model.FocusTimeWithTasks
+import dev.zhdanov.apps.shared.model.Task
 import dev.zhdanov.apps.shared.model.TaskSummary
 import dev.zhdanov.apps.shared.utils.startOfDayWithShift
 import dev.zhdanov.apps.shared.utils.toDuration
@@ -113,9 +115,11 @@ class DaySummaryService(
     private suspend fun tryFinishDay(day: LocalDate) {
         runCatching {
             if (daySummaryDataService.getDaySummary(day) == null) {
-                getFocusTimesForDay(day)
-                    .takeIf { it.isNotEmpty() }
-                    ?.let { createDaySummary(day, it) }
+                val focusTimes = getFocusTimesForDay(day)
+                val completedTasks = getCompletedTasksForDay(day)
+                if (focusTimes.isNotEmpty() || completedTasks.isNotEmpty()) {
+                    createDaySummary(day, focusTimes, completedTasks)
+                }
             }
         }.onSuccess {
             finishAttempts.remove(day)
@@ -134,51 +138,82 @@ class DaySummaryService(
         check(daySummaryDataService.getDaySummary(dayDate) == null) {
             "Day summary already exists for $dayDate"
         }
-        return createDaySummary(dayDate, getFocusTimesForDay(dayDate))
+        return createDaySummary(
+            day = dayDate,
+            focusTimes = getFocusTimesForDay(dayDate),
+            completedTasks = getCompletedTasksForDay(dayDate)
+        )
     }
 
     fun migration() {
         coroutineScope.launch {
             val startOfDayDuration = settingsService.getStartOfDay().toDuration()
+            val timeZone = TimeZone.currentSystemDefault()
             val startOfToday = startOfDayWithShift(Clock.System.now(), shift = startOfDayDuration)
-            focusSessionDataService.getFocusTimesBetween(0L, startOfToday.toEpochMilliseconds())
+            val focusTimesByDay = focusSessionDataService
+                .getFocusTimesBetween(0L, startOfToday.toEpochMilliseconds())
                 .groupBy {
                     Instant
                         .fromEpochMilliseconds(it.finishedAt)
                         .minus(startOfDayDuration)
-                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                        .toLocalDateTime(timeZone)
                         .date
                 }
-                .forEach { (day, focusTimes) ->
-                    if (daySummaryDataService.getDaySummary(day) == null) {
-                        runCatching { createDaySummary(day, focusTimes) }
-                            .onFailure { error -> logger.e(error) { "Failed to add day summary" } }
-                    }
+            val completedTasksByDay = taskDataService
+                .getCompletedTasksBetween(0L, startOfToday.toEpochMilliseconds())
+                .filter { it.completedAt != null }
+                .groupBy {
+                    it.completedAt!!
+                        .toInstant(timeZone)
+                        .minus(startOfDayDuration)
+                        .toLocalDateTime(timeZone)
+                        .date
                 }
+            val days = (focusTimesByDay.keys + completedTasksByDay.keys).sorted()
+            days.forEach { day ->
+                if (daySummaryDataService.getDaySummary(day) == null) {
+                    val focusTimes = focusTimesByDay[day].orEmpty()
+                    val completedTasks = completedTasksByDay[day].orEmpty()
+                    runCatching { createDaySummary(day, focusTimes, completedTasks) }
+                        .onFailure { error -> logger.e(error) { "Failed to add day summary" } }
+                }
+            }
         }
     }
 
-    private suspend fun getFocusTimesForDay(day: LocalDate): List<FocusTime> {
+    private suspend fun getDayPeriodBounds(day: LocalDate): Pair<Long, Long> {
         val startOfDay = settingsService.getStartOfDay()
         val timeZone = TimeZone.currentSystemDefault()
-        return focusSessionDataService.getFocusTimesBetween(
-            from = LocalDateTime(day, startOfDay).toInstant(timeZone).toEpochMilliseconds(),
-            to = LocalDateTime(day.plus(1, DateTimeUnit.DAY), startOfDay).toInstant(timeZone)
-                .toEpochMilliseconds()
-        )
+        val from = LocalDateTime(day, startOfDay).toInstant(timeZone).toEpochMilliseconds()
+        val to = LocalDateTime(day.plus(1, DateTimeUnit.DAY), startOfDay).toInstant(timeZone)
+            .toEpochMilliseconds()
+        return from to to
+    }
+
+    private suspend fun getFocusTimesForDay(day: LocalDate): List<FocusTime> {
+        val (from, to) = getDayPeriodBounds(day)
+        return focusSessionDataService.getFocusTimesBetween(from = from, to = to)
+    }
+
+    private suspend fun getCompletedTasksForDay(day: LocalDate): List<Task> {
+        val (from, to) = getDayPeriodBounds(day)
+        return taskDataService.getCompletedTasksBetween(from = from, to = to)
     }
 
     private suspend fun createDaySummary(
         day: LocalDate,
-        focusTimes: List<FocusTime>
+        focusTimes: List<FocusTime>,
+        completedTasks: List<Task>
     ): AssistantReviewResponse {
-        val review = reviewDay(focusTimes)
+        val allTasksById = taskDataService.getAllTasks().associateBy { it.id }
+        val focusTimesWithTasks = resolveFocusTimesWithTasks(focusTimes, allTasksById)
+        val review = reviewDay(focusTimesWithTasks, completedTasks)
         daySummaryDataService.addDaySummary(
             DaySummary(
                 date = day,
                 focusTime = focusTimes.sumOf { it.duration }.toLong(),
                 review = review.summary,
-                linkedTasks = buildLinkedTasks(focusTimes)
+                linkedTasks = buildLinkedTasks(focusTimesWithTasks, completedTasks, allTasksById)
             )
         )
         logger.d { review }
@@ -192,16 +227,36 @@ class DaySummaryService(
     private suspend fun dayDateFor(currentDateTime: Instant) =
         logicalDayService.currentLogicalDay(currentDateTime)
 
-    private suspend fun buildLinkedTasks(focusTimes: List<FocusTime>): List<TaskSummary> {
-        val knownTaskTitles = taskDataService.getAllTasks()
-            .associate { it.id to it.title }
-            .toMutableMap()
-        val durationByTask = mutableMapOf<Long, Long>()
-
-        focusTimes.forEach { focusTime ->
+    private suspend fun resolveFocusTimesWithTasks(
+        focusTimes: List<FocusTime>,
+        allTasksById: Map<Long, Task>
+    ): List<FocusTimeWithTasks> {
+        return focusTimes.map { focusTime ->
             val linkedTasks = focusSessionDataService.getTasksForFocusTime(focusTime.id)
-            val taskIds = if (linkedTasks.isNotEmpty()) {
-                linkedTasks.map { task ->
+            val resolvedTasks = linkedTasks.ifEmpty {
+                focusTime.taskId?.let { taskId -> listOfNotNull(allTasksById[taskId]) }.orEmpty()
+            }
+            FocusTimeWithTasks(
+                focusTime = focusTime,
+                tasks = resolvedTasks
+            )
+        }
+    }
+
+    private fun buildLinkedTasks(
+        focusTimesWithTasks: List<FocusTimeWithTasks>,
+        completedTasks: List<Task>,
+        allTasksById: Map<Long, Task>
+    ): List<TaskSummary> {
+        val knownTaskTitles = allTasksById
+            .mapValues { (_, task) -> task.title }
+            .toMutableMap()
+        val durationByTask = linkedMapOf<Long, Long>()
+
+        focusTimesWithTasks.forEach { item ->
+            val focusTime = item.focusTime
+            val taskIds = if (item.tasks.isNotEmpty()) {
+                item.tasks.map { task ->
                     knownTaskTitles[task.id] = task.title
                     task.id
                 }
@@ -211,6 +266,13 @@ class DaySummaryService(
 
             taskIds.forEach { taskId ->
                 durationByTask[taskId] = (durationByTask[taskId] ?: 0L) + focusTime.duration
+            }
+        }
+
+        completedTasks.forEach { task ->
+            knownTaskTitles[task.id] = task.title
+            if (task.id !in durationByTask) {
+                durationByTask[task.id] = 0L
             }
         }
 
@@ -225,16 +287,52 @@ class DaySummaryService(
             .sortedByDescending { it.totalDuration }
     }
 
-    private suspend fun reviewDay(focusTimes: List<FocusTime>): DayReviewResult {
+    private suspend fun reviewDay(
+        focusTimesWithTasks: List<FocusTimeWithTasks>,
+        completedTasks: List<Task>
+    ): DayReviewResult {
         val assistantConfig = settingsService.getAssistantConfig()
             ?: throw MissingOpenAiTokenException()
 
-        val historyOfDay = focusTimes.joinToString(separator = "\n") {
-            """Date: ${it.finishedAt.toLocalDateTime()}
-                |Duration: ${it.duration.seconds}
-                |${it.feedback}
-            """.trimMargin()
+        val focusSection = if (focusTimesWithTasks.isEmpty()) {
+            "No focus sessions recorded."
+        } else {
+            focusTimesWithTasks.joinToString(separator = "\n\n") { item ->
+                val ft = item.focusTime
+                val tasksLine = if (item.tasks.isNotEmpty()) {
+                    "Tasks: ${item.tasks.joinToString(", ") { it.title }}"
+                } else {
+                    null
+                }
+                buildString {
+                    appendLine("Date: ${ft.finishedAt.toLocalDateTime()}")
+                    appendLine("Duration: ${ft.duration.seconds}")
+                    if (tasksLine != null) {
+                        appendLine(tasksLine)
+                    }
+                    if (ft.feedback.isNotBlank()) {
+                        append(ft.feedback)
+                    }
+                }.trimEnd()
+            }
         }
+
+        val completedTasksSection = if (completedTasks.isEmpty()) {
+            "No tasks completed."
+        } else {
+            completedTasks.joinToString(separator = "\n") { task ->
+                val desc = task.description?.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty()
+                "- ${task.title}$desc"
+            }
+        }
+
+        val historyOfDay = """
+            |Focus sessions:
+            |$focusSection
+            |
+            |Completed tasks:
+            |$completedTasksSection
+        """.trimMargin()
 
         return reviewClient.reviewDay(assistantConfig, historyOfDay)
     }

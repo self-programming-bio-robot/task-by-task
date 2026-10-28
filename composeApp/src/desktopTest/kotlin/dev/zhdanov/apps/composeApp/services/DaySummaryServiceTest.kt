@@ -59,6 +59,85 @@ class DaySummaryServiceTest {
         assertEquals(LocalDate(2026, 5, 15), response.date)
         assertEquals("summary", response.summary)
         assertEquals(listOf(TaskSummary(task.id, "Refactor", 1_500)), savedSummary?.linkedTasks)
+        assertTrue(fixture.reviewClient.lastHistoryOfDay.orEmpty().contains("Tasks: Refactor"))
+    }
+
+    @Test
+    fun `finishDay links completed tasks without focus sessions and includes them in llm prompt`() = runTest {
+        val fixture = createFixture()
+        fixture.settingsService.saveAssistantConfig(
+            "token",
+            "https://api.openai.com/v1/",
+            "gpt-4.1"
+        )
+        val startOfDay = LocalTime(5, 0)
+        fixture.settingsService.saveStartOfDay(startOfDay)
+        val timeZone = TimeZone.currentSystemDefault()
+
+        fixture.taskDataService.addTask("Focused task")
+        fixture.taskDataService.addTask("Completed without focus")
+        val tasks = fixture.taskDataService.getAllTasks()
+        val focusedTask = tasks.first { it.title == "Focused task" }
+        val completedTask = tasks.first { it.title == "Completed without focus" }
+
+        fixture.taskDataService.completeTask(completedTask.id)
+        val now = Clock.System.now()
+        val currentDay = now.minus(startOfDay.toDuration()).toLocalDateTime(timeZone).date
+
+        fixture.focusSessionDataService.addFocusTimeWithTasks(
+            duration = 1_200,
+            finishedAt = now.toEpochMilliseconds(),
+            feedback = "Worked on feature",
+            startedAt = null,
+            pauseTime = null,
+            taskIds = listOf(focusedTask.id)
+        )
+
+        fixture.daySummaryService.finishDay(now)
+        val savedSummary = fixture.daySummaryDataService.getDaySummary(currentDay)
+
+        assertEquals(
+            listOf(
+                TaskSummary(focusedTask.id, "Focused task", 1_200),
+                TaskSummary(completedTask.id, "Completed without focus", 0)
+            ),
+            savedSummary?.linkedTasks
+        )
+        val promptHistory = fixture.reviewClient.lastHistoryOfDay.orEmpty()
+        assertTrue(promptHistory.contains("Tasks: Focused task"))
+        assertTrue(promptHistory.contains("- Completed without focus"))
+    }
+
+    @Test
+    fun `finishDay summarizes day when only completed tasks exist`() = runTest {
+        val fixture = createFixture()
+        fixture.settingsService.saveAssistantConfig(
+            "token",
+            "https://api.openai.com/v1/",
+            "gpt-4.1"
+        )
+        val startOfDay = LocalTime(5, 0)
+        fixture.settingsService.saveStartOfDay(startOfDay)
+
+        val timeZone = TimeZone.currentSystemDefault()
+        val now = Clock.System.now()
+        val currentDay = now
+            .minus(startOfDay.toDuration())
+            .toLocalDateTime(timeZone)
+            .date
+
+        fixture.taskDataService.addTask("Quick chore")
+        val task = fixture.taskDataService.getAllTasks().first()
+        fixture.taskDataService.completeTask(task.id)
+
+        val response = fixture.daySummaryService.finishDay(now)
+        val savedSummary = fixture.daySummaryDataService.getDaySummary(currentDay)
+
+        assertEquals(currentDay, response.date)
+        assertNotNull(savedSummary)
+        assertEquals(0L, savedSummary.focusTime)
+        assertEquals(listOf(TaskSummary(task.id, "Quick chore", 0)), savedSummary.linkedTasks)
+        assertTrue(fixture.reviewClient.lastHistoryOfDay.orEmpty().contains("- Quick chore"))
     }
 
     @Test
@@ -167,13 +246,14 @@ class DaySummaryServiceTest {
         val daySummaryDataService =
             DaySummaryDataService(database, dispatchers, workspaceSessionService)
         val schedulerService = RecordingSchedulerService()
+        val reviewClient = FakeReviewClient()
         val daySummaryService = DaySummaryService(
             daySummaryDataService = daySummaryDataService,
             focusSessionDataService = focusSessionDataService,
             taskDataService = taskDataService,
             settingsService = settingsService,
             schedulerService = schedulerService,
-            reviewClient = FakeReviewClient(),
+            reviewClient = reviewClient,
             dispatchers = dispatchers,
             routineDataService = routineDataService,
             logicalDayService = logicalDayService
@@ -186,7 +266,8 @@ class DaySummaryServiceTest {
             focusSessionDataService = focusSessionDataService,
             daySummaryDataService = daySummaryDataService,
             daySummaryService = daySummaryService,
-            schedulerService = schedulerService
+            schedulerService = schedulerService,
+            reviewClient = reviewClient
         )
     }
 }
@@ -198,11 +279,15 @@ private data class Fixture(
     val focusSessionDataService: FocusSessionDataService,
     val daySummaryDataService: DaySummaryDataService,
     val daySummaryService: DaySummaryService,
-    val schedulerService: RecordingSchedulerService
+    val schedulerService: RecordingSchedulerService,
+    val reviewClient: FakeReviewClient
 )
 
 private class FakeReviewClient : ReviewClient {
+    var lastHistoryOfDay: String? = null
+
     override suspend fun reviewDay(config: AssistantConfig, historyOfDay: String): DayReviewResult {
+        lastHistoryOfDay = historyOfDay
         return DayReviewResult(summary = "summary", response = "response")
     }
 }

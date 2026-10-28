@@ -37,6 +37,15 @@ class TaskDataService(
             .map(::decryptTask)
     }
 
+    suspend fun getCompletedTasksBetween(from: Long, to: Long): List<Task> = withContext(dispatchers.io) {
+        workspaceSessionService.requireUnlockedForCurrentWorkspace()
+        database.taskRepository.getCompletedTasksBetween(
+            from = from,
+            to = to,
+            workspaceId = workspaceSessionService.requireCurrentWorkspaceId()
+        ).map(::decryptTask)
+    }
+
     suspend fun getTaskById(id: Long): Task? = withContext(dispatchers.io) {
         workspaceSessionService.requireUnlockedForCurrentWorkspace()
         database.taskRepository.getTaskById(id, workspaceSessionService.requireCurrentWorkspaceId())

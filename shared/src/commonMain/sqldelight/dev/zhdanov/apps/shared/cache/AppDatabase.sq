@@ -403,6 +403,11 @@ selectCompletedRoutineTasksUpToDate:
 SELECT * FROM Task
 WHERE workspaceId = ? AND deletedAt IS NULL AND routineId IS NOT NULL AND isCompleted = 1 AND targetDate <= ?;
 
+selectCompletedTasksInPeriod:
+SELECT * FROM Task
+WHERE workspaceId = ? AND deletedAt IS NULL AND isCompleted = 1 AND completedAt BETWEEN ? AND ?
+ORDER BY completedAt ASC;
+
 -- FocusTime <-> Task Junction Table (Many-to-Many)
 
 CREATE TABLE IF NOT EXISTS FocusTimeTaskCrossRef(

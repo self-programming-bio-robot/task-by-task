@@ -112,4 +112,12 @@ class TaskRepository(private val database: AppDatabaseQueries) {
     ): List<Task> {
         return database.selectCompletedRoutineTasksUpToDate(workspaceId, to, taskMapper).executeAsList()
     }
+
+    fun getCompletedTasksBetween(
+        from: Long,
+        to: Long,
+        workspaceId: Long = DEFAULT_WORKSPACE_ID
+    ): List<Task> {
+        return database.selectCompletedTasksInPeriod(workspaceId, from, to, taskMapper).executeAsList()
+    }
 }
